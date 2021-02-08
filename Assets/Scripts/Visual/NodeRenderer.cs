@@ -1,8 +1,17 @@
+using Data;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class NodeRenderer : MonoBehaviour {
+
+	/*
+
+	visualize the node information with the given style information
+
+	save data when it changes
+
+	*/
 
 	[Header( "Data" )]
 	[SerializeField] private Node _node;
@@ -13,37 +22,33 @@ public class NodeRenderer : MonoBehaviour {
 	[SerializeField] private Transform _connectorR;
 
 	[Header( "UI Components" )]
-	[SerializeField] private RectTransform _uiRoot;
 	[SerializeField] private Transform _root;
-	[SerializeField] private TextMeshProUGUI _titleText;
+	[SerializeField] private RectTransform _canvasRoot;
+	[SerializeField] private TMP_InputField _titleInputField;
 	[SerializeField] private ContentRenderer _content;
 	[SerializeField] private StyleRenderer[] _styleRenderers;
 
 	private void Awake () {
 
-		foreach ( var styleRenderer in _styleRenderers ) {
-			styleRenderer.SetStyle( _style );
-		}
 		SetStyle( _style );
 		SetNode( _node );
 	}
 	private void Update () {
 
 		AnimateMinimization();
-		ResizeCanvas();
+		FitCanvas();
 		PositionConnectors();
 	}
 
-	private void ResizeCanvas () {
+	private void FitCanvas () {
 
 		// always resize the canvas to be based off of node cube size
-		_uiRoot.sizeDelta = new Vector2( _root.transform.localScale.x * 100, _root.transform.localScale.y * 100 );
+		_canvasRoot.sizeDelta = new Vector2( _root.transform.localScale.x * 100, _root.transform.localScale.y * 100 );
 		if ( _root.transform.hasChanged ) {
-			LayoutRebuilder.ForceRebuildLayoutImmediate( _uiRoot );
+			LayoutRebuilder.ForceRebuildLayoutImmediate( _canvasRoot );
 			_root.transform.hasChanged = false;
 		}
 	}
-
 	private void AnimateMinimization () {
 
 		if ( _minimizationTimer.IsRunning ) {
@@ -60,7 +65,6 @@ public class NodeRenderer : MonoBehaviour {
 			}
 		}
 	}
-
 	private void PositionConnectors () {
 
 		_connectorL.localPosition = new Vector3( 0f, -0.75f / 2f, 0f );
@@ -69,24 +73,24 @@ public class NodeRenderer : MonoBehaviour {
 
 	public void SetStyle ( Style style ) {
 
-		_titleText.color = _style.Foreground;
-		_content.SetStyle( style );
+		foreach ( var styleRenderer in _styleRenderers ) {
+			styleRenderer.SetStyle( _style );
+		}
+		_content.Style = style;
 	}
-
 	public void SetNode ( Node node ) {
 
-		_titleText.text = node.Title;
-		_content.SetContent( node.Content );
+		_titleInputField.text = node.Title;
+		_content.SetBody( node.Body );
 
-		LayoutRebuilder.ForceRebuildLayoutImmediate( _uiRoot );
+		LayoutRebuilder.ForceRebuildLayoutImmediate( _canvasRoot );
 	}
-
 	public void SetMinimized ( bool isMinimized ) {
 
 		_isMinimized = isMinimized;
 	}
-
 	public void SetEditMode ( bool isEditing ) {
+
 
 	}
 
