@@ -1,4 +1,4 @@
-using Data;
+using Model;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -81,7 +81,12 @@ public class NodeRenderer : MonoBehaviour {
 	public void SetNode ( Node node ) {
 
 		_titleInputField.text = node.Title;
-		_content.SetBody( node.Body );
+		_content.SetContent(
+			new View.Content(
+				content: new Model.Content( userString: node.Body ),
+				style: _style
+			)
+		);
 
 		LayoutRebuilder.ForceRebuildLayoutImmediate( _canvasRoot );
 	}

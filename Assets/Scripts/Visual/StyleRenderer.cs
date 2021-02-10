@@ -1,5 +1,4 @@
-using Data;
-using System.Collections;
+using Model;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
