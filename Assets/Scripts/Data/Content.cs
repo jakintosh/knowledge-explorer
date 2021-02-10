@@ -19,6 +19,10 @@ namespace Model {
 
 			// "This is a [[string]] that has a [[link]]." => "This is a $0123abc that has a $4567def."
 
+			if ( string.IsNullOrEmpty( userEditableString ) ) {
+				return "";
+			}
+
 			var modelSB = new StringBuilder();
 			for ( int i = 0; i < userEditableString.Length; i++ ) {
 

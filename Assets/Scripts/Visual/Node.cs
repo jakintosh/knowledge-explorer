@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 namespace View {
 
-
 	public class Node : MonoBehaviour {
 
 		// data types
@@ -18,7 +17,6 @@ namespace View {
 			Minimized,
 			Maximized
 		}
-
 
 		// properties
 		public EditStates EditState {
@@ -33,6 +31,8 @@ namespace View {
 						SetCaretRaycastTarget( isTarget: false );
 						_titleInputField.interactable = false;
 						_contentInputField.interactable = false;
+						_data.Title = _titleInputField.text;
+						_data.Body = _contentInputField.text;
 						break;
 
 					case EditStates.Edit:
@@ -69,6 +69,44 @@ namespace View {
 				if ( _style == value ) { return; }
 				_style = value;
 				_styleRenderer.SetStyle( _style );
+			}
+		}
+
+
+		// data
+
+		[Header( "Data" )]
+		[SerializeField] private EditStates _editState;
+		[SerializeField] private WindowStates _windowState;
+		[SerializeField] private Model.Node _data;
+		[SerializeField] private Model.Style _style;
+
+		[Header( "UI Content" )]
+		[SerializeField] private StyleRenderer _styleRenderer;
+		[SerializeField] private TMP_InputField _titleInputField;
+		[SerializeField] private TMP_InputField _contentInputField;
+
+		[Header( "UI Component References" )]
+		[SerializeField] private Toggle _editToggle;
+		[SerializeField] private Toggle _minimizeToggle;
+		[SerializeField] private RectTransform _canvasRoot;
+		[SerializeField] private Transform _backgroundRoot;
+		[SerializeField] private Transform _connectorL;
+		[SerializeField] private Transform _connectorR;
+
+		// instance variables
+		private Timer _minimizationTimer = new Timer( 0.3f );
+		private List<MaskableGraphic> _carets;
+		private Vector2 __size;
+		private Vector2 _size {
+			get => __size;
+			set {
+				if ( __size == value ) { return; }
+				__size = value;
+				// size changed
+				SetBackgroundSize( __size );
+				FitCanvas( __size );
+				PositionConnectors( __size );
 			}
 		}
 
@@ -156,42 +194,6 @@ namespace View {
 			WindowState = isOn ? WindowStates.Minimized : WindowStates.Maximized;
 		}
 
-
-
-		[Header( "Data" )]
-		[SerializeField] private EditStates _editState;
-		[SerializeField] private WindowStates _windowState;
-		[SerializeField] private Model.Node _data;
-		[SerializeField] private Model.Style _style;
-
-		[Header( "UI Content" )]
-		[SerializeField] private StyleRenderer _styleRenderer;
-		[SerializeField] private TMP_InputField _titleInputField;
-		[SerializeField] private TMP_InputField _contentInputField;
-
-		[Header( "UI Component References" )]
-		[SerializeField] private Toggle _editToggle;
-		[SerializeField] private Toggle _minimizeToggle;
-		[SerializeField] private RectTransform _canvasRoot;
-		[SerializeField] private Transform _backgroundRoot;
-		[SerializeField] private Transform _connectorL;
-		[SerializeField] private Transform _connectorR;
-
-
-		private Timer _minimizationTimer = new Timer( 0.3f );
-		private List<MaskableGraphic> _carets;
-		private Vector2 __size;
-		private Vector2 _size {
-			get => __size;
-			set {
-				if ( __size == value ) { return; }
-				__size = value;
-				// size changed
-				SetBackgroundSize( __size );
-				FitCanvas( __size );
-				PositionConnectors( __size );
-			}
-		}
 
 	}
 }
