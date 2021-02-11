@@ -1,7 +1,7 @@
-using View;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using View;
 
 
 public class ContentRenderer : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler {

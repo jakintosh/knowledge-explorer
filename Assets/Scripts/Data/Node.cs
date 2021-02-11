@@ -29,7 +29,7 @@ namespace Model {
 
 		public void Load () {
 
-			var database = PersistentStore.Load( "/data/buckets/default.bucket" );
+			var database = PersistentStore.Load<Database>( "/data/buckets/default.bucket" );
 			_nodesByID = new Dictionary<string, Node>();
 			foreach ( var node in database.Nodes ) {
 
@@ -54,9 +54,8 @@ namespace Model {
 		public Node NewNode ( string title = null ) {
 
 			// create node
-			var node = new Node();
+			var node = new Node( id: GenerateID() );
 			node.Title = string.IsNullOrEmpty( title ) ? GenerateTitle() : title;
-			node.ID = GenerateID();
 			node.OnTitleChanged += HandleTitleChange;
 
 			// register with data structures
@@ -75,6 +74,14 @@ namespace Model {
 
 		// ****************************************
 
+		public Node GetNodeForID ( string id ) {
+
+			if ( !_nodesByID.ContainsKey( id ) ) {
+				Debug.LogWarning( $"Couldn't resolve ID {id}" );
+				return null;
+			}
+			return _nodesByID[id];
+		}
 		public string GetIDForTitle ( string title ) {
 
 			if ( !_idsByTitle.ContainsKey( title ) ) {
@@ -145,7 +152,7 @@ namespace Model {
 
 		private static string FullPath ( string subpath ) => $"{UnityEngine.Application.persistentDataPath}{subpath}";
 
-		public static void Save ( string path, Database database ) {
+		public static void Save<T> ( string path, T data ) {
 
 			var fullpath = FullPath( path );
 
@@ -159,19 +166,21 @@ namespace Model {
 			EnsureDirectory( fullpath.Substring( 0, lastSlash ) );
 
 			// write out the actual file
-			var json = JsonUtility.ToJson( database );
+			Debug.Log( $"PersistentStore: Saving to {fullpath}" );
+			var json = JsonUtility.ToJson( data );
 			File.WriteAllText( fullpath, json );
 		}
 
-		public static Database Load ( string path ) {
+		public static T Load<T> ( string path ) where T : new() {
 
 			var fullpath = FullPath( path );
 			if ( !File.Exists( fullpath ) ) {
-				return new Database();
+				return new T();
 
 			}
+			Debug.Log( $"PersistentStore: Loading from {fullpath}" );
 			var json = File.ReadAllText( fullpath );
-			return JsonUtility.FromJson<Database>( json );
+			return JsonUtility.FromJson<T>( json );
 		}
 
 		private static void EnsureDirectory ( string path ) {
@@ -199,14 +208,17 @@ namespace Model {
 	[Serializable]
 	public class Node {
 
-		// events
+		// delegates
 		public delegate void TitleChangedEvent ( string oldTitle, string newTitle );
+		public delegate void BodyChangedEvent ( string newBody );
+
+		// events
 		public event TitleChangedEvent OnTitleChanged;
+		public event BodyChangedEvent OnBodyChanged;
 
 		// properties
 		public string ID {
 			get => _id;
-			set => _id = value;
 		}
 		public string Title {
 			get => _title;
@@ -214,13 +226,28 @@ namespace Model {
 				if ( _title != value ) {
 					var oldTitle = _title;
 					_title = value;
+					// Debug.Log( $"New title {_title}" );
+					// if ( OnTitleChanged == null ) { Debug.Log( "Title Changed Null" ); }
 					OnTitleChanged?.Invoke( oldTitle: oldTitle, newTitle: _title );
 				}
 			}
 		}
 		public string Body {
 			get => _body;
-			set => _body = value;
+			set {
+				if ( _body != value ) {
+					_body = value;
+					// Debug.Log( $"New body {_body}" );
+					// if ( OnBodyChanged == null ) { Debug.Log( "Body Changed Null" ); }
+					OnBodyChanged?.Invoke( newBody: _body );
+				}
+			}
+		}
+
+		// constructor
+		public Node ( string id ) {
+
+			_id = id;
 		}
 
 		// serialized backing data

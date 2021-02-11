@@ -49,10 +49,17 @@ namespace View {
 
 		private void Refresh () {
 
+			if ( _content == null ) {
+				return;
+			}
 			TMPString = DoSomething( _content.ModelString );
 		}
 
 		private string DoSomething ( string modelString ) {
+
+			if ( modelString == null ) {
+				return "";
+			}
 
 			// "This is a $0123abc that has a $4567def." => "This is a <#0000FFFF><u>string</u></color> that has a <#0000FFFF><u>link</u></color>.", with links
 
