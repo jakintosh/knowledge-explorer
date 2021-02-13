@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace Model {
 
@@ -46,7 +47,7 @@ namespace Model {
 
 			} else {
 
-				var node = NodeManager.Instance.GetNodeForID( id );
+				var node = Bucket.Instance.GetNodeForID( id );
 				if ( node == null ) {
 					Debug.LogWarning( $"Workspace: Couldn't open node {id}, doesn't exist" );
 					return;
@@ -59,20 +60,30 @@ namespace Model {
 				InstantiateNode( metadata );
 			}
 		}
+		public void OpenSearch () {
 
+			HandleSearchClicked();
+		}
 
 		// ********** Private Interface ***********
 
 		private void Awake () {
 
+			_searchAnimation = new Timer( 0.16f );
+
 			_nodesByID = new Dictionary<string, View.Node>();
 			_nodeMetadataByID = new Dictionary<string, NodeMetadata>();
 
+			_searchField.onValueChanged.AddListener( HandleSearchChanged );
 			_newNodeButton.onClick.AddListener( CreateNewNode );
 			_saveButton.onClick.AddListener( SaveBucket );
 
 			LoadBucket();
 			LoadWorkspace();
+		}
+		private void Update () {
+
+			AnimateSearch();
 		}
 		private void OnDestroy () {
 
@@ -83,7 +94,12 @@ namespace Model {
 		private void InstantiateNode ( NodeMetadata nodeMetadata ) {
 
 			var id = nodeMetadata.ID;
-			var nodeData = NodeManager.Instance.GetNodeForID( id );
+			var nodeData = Bucket.Instance.GetNodeForID( id );
+			if ( nodeData == null ) {
+				// no node in the database with this ID, most likely didn't save the database
+				Debug.LogWarning( $"Workspace: Node {id} found in workspace, but not in database. The database probably wasn't saved last session." );
+				return;
+			}
 			var nodeView = Instantiate<View.Node>( _nodePrefab );
 			nodeView.Data = nodeData;
 			nodeView.transform.position = nodeMetadata.Position;
@@ -93,7 +109,7 @@ namespace Model {
 		}
 		private void CreateNewNode () {
 
-			var node = NodeManager.Instance.NewNode();
+			var node = Bucket.Instance.NewNode();
 			var metadata = new NodeMetadata() {
 				ID = node.ID,
 				Position = Vector3.zero
@@ -111,8 +127,60 @@ namespace Model {
 			_nodeMetadataByID[id] = metadata;
 		}
 
+		// search stuff
+		private void HandleSearchClicked () {
 
+			_searchOpen = _searchOpen.Toggled();
+			_searchAnimation.Start();
+		}
+		private void HandleSearchChanged ( string searchString ) {
 
+			// kill children
+			foreach ( Transform child in _searchResults ) {
+				Destroy( child.gameObject );
+			}
+
+			// set search results active
+			_searchResults.gameObject.SetActive( !string.IsNullOrEmpty( searchString ) );
+
+			// populate results
+			var results = Bucket.Instance.SearchTitles( searchString );
+			foreach ( var result in results ) {
+				var cell = Instantiate<View.SearchResultCell>( _searchResultCellPrefab, _searchResults );
+				cell.SetNode( result.Result );
+			}
+		}
+		private void AnimateSearch () {
+
+			if ( _searchAnimation.IsRunning ) {
+
+				var startWidth = _searchOpen ? 100f : 600f;
+				var endWidth = _searchOpen ? 600f : 100f;
+
+				var rt = _searchField.transform as RectTransform;
+				var size = rt.sizeDelta;
+				size.x = startWidth.Lerp( to: endWidth, _searchAnimation.Percentage );
+				rt.sizeDelta = size;
+
+				var startAlpha = _searchOpen ? 0f : 1f;
+				var endAlpha = _searchOpen ? 1f : 0f;
+				var currentAlpha = startAlpha.Lerp( to: endAlpha, _searchAnimation.Percentage );
+				_searchText.alpha = currentAlpha;
+				_searchResultsGroup.alpha = currentAlpha;
+
+				if ( _searchAnimation.IsComplete ) {
+					_searchAnimation.Stop();
+					if ( _searchOpen ) {
+						// do stuff on finish open
+					} else {
+						// do stuff on finish close
+						_searchField.text = "";
+					}
+				}
+			}
+		}
+
+		// workspace save/load
 		private void SaveWorkspace () {
 
 			var metadata = new WorkspaceMetadata();
@@ -127,26 +195,35 @@ namespace Model {
 			}
 		}
 
+		// bucket save/load
 		private void SaveBucket () {
 
-			NodeManager.Instance.Save();
+			Bucket.Instance.Save();
 		}
 		private void LoadBucket () {
 
-			NodeManager.Instance.Load();
+			Bucket.Instance.Load();
 		}
 
 
 		// ************* Private Data *************
 
 		[Header( "UI Components" )]
+		[SerializeField] private TMP_InputField _searchField;
+		[SerializeField] private CanvasGroup _searchText;
+		[SerializeField] private RectTransform _searchResults;
+		[SerializeField] private CanvasGroup _searchResultsGroup;
 		[SerializeField] private Button _newNodeButton;
 		[SerializeField] private Button _saveButton;
 
 		[Header( "Components" )]
 		[SerializeField] private View.Node _nodePrefab;
+		[SerializeField] private View.SearchResultCell _searchResultCellPrefab;
 
 		private Dictionary<string, View.Node> _nodesByID;
 		private Dictionary<string, NodeMetadata> _nodeMetadataByID;
+
+		private bool _searchOpen;
+		private Timer _searchAnimation;
 	}
 }

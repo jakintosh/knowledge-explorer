@@ -6,20 +6,21 @@ using UnityEngine;
 
 namespace Model {
 
-	public class NodeManager {
+	[Serializable]
+	public class Bucket {
 
 		// ********** singleton management **********
 
-		private static NodeManager _instance;
-		public static NodeManager Instance {
+		private static Bucket _instance;
+		public static Bucket Instance {
 			get {
 				if ( _instance == null ) {
-					_instance = new NodeManager();
+					_instance = new Bucket();
 				}
 				return _instance;
 			}
 		}
-		private NodeManager () {
+		private Bucket () {
 
 			_idsByTitle = new Dictionary<string, string>();
 			_nodesByID = new Dictionary<string, Node>();
@@ -101,6 +102,38 @@ namespace Model {
 			return new List<Node>( _nodesByID.Values );
 		}
 
+		// **************** Search ****************
+
+		public struct SearchResult<T> {
+			public string Query;
+			public int Score;
+			public T Result;
+		}
+
+		public List<SearchResult<Node>> SearchTitles ( string titleQuery ) {
+
+			var results = new List<SearchResult<Node>>();
+
+			if ( string.IsNullOrEmpty( titleQuery ) ) {
+				return results;
+			}
+
+			foreach ( var title in _idsByTitle.Keys ) {
+				int score = title.IndexOf( titleQuery, StringComparison.CurrentCultureIgnoreCase );
+				if ( score >= 0 ) {
+					var id = GetIDForTitle( title );
+					var node = GetNodeForID( id );
+					results.Add( new SearchResult<Node>() {
+						Query = titleQuery,
+						Score = score,
+						Result = node
+					} );
+				}
+			}
+			results.Sort( ( a, b ) => a.Score.CompareTo( b.Score ) );
+			return results;
+		}
+
 		// ****************************************
 
 		public static int ID_LENGTH = 8;
@@ -143,6 +176,8 @@ namespace Model {
 		}
 
 		// ****************************************
+
+		[SerializeField] public Node[] Nodes = new Node[0];
 
 		private Dictionary<string, string> _idsByTitle;
 		private Dictionary<string, Node> _nodesByID;

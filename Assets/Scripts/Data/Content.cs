@@ -59,7 +59,7 @@ namespace Model {
 					}
 
 					// append link ID in string
-					var id = NodeManager.Instance.GetIDForTitle( title );
+					var id = Bucket.Instance.GetIDForTitle( title );
 					modelSB.Append( $"${id}" );
 
 				} else {

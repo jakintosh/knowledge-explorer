@@ -72,7 +72,7 @@ namespace View {
 
 					// get id
 					var idStringBuilder = new StringBuilder();
-					var idLength = Model.NodeManager.ID_LENGTH;
+					var idLength = Model.Bucket.ID_LENGTH;
 					for ( int j = 0; j < idLength; j++ ) {
 						var idChar = modelString[i + 1 + j];
 						idStringBuilder.Append( idChar ); ;
@@ -82,7 +82,7 @@ namespace View {
 					var id = idStringBuilder.ToString();
 
 					// resolve title
-					var title = Model.NodeManager.Instance.GetTitleForID( id );
+					var title = Model.Bucket.Instance.GetTitleForID( id );
 					if ( title != null ) {
 
 						// create a visual link

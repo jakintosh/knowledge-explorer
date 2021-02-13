@@ -31,8 +31,8 @@ public class Data_Tests {
 		var inputString = "Hey this is a [[user]] editable string to test how a [[link]] works.";
 		var contentModel = new Model.Content( inputString );
 
-		var userID = Model.NodeManager.Instance.GetIDForTitle( "user" );
-		var linkID = Model.NodeManager.Instance.GetIDForTitle( "link" );
+		var userID = Model.Bucket.Instance.GetIDForTitle( "user" );
+		var linkID = Model.Bucket.Instance.GetIDForTitle( "link" );
 		var expectedModelString = $"Hey this is a ${userID} editable string to test how a ${linkID} works.";
 
 		Assert.AreEqual( inputString, contentModel.UserEditableString );
@@ -45,8 +45,8 @@ public class Data_Tests {
 		var inputString = "Hey this is a [[user]] editable string to test how a [[link]] works.";
 		var contentModel = new Model.Content( inputString );
 
-		var userID = Model.NodeManager.Instance.GetIDForTitle( "user" );
-		var linkID = Model.NodeManager.Instance.GetIDForTitle( "link" );
+		var userID = Model.Bucket.Instance.GetIDForTitle( "user" );
+		var linkID = Model.Bucket.Instance.GetIDForTitle( "link" );
 		var expectedModelString = $"Hey this is a ${userID} editable string to test how a ${linkID} works.";
 
 		Assert.AreEqual( expectedModelString, contentModel.ModelString );
