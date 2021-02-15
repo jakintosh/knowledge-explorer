@@ -1913,6 +1913,7 @@ MonoBehaviour:
   _searchField: {fileID: 1955609398}
   _searchText: {fileID: 213170440}
   _searchResults: {fileID: 504272700}
+  _searchResultsGroup: {fileID: 504272706}
   _newNodeButton: {fileID: 759319504}
   _saveButton: {fileID: 772442482}
   _nodePrefab: {fileID: 1178911139630878072, guid: eb39aed6791474f3c8bc64b134a89fdb, type: 3}

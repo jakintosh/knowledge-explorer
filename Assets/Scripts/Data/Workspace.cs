@@ -60,6 +60,16 @@ namespace Model {
 				InstantiateNode( metadata );
 			}
 		}
+		public void CloseNode ( string id ) {
+
+			if ( _nodeMetadataByID.ContainsKey( id ) ) {
+
+				var node = _nodesByID[id];
+				_nodesByID.Remove( id );
+				_nodeMetadataByID.Remove( id );
+				Destroy( node.gameObject );
+			}
+		}
 		public void OpenSearch () {
 
 			HandleSearchClicked();
@@ -112,7 +122,7 @@ namespace Model {
 			var node = Bucket.Instance.NewNode();
 			var metadata = new NodeMetadata() {
 				ID = node.ID,
-				Position = Vector3.zero
+				Position = new Vector3( -1.5f, 3f, 0f )
 			};
 			InstantiateNode( metadata );
 		}

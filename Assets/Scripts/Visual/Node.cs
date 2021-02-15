@@ -60,6 +60,9 @@ namespace View {
 		[SerializeField] private Model.Node _data;
 		[SerializeField] private Model.Style _style;
 
+		[SerializeField] private Sprite _viewSprite;
+		[SerializeField] private Sprite _editSprite;
+
 		[Header( "UI Content" )]
 		[SerializeField] private StyleRenderer _styleRenderer;
 		[SerializeField] private TMP_InputField _titleInputField;
@@ -68,6 +71,8 @@ namespace View {
 		[Header( "UI Component References" )]
 		[SerializeField] private Toggle _editToggle;
 		[SerializeField] private Toggle _minimizeToggle;
+		[SerializeField] private Button _closeButton;
+		[SerializeField] private Image _editImage;
 		[SerializeField] private RectTransform _canvasRoot;
 		[SerializeField] private Transform _backgroundRoot;
 		[SerializeField] private Transform _connectorL;
@@ -75,7 +80,7 @@ namespace View {
 
 		// instance variables
 		private Timer _minimizationTimer = new Timer( 0.3f );
-		private List<MaskableGraphic> _carets;
+		private List<MaskableGraphic> _carets = new List<MaskableGraphic>();
 		private View.Content _content;
 		private Vector2 __size;
 		private Vector2 _size {
@@ -116,6 +121,7 @@ namespace View {
 			HandleMinimizeToggle( _minimizeToggle.isOn );
 
 			// subscribe to toggle changes
+			_closeButton.onClick.AddListener( HandleCloseButton );
 			_editToggle.onValueChanged.AddListener( HandleEditToggle );
 			_minimizeToggle.onValueChanged.AddListener( HandleMinimizeToggle );
 		}
@@ -190,6 +196,7 @@ namespace View {
 					SetCaretRaycastTarget( isTarget: false );
 					_titleInputField.interactable = false;
 					_contentInputField.interactable = false;
+					_editImage.sprite = _viewSprite;
 
 					// save data
 					_data.Title = _titleInputField.text;
@@ -207,6 +214,7 @@ namespace View {
 					SetCaretRaycastTarget( isTarget: true );
 					_titleInputField.interactable = true;
 					_contentInputField.interactable = true;
+					_editImage.sprite = _editSprite;
 
 					// set text fields to raw data
 					_titleInputField.text = _data.Title;
@@ -251,6 +259,10 @@ namespace View {
 		}
 
 		// ui event handlers
+		private void HandleCloseButton () {
+
+			Workspace.Instance.CloseNode( _data.ID );
+		}
 		private void HandleEditToggle ( bool isOn ) {
 
 			SetEditState( isOn ? EditStates.Edit : EditStates.View );
