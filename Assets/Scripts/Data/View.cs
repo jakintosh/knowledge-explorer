@@ -64,6 +64,7 @@ namespace View {
 			// "This is a $0123abc that has a $4567def." => "This is a <#0000FFFF><u>string</u></color> that has a <#0000FFFF><u>link</u></color>.", with links
 
 			var visibleString = new StringBuilder( capacity: modelString.Length );
+			int visibleIndex = 0;
 			for ( int i = 0; i < modelString.Length; i++ ) {
 
 				var c = modelString[i];
@@ -88,9 +89,11 @@ namespace View {
 						// create a visual link
 						var link = new Link();
 						link.ID = id;
-						link.StartIndex = i;
-						link.EndIndex = i + title.Length;
+						link.StartIndex = visibleIndex;
+						link.EndIndex = visibleIndex + title.Length;
 						Links.Add( link );
+
+						Debug.Log( $"Found link for {title} in range {link.StartIndex} to {link.EndIndex}" );
 
 						// add formatted title to string
 						var color = _style.Accent;
@@ -98,11 +101,14 @@ namespace View {
 						var prefix = underlined ? $"<#{ColorUtility.ToHtmlStringRGBA( color )}><u>" : $"<#{ColorUtility.ToHtmlStringRGBA( color )}>";
 						var postfix = underlined ? "</u></color>" : "</color";
 						visibleString.Append( $"{prefix}{title}{postfix}" );
+						visibleIndex += title.Length;
 
 					} else {
 
 						Debug.LogError( $"View.Content.FindLinks: Invalid link found {{{id}}}" );
-						visibleString.Append( $"${id}" );
+						var appendix = $"${id}";
+						visibleString.Append( appendix );
+						visibleIndex += appendix.Length;
 					}
 
 					// move progress along
@@ -112,6 +118,7 @@ namespace View {
 
 					// just add character
 					visibleString.Append( c );
+					visibleIndex++;
 				}
 			}
 

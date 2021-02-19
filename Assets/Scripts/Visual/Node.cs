@@ -48,10 +48,12 @@ namespace View {
 			}
 		}
 
+		public Vector3 LinkInPosition => _connectorL.position + _connectorL.right * -0.2f;
+		public Vector3 LinkOutPosition => _connectorR.position + _connectorR.right * 0.2f;
+
 		// events
 		public delegate void PositionChangedEvent ( string nodeID, Vector3 newPosition );
 		public event PositionChangedEvent OnPositionChanged;
-
 
 
 		[Header( "Data" )]
@@ -143,11 +145,11 @@ namespace View {
 
 				var startSize = _windowState switch {
 					WindowStates.Minimized => new Vector3( x: 4f, y: 6f, z: 0.2f ),
-					WindowStates.Maximized => new Vector3( x: 3f, y: 0.9f, z: 0.2f ),
+					WindowStates.Maximized => new Vector3( x: 3f, y: 0.8f, z: 0.2f ),
 					_ => Vector3.zero
 				};
 				var targetSize = _windowState switch {
-					WindowStates.Minimized => new Vector3( x: 3f, y: 0.9f, z: 0.2f ),
+					WindowStates.Minimized => new Vector3( x: 3f, y: 0.8f, z: 0.2f ),
 					WindowStates.Maximized => new Vector3( x: 4f, y: 6f, z: 0.2f ),
 					_ => Vector3.zero
 				};
@@ -283,7 +285,7 @@ namespace View {
 			foreach ( var link in _content.Links ) {
 				if ( link.ContainsChar( charIndex ) ) {
 					Debug.Log( $"Link Clicked: {link.ID}" );
-					Workspace.Instance.OpenNode( link.ID );
+					Workspace.Instance.OpenNode( nodeID: link.ID, sourceID: _data.ID );
 				}
 			}
 		}
