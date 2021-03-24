@@ -21,7 +21,7 @@
 			"**/*.sublime-project": true,
 			"**/*.vscode": true,
 			"**/Build": true,
-			"**/Library": true,
+			"./Library": true,
 			"**/Logs": true,
 			"**/obj": true,
 			"**/Packages": true,

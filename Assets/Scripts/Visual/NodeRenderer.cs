@@ -1,4 +1,4 @@
-using Model;
+using Library.Model;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -83,7 +83,7 @@ public class NodeRenderer : MonoBehaviour {
 		_titleInputField.text = node.Title;
 		_content.SetContent(
 			new View.Content(
-				content: new Model.Content( userString: node.Body ),
+				content: new Library.Model.Content( userString: node.Body ),
 				style: _style
 			)
 		);

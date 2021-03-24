@@ -4,21 +4,30 @@ using TMPro;
 
 namespace View {
 
-	public class SearchResultCell : MonoBehaviour, IPointerClickHandler {
+	public class SearchResultCell : Framework.UI.Cell<Library.Model.Node>, IPointerClickHandler {
 
-		[SerializeField] private TextMeshProUGUI _nodeTitleText;
 
-		[SerializeField] private string _id;
+		// ************ Pulic Interface ************
 
-		public void SetNode ( Model.Node node ) {
+		protected override void ReceiveData ( Library.Model.Node node ) {
 
 			_id = node.ID;
 			_nodeTitleText.text = node.Title;
 		}
 
+		// ********** Private Interface **********
+
+		[Header( "UI Components" )]
+		[SerializeField] private TextMeshProUGUI _nodeTitleText;
+
+		// data
+		private string _id;
+
+		// ***** IPointerClick Implementation *****
+
 		void IPointerClickHandler.OnPointerClick ( PointerEventData eventData ) {
 
-			Model.Workspace.Instance.OpenNode( _id );
+			Library.Model.Workspace.Instance.OpenNode( _id );
 		}
 	}
 }

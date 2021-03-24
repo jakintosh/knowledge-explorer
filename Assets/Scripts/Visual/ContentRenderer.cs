@@ -9,9 +9,9 @@ public class ContentRenderer : MonoBehaviour, IPointerClickHandler, IPointerEnte
 	[SerializeField] private TextMeshProUGUI _textContent;
 
 	private Content _content;
-	private Model.Style _style;
+	private Library.Model.Style _style;
 
-	public Model.Style Style {
+	public Library.Model.Style Style {
 		get => _style;
 		set {
 			if ( _style == value ) { return; }
