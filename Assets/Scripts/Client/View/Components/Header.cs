@@ -6,7 +6,7 @@ namespace Client.View {
 
 	public class Header : ModelHandler<ViewModel.Window> {
 
-		protected override string BindingKey => "view.header";
+		protected override string BindingKey => $"view.header-{GetInstanceID()}";
 		protected override void PropogateModel ( ViewModel.Window model ) {
 
 			_presenceControl?.SetModel( model?.Presence );
@@ -15,7 +15,6 @@ namespace Client.View {
 
 			Bind( _sizeBinding, toOutput: model.Frame.Size );
 		}
-		protected override void HandleNullModel () => throw new System.NotImplementedException();
 
 		// ********** Private Interface **********
 

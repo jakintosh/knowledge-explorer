@@ -51,23 +51,25 @@ namespace Framework {
 
 		// ********** Internal Interface ***********
 
-		[Serializable]
-		private struct OutputBinding {
-			public string Key;
-			public IUnbindableOutput Output;
-		}
-
-		private List<OutputBinding> _outputBindings = new List<OutputBinding>();
+		private Dictionary<string, IUnbindableOutput> _outputBindings = new Dictionary<string, IUnbindableOutput>();
 
 		private bool _isInitialized = false;
 		protected T _model;
 
 		protected void Bind<U> ( Output<U>.Binding binding, Output<U> toOutput ) {
-			toOutput.Bind( BindingKey, binding );
-			_outputBindings.Add( new OutputBinding() { Key = BindingKey, Output = toOutput as IUnbindableOutput } );
+
+			var key = BindingKey;
+			toOutput.Bind( key, binding );
+			_outputBindings[key] = toOutput;
 		}
-		private void UnbindView ()
-			=> _outputBindings.ForEach( binding => binding.Output.Unbind( binding.Key ) );
+		private void UnbindView () {
+
+			foreach ( var bindingPair in _outputBindings ) {
+				var key = bindingPair.Key;
+				var binding = bindingPair.Value;
+				binding.Unbind( key );
+			}
+		}
 	}
 
 }

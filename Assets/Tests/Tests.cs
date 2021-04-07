@@ -1,25 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 
-public class Tests {
+using Graph = Server.Graph;
 
-	// A Test behaves as an ordinary method
+public class Graph_Tests {
+
 	[Test]
-	public void TestsSimplePasses () {
+	public void Graph_CreateNode () {
 
-		Assert.Pass();
+		var graph = new Graph();
+		var testNodeUID = graph.CreateNode();
+		var count = Graph.Query
+			.WithGraph( graph )
+			.FromNode( testNodeUID )
+			.ResultCount();
+
+		Assert.AreEqual( count, 1 );
 	}
 
-	// A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-	// `yield return null;` to skip a frame.
-	[UnityTest]
-	public IEnumerator TestsWithEnumeratorPasses () {
-		// Use the Assert class to test conditions.
-		// Use yield to skip a frame.
-		yield return null;
+	[Test]
+	public void Graph_CreateNode_InferTypeFromNull () {
+
+		var graph = new Graph();
+		var testNode = graph.CreateNode<string>( null );
+		var testNode2 = graph.CreateNode( (string)null );
+
+		Assert.NotNull( testNode );
+		Assert.NotNull( testNode2 );
 	}
 }
 

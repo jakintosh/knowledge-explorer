@@ -25,7 +25,7 @@ namespace Client.View {
 
 			// connect controls
 			_addButton.onClick.AddListener( () => {
-				_model?.CreateNewNode();
+				_model?.CreateNode( openImmediately: true );
 			} );
 
 			// bindings

@@ -67,8 +67,10 @@ namespace Client.ViewModel {
 			_workspaceNameValidator = workspaceNameValidator;
 
 			// init subviews
-			NewWorkspaceDialog = new ValidatedTextEntryDialog( stringValidator: _workspaceNameValidator );
-			NewWorkspaceDialog.Title.Set( "New Workspace" );
+			NewWorkspaceDialog = new ValidatedTextEntryDialog(
+				title: "New Workspace",
+				stringValidator: _workspaceNameValidator
+			);
 		}
 
 	}

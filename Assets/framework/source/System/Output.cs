@@ -101,8 +101,8 @@ namespace Framework {
 		}
 
 		// data
-		[JsonProperty( propertyName: "value " )] protected T value = default( T );
-		private Dictionary<string, IBindingReceivable> _bindings = new Dictionary<string, IBindingReceivable>();
+		[JsonProperty] protected T value = default( T );
+		[JsonIgnore] private Dictionary<string, IBindingReceivable> _bindings = new Dictionary<string, IBindingReceivable>();
 	}
 
 	[Serializable]

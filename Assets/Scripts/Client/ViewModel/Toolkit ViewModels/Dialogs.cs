@@ -38,7 +38,8 @@ namespace Client.ViewModel {
 
 
 		// runtime model
-		public ValidatedTextEntryDialog ( Func<string, bool> stringValidator ) {
+		public ValidatedTextEntryDialog ( string title, Func<string, bool> stringValidator ) {
+			Title.Set( title );
 			ValidatedText.AddValidator( stringValidator );
 		}
 	}

@@ -1,4 +1,3 @@
-using Client.Model;
 using Framework;
 using UnityEngine;
 
@@ -9,16 +8,16 @@ namespace Client.View {
 
 		// ****** ModelHandler Implementation ******
 
-		protected override string BindingKey => "view.window";
+		protected override string BindingKey => $"view.window-{GetInstanceID()}";
 		protected override void PropogateModel ( ViewModel.Window model ) {
 
 			_header?.SetModel( model );
 		}
-		protected override void HandleNullModel () => throw new System.NotImplementedException();
 		protected override void BindViewToOutputs ( ViewModel.Window model ) {
 
 			Bind( _sizeBinding, toOutput: model.Frame.Size );
 			Bind( _positionBinding, toOutput: model.Frame.Position );
+			Bind( _presenceSizeBinding, toOutput: model.Presence.Size );
 		}
 
 

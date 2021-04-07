@@ -13,7 +13,7 @@ namespace Client.View {
 
 		// ****** ModelHandler Implementation ******
 
-		protected override string BindingKey => "view.workspace-browser";
+		protected override string BindingKey => $"view.workspace-browser-{GetInstanceID()}";
 
 		protected override void PropogateModel ( ViewModel.WorkspaceBrowser model ) {
 
@@ -66,7 +66,7 @@ namespace Client.View {
 				_model?.ConfirmNewWorkspace( text );
 			} );
 			_workspaceListLayout.OnCellClicked.AddListener( cellData => {
-				_model?.OpenWorkspace( cellData.WorkspaceMetadata.ID );
+				_model?.OpenWorkspace( cellData.WorkspaceMetadata.UID );
 			} );
 			_closeActiveWorkspaceButton.onClick.AddListener( () => {
 				_model?.CloseActiveWorkspace();
@@ -85,7 +85,7 @@ namespace Client.View {
 				_newButton.gameObject.SetActive( isExpanded );
 			} );
 			_activeWorkspaceBinding = new Output<ViewModel.Workspace>.Binding( valueHandler: activeWorkspace => {
-				_activeWorkspaceNameText.text = activeWorkspace?.Name ?? "---";
+				_activeWorkspaceNameText.text = activeWorkspace?.Name.Get() ?? "---";
 				_closeActiveWorkspaceButton.gameObject.SetActive( activeWorkspace != null );
 			} );
 			_allWorkspacesBinding = new ListOutput<ResourceMetadata>.Binding( valueHandler: allWorkspaces => {

@@ -3,7 +3,7 @@ using Framework.Data;
 using System;
 using UnityEngine;
 
-using Bucket = Library.Model.Bucket;
+using Graph = Server.KnowledgeGraph;
 using Workspace = Client.ViewModel.Workspace;
 using Metadata = Framework.Data.Metadata;
 
@@ -16,28 +16,13 @@ namespace Client.Model {
 		ListOutput<Metadata.Resource> AllMetadata { get; }
 
 		// methods
-		Metadata.Resource Create ( string name, string bucketID = null );
-		Workspace Read ( string id );
-		bool Delete ( string id );
+		Metadata.Resource Create ( string name, string bucketUID = null );
+		Workspace Read ( string uid );
+		bool Delete ( string uid );
 
 		// helpers
 		bool ValidateName ( string name, bool allowEmpty = false );
 	}
-
-	// public interface IBucketAPI {
-
-	// 	// outputs
-	// 	ListOutput<Metadata.Resource> AllMetadata { get; }
-
-	// 	// methods
-	// 	Metadata.Resource Create ( string name );
-	// 	Bucket Read ( string id );
-	// 	bool Delete ( string id );
-
-	// 	// helpers
-	// 	bool ValidateName ( string name, bool allowEmpty = false );
-	// }
-
 	public interface IGraphAPI {
 
 		// outputs
@@ -45,8 +30,8 @@ namespace Client.Model {
 
 		// methods
 		Metadata.Resource Create ( string name );
-		Server.Graph Read ( string id );
-		bool Delete ( string id );
+		Graph Read ( string uid );
+		bool Delete ( string uid );
 
 		// helpers
 		bool ValidateName ( string name, bool allowEmpty = false );
@@ -65,12 +50,12 @@ namespace Client.Model {
 			_workspaces = new Resources<Metadata.Resource, Workspace>(
 				resourcePath: WorkspacePath,
 				resourceExtension: WORKSPACE_EXTENSION,
-				idLength: WORKSPACE_ID_LENGTH
+				uidLength: WORKSPACE_UID_LENGTH
 			);
-			_graphs = new Resources<Metadata.Resource, Server.Graph>(
+			_graphs = new Resources<Metadata.Resource, Graph>(
 				resourcePath: GraphPath,
 				resourceExtension: GRAPH_EXTENSION,
-				idLength: GRAPH_ID_LENGTH
+				uidLength: GRAPH_UID_LENGTH
 			);
 
 			// subscribe to events on resources
@@ -99,11 +84,11 @@ namespace Client.Model {
 			_graphs.Close();
 		}
 
+
 		// *********** Private Interface ***********
 
 		private string LocalDataPath => $"/data/local";
 	}
-
 	public partial class Application : IGraphAPI {
 
 		// outputs
@@ -120,7 +105,7 @@ namespace Client.Model {
 			try {
 
 				var (metadata, graph) = _graphs.New( name );
-				graph.UID = metadata.ID;
+				graph.FirstInitialization(); // TODO: can we make this also some resource management thing?
 				return metadata;
 
 			} catch ( ResourceNameEmptyException ) {
@@ -134,11 +119,11 @@ namespace Client.Model {
 				return null;
 			}
 		}
-		Server.Graph IGraphAPI.Read ( string id ) {
+		Graph IGraphAPI.Read ( string uid ) {
 
 			try {
 
-				return _graphs.RequestResource( id, load: true );
+				return _graphs.RequestResource( uid, load: true );
 
 			} catch ( ResourceMetadataNotFoundException ) {
 
@@ -146,18 +131,18 @@ namespace Client.Model {
 				return null;
 			}
 		}
-		bool IGraphAPI.Delete ( string id ) {
+		bool IGraphAPI.Delete ( string uid ) {
 
-			return _graphs.Delete( id );
+			return _graphs.Delete( uid );
 		}
 
 
 		// data resources
-		private static int GRAPH_ID_LENGTH = 6;
+		private static int GRAPH_UID_LENGTH = 6;
 		private static string GRAPH_EXTENSION = "graph";
 		private string GraphPath => $"{LocalDataPath}/graph";
 
-		private Resources<Metadata.Resource, Server.Graph> _graphs;
+		private Resources<Metadata.Resource, Graph> _graphs;
 		private ListOutput<Metadata.Resource> _graphMetadataOutput = new ListOutput<Metadata.Resource>();
 	}
 	public partial class Application : IWorkspaceAPI {
@@ -189,53 +174,57 @@ namespace Client.Model {
 			}
 
 			// set metadata
-			workspaceResource.SetMetadata( workspaceMetadata );
+			workspaceResource.UID.Set( workspaceMetadata.UID );
+			workspaceResource.Name.Set( workspaceMetadata.Name );
 
 			// if graph doesn't exist, try to create it
 			if ( graphID == null ) {
 				var graphMetadata = ( this as IGraphAPI ).Create( name );
-				graphID = graphMetadata?.ID;
+				graphID = graphMetadata?.UID;
 			}
 
 			// try get graph
-			Server.Graph graphResource;
+			Graph graphResource;
 			try {
 
 				graphResource = _graphs.RequestResource( graphID, load: true );
 
 			} catch ( ResourceMetadataNotFoundException ) {
 				Debug.LogError( "Model.Application.IWorkspaceAPI.Create: Failed due to missing graph. Deleting created workspace and aborting." );
-				( this as IWorkspaceAPI ).Delete( workspaceMetadata.ID );
+				( this as IWorkspaceAPI ).Delete( workspaceMetadata.UID );
 				return null;
 			}
 
 			// init workspace
 			workspaceResource.SetGraph( graphResource );
+			workspaceResource.GraphUID.Set( graphID );
 
 			// return metadata
 			return workspaceMetadata;
 		}
-		Workspace IWorkspaceAPI.Read ( string id ) {
+		Workspace IWorkspaceAPI.Read ( string uid ) {
 
 			try {
 
-				var workspace = _workspaces.RequestResource( id, load: true );
+				var workspaceResource = _workspaces.RequestResource( uid, load: true );
 
 				// try get graph
-				Server.Graph graphResource;
+				Graph graphResource;
 				try {
 
-					graphResource = _graphs.RequestResource( workspace.GraphUID, load: true );
+					// TODO: this should be using some kind of resource dependency system
+					graphResource = _graphs.RequestResource( workspaceResource.GraphUID.Get(), load: true );
 
 				} catch {
 					Debug.LogError( "Model.Application.IWorkspaceAPI.Read: Failed due to missing graph. Deleting workspace and aborting." );
-					( this as IWorkspaceAPI ).Delete( id );
+					( this as IWorkspaceAPI ).Delete( uid );
+					( this as IGraphAPI ).Delete( workspaceResource.GraphUID.Get() );
 					return null;
 				}
 
-				workspace.SetGraph( graphResource );
+				workspaceResource.SetGraph( graphResource );
 
-				return workspace;
+				return workspaceResource;
 
 			} catch ( ResourceMetadataNotFoundException ) {
 
@@ -243,14 +232,14 @@ namespace Client.Model {
 				return null;
 			}
 		}
-		bool IWorkspaceAPI.Delete ( string id ) {
+		bool IWorkspaceAPI.Delete ( string uid ) {
 
-			return _workspaces.Delete( id );
+			return _workspaces.Delete( uid );
 		}
 
 
 		// data resources
-		private static int WORKSPACE_ID_LENGTH = 6;
+		private static int WORKSPACE_UID_LENGTH = 6;
 		private static string WORKSPACE_EXTENSION = "workspace";
 		private string WorkspacePath => $"{LocalDataPath}/workspace";
 

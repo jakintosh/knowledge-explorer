@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using UnityEngine;
 
 namespace StringHelpers {
 
@@ -10,7 +9,7 @@ namespace StringHelpers {
 
 		public static string Generate ( int length, Func<string, bool> validateUniqueness ) {
 
-			var random = new System.Random( (int)( Time.time * 1000 ) );
+			var random = new System.Random( (int)( DateTime.Now.Ticks ) );
 			var sb = new StringBuilder( capacity: length );
 			string id;
 			do {
