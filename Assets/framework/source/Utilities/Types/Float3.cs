@@ -31,3 +31,4 @@ public struct Float3 {
 	public static Float3 operator * ( Float3 a, Float3 b ) => new Float3( a.x * b.x, a.y * b.y, a.z * b.z );
 	public static Float3 operator / ( Float3 a, float b ) => new Float3( a.x / b, a.y / b, a.z / b );
 }
+

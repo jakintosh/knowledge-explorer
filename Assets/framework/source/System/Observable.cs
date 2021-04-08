@@ -9,7 +9,7 @@ namespace Framework {
 
 		public Observable ( T initialValue, Action<T> onChange ) {
 
-			_value = initialValue;
+			SetValue( initialValue );
 			_onChange = onChange;
 			_onChange?.Invoke( _value );
 		}
@@ -17,17 +17,23 @@ namespace Framework {
 		public T Get () => _value;
 		public virtual void Set ( T value ) {
 
-			// check for equality
-			if ( EqualityComparer<T>.Default.Equals( _value, value ) ) {
+			if ( CheckEquality( value, _value ) ) {
 				return;
 			}
 
-			_value = value;
+			SetValue( value );
 			_onChange?.Invoke( _value );
 		}
 
 		protected T _value;
 		protected Action<T> _onChange;
+
+		protected virtual void SetValue ( T value ) {
+			_value = value;
+		}
+		protected virtual bool CheckEquality ( T a, T b ) {
+			return EqualityComparer<T>.Default.Equals( a, b );
+		}
 	}
 
 	[Serializable]
@@ -35,33 +41,52 @@ namespace Framework {
 		where T : IEquatable<T> {
 
 		public ListObservable ( IList<T> initialValue, Action<IList<T>> onChange )
-			: base( initialValue, onChange ) {
+			: base( initialValue, onChange ) { }
 
-			_comparisonArray = new T[0];
-		}
+		protected override bool CheckEquality ( IList<T> a, IList<T> b ) {
 
-		// set is completely-overriden for list equality check
-		public override void Set ( IList<T> value ) {
-
-			// check for equality
-			if ( _value == null || value == null ) {
-				if ( value == null && _value == null ) {
-					return;
-				}
-			} else if ( value.SequenceEqual( _comparisonArray ) ) {
-				return;
+			if ( a != null && b != null ) {
+				return Enumerable.SequenceEqual( a, b );
 			}
-
-			_comparisonArray = value.ToArray<T>();
-			_value = value;
-			_onChange?.Invoke( _value );
+			return ( a == null && b == null );
 		}
+		protected override void SetValue ( IList<T> value ) {
 
-		// data
-		private T[] _comparisonArray;
+			if ( value != null ) {
+				if ( _value == null ) { _value = new List<T>(); }
+				_value.Clear();
+				foreach ( var v in value ) { _value.Add( v ); }
+			} else {
+				_value = null;
+			}
+		}
 	}
 
-	// TODO: HashSetObservable
+	[Serializable]
+	public class HashSetObservable<T> : Observable<HashSet<T>>
+		where T : IEquatable<T> {
+
+		public HashSetObservable ( HashSet<T> initialValue, Action<HashSet<T>> onChange )
+			: base( initialValue, onChange ) { }
+
+		protected override bool CheckEquality ( HashSet<T> a, HashSet<T> b ) {
+
+			if ( a != null && b != null ) {
+				return a.SetEquals( b );
+			}
+			return ( a == null && b == null );
+		}
+		protected override void SetValue ( HashSet<T> value ) {
+
+			if ( value != null ) {
+				if ( _value == null ) { _value = new HashSet<T>(); }
+				_value.Clear();
+				_value.UnionWith( value );
+			} else {
+				_value = null;
+			}
+		}
+	}
 
 	[Serializable]
 	public class ValidatedObservable<T> : Observable<T> {

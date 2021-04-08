@@ -347,6 +347,9 @@ namespace Explorer.Model {
 		private void TrackRelationshipsByType () {
 
 			// fill hashset with keys of type UIDs
+			relationshipTypes.ForEach( ( uid, _ ) => {
+				_relationshipUIDsByType[uid] = new HashSet<string>();
+			} );
 			foreach ( var relationshipType in relationshipTypes.Keys ) {
 				_relationshipUIDsByType[relationshipType] = new HashSet<string>();
 			}
@@ -369,6 +372,7 @@ namespace Explorer.Model {
 			_allTitles = new HashSet<string>();
 		}
 
+		// this happens once *ever*. we do not want this to happen everytime the program is run
 		public void FirstInitialization () {
 
 			graph = new Graph();
@@ -406,11 +410,26 @@ namespace Explorer.Model {
 
 			return rootUID;
 		}
+		public string GetTitle ( string uid ) {
+
+			var results = QueryFromNode( uid )
+				.FilterNeighbors( titleRelationshipTypeUID )
+				.ResultsOfType<string>();
+			if ( results.Count > 0 ) {
+				return results.First();
+			} else {
+				return "{ERROR}";
+			}
+		}
 		public void SetTitle ( string uid, string title ) {
 
 			var node = graph.GetNode( uid );
 			var titleRels = graph.GetRelationships( node.RelationshipUIDs ).Filter( rel => rel.TypeUID == titleRelationshipTypeUID );
 			var titleNode = graph.GetNode( titleRels.First().ToUID ) as Graph.Node<string>;
+			var oldTitle = titleNode.Value;
+			if ( oldTitle == title ) { return; }
+			_allTitles.Remove( oldTitle );
+			_allTitles.Add( title );
 			titleNode.updateValue( title );
 		}
 		public void SetDescription ( string uid, string description ) {
@@ -423,6 +442,7 @@ namespace Explorer.Model {
 
 		// Links
 		public struct Link : IEquatable<Link> {
+
 			public string TypeUID;
 			public string NodeUID;
 			public Link ( string typeUID, string nodeUID ) {
@@ -446,17 +466,6 @@ namespace Explorer.Model {
 
 			var relationship = graph.GetRelationship( relationshipUID );
 			relationship.TypeUID = typeUID;
-		}
-		public string GetTitle ( string uid ) {
-
-			var results = QueryFrom( uid )
-				.FilterNeighbors( TitleRelationshipUID )
-				.ResultsOfType<string>();
-			if ( results.Count > 0 ) {
-				return results.First();
-			} else {
-				return "{ERROR}";
-			}
 		}
 		public List<Link> GetLinksFromConcept ( string uid ) {
 
@@ -483,13 +492,14 @@ namespace Explorer.Model {
 			graph.DeleteRelationshipType( uid );
 		}
 		public string GetRelationshipTypeName ( string uid ) {
-			var type = graph.GetRelationshipType( uid );
-			return type.Name;
+
+			return graph.GetRelationshipType( uid ).Name;
 		}
 
 
 		// queries
-		public Graph.Query QueryFrom ( string uid ) => Graph.Query.WithGraph( graph ).FromNode( uid );
+		public Graph.Query QueryFromNode ( string uid ) => Graph.Query.WithGraph( graph ).FromNode( uid );
+		public Graph.Query QueryFromRelationshipType ( string uid ) => Graph.Query.WithGraph( graph ).FromRelationshipType( uid );
 
 		// private helpers
 		private IList<Graph.RelationshipType> GetAllRelationshipTypes () {
@@ -521,9 +531,7 @@ namespace Explorer.Model {
 		}
 		protected void TrackAllTitles () {
 
-			var allTitles = Graph.Query.WithGraph( graph )
-				.FromRelationshipType( titleRelationshipTypeUID )
-				.ResultsOfType<string>();
+			var allTitles = QueryFromRelationshipType( titleRelationshipTypeUID ).ResultsOfType<string>();
 
 			_allTitles.Clear();
 			_allTitles.UnionWith( allTitles );

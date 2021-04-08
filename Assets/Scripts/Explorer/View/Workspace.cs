@@ -41,7 +41,6 @@ namespace Explorer.View {
 			Init( _workspaceBrowser );
 			Init( _workspaceToolbar );
 
-
 			// init observables
 			_activeWorkspace = new Observable<Model.Workspace>(
 				initialValue: Application.State.Contexts.Current.Workspace,

@@ -32,7 +32,6 @@ public static class List_T_FunctionalExtensions {
 				results.Add( element );
 			}
 		}
-
 		return results;
 	}
 	public static HashSet<U> Convert<T, U> ( this HashSet<T> list, Func<T, U> convert ) {

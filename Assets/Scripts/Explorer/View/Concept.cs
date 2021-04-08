@@ -47,7 +47,7 @@ namespace Explorer.View {
 		// model data
 		private Observable<string> _graphUID;
 		private Observable<string> _nodeUID;
-		private ListObservable<Model.KnowledgeGraph.Link> _links; // TODO: HashSetObservable
+		private HashSetObservable<Model.KnowledgeGraph.Link> _links;
 		private Observable<Float3> _size;
 		private Observable<Float3> _position;
 		private Observable<string> _title;
@@ -72,10 +72,10 @@ namespace Explorer.View {
 				onChange: nodeUID => {
 					if ( _graph == null ) { return; }
 					_title.Set( _graph.GetTitle( nodeUID ) );
-					_links.Set( _graph.GetLinksFromConcept( nodeUID ) );
+					_links.Set( new System.Collections.Generic.HashSet<Model.KnowledgeGraph.Link>( _graph.GetLinksFromConcept( nodeUID ) ) );
 				}
 			);
-			_links = new ListObservable<Model.KnowledgeGraph.Link>(
+			_links = new HashSetObservable<Model.KnowledgeGraph.Link>(
 				initialValue: null,
 				onChange: links => {
 					if ( links == null ) { return; }
