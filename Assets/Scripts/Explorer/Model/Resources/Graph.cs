@@ -8,6 +8,13 @@ namespace Explorer.Model {
 
 	public partial class Graph {
 
+		private interface IEditableRelationship {
+			void SetTypeUID ( string typeUID );
+		}
+		private interface IEditableNode<T> {
+			void SetValue ( T value );
+		}
+
 		public enum NodeDataTypes {
 			Invalid = -1,
 			Node = 0,
@@ -95,7 +102,7 @@ namespace Explorer.Model {
 				InverseRelationshipUIDs = new List<string>();
 			}
 		}
-		public class Node<T> : Node {
+		public class Node<T> : Node, IEditableNode<T> {
 
 			[JsonProperty] public override NodeDataTypes Type => _dataType;
 			[JsonProperty] public T Value { get; private set; }
@@ -105,16 +112,16 @@ namespace Explorer.Model {
 				_dataType = dataType;
 				Value = value;
 			}
-			public void updateValue ( T value ) {
+			void IEditableNode<T>.SetValue ( T value ) {
 
 				Value = value;
 			}
 
 			private NodeDataTypes _dataType;
 		}
-		public class Relationship : IdentifiableResource {
+		public class Relationship : IdentifiableResource, IEditableRelationship {
 
-			[JsonProperty] public string TypeUID { get; set; }
+			[JsonProperty] public string TypeUID { get; private set; }
 			[JsonProperty] public string FromUID { get; private set; }
 			[JsonProperty] public string ToUID { get; private set; }
 
@@ -124,6 +131,8 @@ namespace Explorer.Model {
 				FromUID = fromUID;
 				ToUID = toUID;
 			}
+
+			void IEditableRelationship.SetTypeUID ( string typeUID ) => TypeUID = typeUID;
 		}
 		public class RelationshipType : IdentifiableResource {
 
@@ -201,6 +210,11 @@ namespace Explorer.Model {
 			nodes[uid] = node;
 			return uid;
 		}
+		public void UpdateNodeValue<T> ( string uid, T value ) {
+
+			var node = GetNode( uid ) as IEditableNode<T>;
+			node.SetValue( value );
+		}
 		public void DeleteNode ( string uid ) {
 
 			var node = nodes[uid];
@@ -238,6 +252,10 @@ namespace Explorer.Model {
 
 			return uid;
 		}
+		public void UpdateRelationshipType ( string uid, string newTypeUID ) {
+			var rel = GetRelationship( uid ) as IEditableRelationship;
+			rel.SetTypeUID( newTypeUID );
+		}
 		public void DeleteRelationship ( string uid ) {
 
 			var rel = relationships[uid];
@@ -267,24 +285,7 @@ namespace Explorer.Model {
 			// TODO: what should happen here
 		}
 
-		public string GetUID () {
-
-			return StringHelpers.UID.Generate(
-				length: 10,
-				validateUniqueness: uid =>
-					nodes.KeyIsUnique( uid ) &&
-					relationships.KeyIsUnique( uid ) &&
-					relationshipTypes.KeyIsUnique( uid ) );
-		}
-		public NodeDataTypes GetType<T> ( T value = default( T ) ) {
-
-			return typeof( T ) switch {
-				Type t when t == typeof( string ) => NodeDataTypes.String,
-				Type t when t == typeof( int ) => NodeDataTypes.Integer,
-				_ => NodeDataTypes.Invalid
-			};
-		}
-
+		// nodes
 		public Node GetNode ( string uid ) {
 
 			return nodes[uid];
@@ -296,6 +297,7 @@ namespace Explorer.Model {
 			return nodes;
 		}
 
+		// relationships
 		public Relationship GetRelationship ( string uid ) {
 
 			return relationships[uid];
@@ -311,28 +313,48 @@ namespace Explorer.Model {
 			return _relationshipUIDsByType[uid];
 		}
 
+		// relationship types
+		public ICollection<string> GetAllRelationshipTypeUIDs () => relationshipTypes.Keys;
+		public IReadOnlyDictionary<string, RelationshipType> GetAllRelationshipTypes () => relationshipTypes;
 		public RelationshipType GetRelationshipType ( string uid ) {
 
 			return relationshipTypes[uid];
 		}
-		public List<RelationshipType> GetRelationshipTypes ( IEnumerable<string> uids ) {
+		public IList<RelationshipType> GetRelationshipTypes ( IEnumerable<string> uids ) {
 
 			var rels = new List<RelationshipType>();
 			foreach ( var uid in uids ) { rels.Add( GetRelationshipType( uid ) ); }
-			return rels;
+			return rels.AsReadOnly();
 		}
-		public IList<RelationshipType> GetAllRelationshipTypes () {
 
-			return new List<RelationshipType>( relationshipTypes.Values ).AsReadOnly();
-		}
 
 		// serialized data
 		[JsonProperty( ItemConverterType = typeof( NodeConverter ) )] protected Dictionary<string, Node> nodes;
 		[JsonProperty] protected Dictionary<string, Relationship> relationships;
 		[JsonProperty] protected Dictionary<string, RelationshipType> relationshipTypes;
 
+		// private helpers
+		private string GetUID () {
 
-		// runtime processing
+			return StringHelpers.UID.Generate(
+				length: 10,
+				validateUniqueness: uid =>
+					nodes.KeyIsUnique( uid ) &&
+					relationships.KeyIsUnique( uid ) &&
+					relationshipTypes.KeyIsUnique( uid ) );
+		}
+		private NodeDataTypes GetType<T> ( T value = default( T ) ) {
+
+			return typeof( T ) switch {
+				Type t when t == typeof( string ) => NodeDataTypes.String,
+				Type t when t == typeof( int ) => NodeDataTypes.Integer,
+				_ => NodeDataTypes.Invalid
+			};
+		}
+
+
+		// ********** runtime processing **********
+
 		[JsonIgnore] protected Dictionary<string, HashSet<string>> _relationshipUIDsByType;
 
 		[OnDeserialized]
@@ -350,6 +372,7 @@ namespace Explorer.Model {
 			relationshipTypes.ForEach( ( uid, _ ) => {
 				_relationshipUIDsByType[uid] = new HashSet<string>();
 			} );
+			_relationshipUIDsByType["null"] = new HashSet<string>();
 			foreach ( var relationshipType in relationshipTypes.Keys ) {
 				_relationshipUIDsByType[relationshipType] = new HashSet<string>();
 			}
@@ -358,7 +381,11 @@ namespace Explorer.Model {
 			foreach ( var pair in relationships ) {
 				var id = pair.Key;
 				var relationship = pair.Value;
-				_relationshipUIDsByType[relationship.TypeUID].Add( id );
+				if ( relationship.TypeUID != null ) {
+					_relationshipUIDsByType[relationship.TypeUID].Add( id );
+				} else {
+					_relationshipUIDsByType["null"].Add( id );
+				}
 			}
 		}
 	}
@@ -430,14 +457,14 @@ namespace Explorer.Model {
 			if ( oldTitle == title ) { return; }
 			_allTitles.Remove( oldTitle );
 			_allTitles.Add( title );
-			titleNode.updateValue( title );
+			graph.UpdateNodeValue( uid, title );
 		}
 		public void SetDescription ( string uid, string description ) {
 
 			var node = graph.GetNode( uid );
 			var descriptionRels = graph.GetRelationships( node.RelationshipUIDs ).Filter( rel => rel.TypeUID == descriptionRelationshipTypeUID );
 			var descriptionNode = graph.GetNode( descriptionRels.First().ToUID ) as Graph.Node<string>;
-			descriptionNode.updateValue( description );
+			graph.UpdateNodeValue( uid, description );
 		}
 
 		// Links
@@ -451,7 +478,10 @@ namespace Explorer.Model {
 			}
 
 			// *** IEquatable<IdentifiableResource> ***
-			public bool Equals ( Link other ) => other.TypeUID.Equals( TypeUID ) && other.NodeUID.Equals( NodeUID );
+			public bool Equals ( Link other ) {
+				return EqualityComparer<string>.Default.Equals( this.TypeUID, other.TypeUID ) &&
+					EqualityComparer<string>.Default.Equals( this.NodeUID, other.NodeUID );
+			}
 
 			// ********** Equality Overrides **********
 			public override bool Equals ( object obj ) => obj is Link ? this.Equals( obj ) : false;
@@ -464,8 +494,11 @@ namespace Explorer.Model {
 		}
 		public void ChangeLinkType ( string relationshipUID, string typeUID ) {
 
-			var relationship = graph.GetRelationship( relationshipUID );
-			relationship.TypeUID = typeUID;
+			graph.UpdateRelationshipType( relationshipUID, typeUID );
+		}
+		public (string sourceUid, string destinationUid, string typeUid) GetRelationshipInfo ( string relationshipUID ) {
+			var rel = graph.GetRelationship( relationshipUID );
+			return (rel.FromUID, rel.ToUID, rel.TypeUID);
 		}
 		public List<Link> GetLinksFromConcept ( string uid ) {
 
@@ -482,10 +515,11 @@ namespace Explorer.Model {
 		// Relationship Types
 		[JsonIgnore] public string TitleRelationshipUID => titleRelationshipTypeUID;
 		[JsonIgnore] public string DescriptionRelationshipUID => descriptionRelationshipTypeUID;
-		[JsonIgnore] public IList<Graph.RelationshipType> AllRelationshipTypes => GetAllRelationshipTypes();
+		[JsonIgnore] public IReadOnlyDictionary<string, Graph.RelationshipType> AllRelationshipTypes => graph.GetAllRelationshipTypes();
+		[JsonIgnore] public List<string> AllRelationshipTypeNames => new List<Graph.RelationshipType>( graph.GetAllRelationshipTypes().Values ).Convert( relType => relType.Name );
 		public void NewRelationshipType ( string name ) {
 
-			graph.CreateRelationshipType( name, Graph.NodeDataTypes.Node );
+			graph.CreateRelationshipType( name, Graph.NodeDataTypes.String );
 		}
 		public void DeleteRelationshipType ( string uid ) {
 
@@ -496,16 +530,11 @@ namespace Explorer.Model {
 			return graph.GetRelationshipType( uid ).Name;
 		}
 
-
 		// queries
 		public Graph.Query QueryFromNode ( string uid ) => Graph.Query.WithGraph( graph ).FromNode( uid );
 		public Graph.Query QueryFromRelationshipType ( string uid ) => Graph.Query.WithGraph( graph ).FromRelationshipType( uid );
 
 		// private helpers
-		private IList<Graph.RelationshipType> GetAllRelationshipTypes () {
-
-			return graph.GetAllRelationshipTypes();
-		}
 		private string GetEmptyTitle () {
 
 			return StringHelpers.IncrementedString.Generate(

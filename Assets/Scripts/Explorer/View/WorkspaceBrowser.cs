@@ -41,8 +41,8 @@ namespace Explorer.View {
 		protected override void Init () {
 
 			// init subviews
-			Init( _presenceControl );
-			Init( _newWorkspaceDialog );
+			InitView( _presenceControl );
+			InitView( _newWorkspaceDialog );
 
 			// init observables
 			_dialogOpen = new Observable<bool>(
@@ -99,7 +99,7 @@ namespace Explorer.View {
 			// configure subviews
 			_presenceControl.SetEnabled( close: false, size: true, context: false );
 			_newWorkspaceDialog.SetTitle( title: "New Workspace" );
-			_newWorkspaceDialog.SetValidators( validator: Application.Resources.Workspaces.ValidateName );
+			_newWorkspaceDialog.SetValidators( validators: Application.Resources.Workspaces.ValidateName );
 		}
 	}
 

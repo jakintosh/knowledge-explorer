@@ -8,33 +8,31 @@ public class Observable_Tests {
 	// ****************************************
 
 	private bool intFlag = false;
+	private void ResetIntFlags () => intFlag = false;
+	private Observable<int> GetNewIntObservable ( int initialValue ) =>
+		new Observable<int>(
+			initialValue: initialValue,
+			onChange: newValue => {
+				intFlag = true;
+			}
+		);
 
 	[Test]
 	public void Observable_Int_InitialCall () {
 
 		// make sure initial firing works
-		intFlag = false;
-		var o = new Observable<int>(
-			initialValue: 0,
-			onChange: newValue => {
-				intFlag = true;
-			}
-		);
+		ResetIntFlags();
+		var o = GetNewIntObservable( 0 );
 		Assert.That( intFlag == true );
 	}
 
 	[Test]
 	public void Observable_Int_ChangeCalls () {
 
-		var o = new Observable<int>(
-			initialValue: 0,
-			onChange: newValue => {
-				intFlag = true;
-			}
-		);
+		var o = GetNewIntObservable( 0 );
 
 		// changing the value calls handler
-		intFlag = false;
+		ResetIntFlags();
 		o.Set( 1 );
 		Assert.That( intFlag == true );
 	}
@@ -42,15 +40,10 @@ public class Observable_Tests {
 	[Test]
 	public void Observable_Int_SameDoesntCall () {
 
-		var o = new Observable<int>(
-			initialValue: 0,
-			onChange: newValue => {
-				intFlag = true;
-			}
-		);
+		var o = GetNewIntObservable( 0 );
 
 		// setting to same value doesn't call handler
-		intFlag = false;
+		ResetIntFlags();
 		o.Set( 0 );
 		Assert.That( intFlag == false );
 	}

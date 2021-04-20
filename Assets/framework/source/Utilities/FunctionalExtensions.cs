@@ -105,19 +105,36 @@ public struct SerializableKeyValuePair<K, V> {
 
 public static class Dictionary_K_V_FunctionalExtensions {
 
-	public static void ForEach<K, V> ( this Dictionary<K, V> dicationary, Action<K, V> action ) {
+	public static void ForEach<K, V> ( this IDictionary<K, V> dictionary, Action<K, V> action ) {
 
-		foreach ( var kvp in dicationary ) {
+		foreach ( var kvp in dictionary ) {
 			action( kvp.Key, kvp.Value );
 		}
 	}
 
-	public static bool KeyIsUnique<K, V> ( this Dictionary<K, V> dictionary, K key ) {
+	public static List<T> ConvertToList<K, V, T> ( this IDictionary<K, V> dictionary, Func<K, V, T> converter ) {
+
+		var results = new List<T>();
+		dictionary.ForEach( ( k, v ) => results.Add( converter( k, v ) ) );
+		return results;
+	}
+
+	public static void EnsureValue<K, V> ( this IDictionary<K, V> dictionary, K key, Func<V> createValue ) {
+
+		if ( dictionary.TryGetValue( key, out var value ) ) {
+			if ( value != null ) {
+				return;
+			}
+		}
+		dictionary[key] = createValue();
+	}
+
+	public static bool KeyIsUnique<K, V> ( this IDictionary<K, V> dictionary, K key ) {
 
 		return !dictionary.ContainsKey( key );
 	}
 
-	public static void CopyToSerializableList<K, V> ( this Dictionary<K, V> dictionary, List<SerializableKeyValuePair<K, V>> list ) {
+	public static void CopyToSerializableList<K, V> ( this IDictionary<K, V> dictionary, List<SerializableKeyValuePair<K, V>> list ) {
 
 		list.Clear();
 		foreach ( var pair in dictionary ) {
@@ -125,7 +142,7 @@ public static class Dictionary_K_V_FunctionalExtensions {
 		}
 	}
 
-	public static void CopyToDictionary<K, V> ( this List<SerializableKeyValuePair<K, V>> list, Dictionary<K, V> dictionary ) {
+	public static void CopyToDictionary<K, V> ( this List<SerializableKeyValuePair<K, V>> list, IDictionary<K, V> dictionary ) {
 
 		dictionary.Clear();
 		foreach ( var entry in list ) {

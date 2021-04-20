@@ -21,11 +21,7 @@ namespace Explorer.View {
 
 			_titleDisplay.SetText( title );
 		}
-		public void SetValidators ( Func<string, bool> validator ) {
-
-			_text.SetValidators( validator );
-		}
-		public void SetValidators ( List<Func<string, bool>> validators ) {
+		public void SetValidators ( params Func<string, bool>[] validators ) {
 
 			_text.SetValidators( validators );
 		}

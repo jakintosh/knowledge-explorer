@@ -98,26 +98,6 @@ namespace Explorer {
 
 }
 
-
-namespace Explorer.View {
-
-	public abstract class View : MonoBehaviour {
-
-		protected abstract void Init ();
-		protected void Init ( View view ) {
-			view.Init();
-		}
-	}
-
-	public abstract class RootView : View {
-
-		private void Awake () {
-			Init();
-		}
-	}
-}
-
-
 namespace Explorer.Model {
 
 	// allows access to the application's state
@@ -201,18 +181,33 @@ namespace Explorer.Model {
 	public class Context : IdentifiableResource {
 
 		// events
+		public event Framework.Event<KnowledgeGraph>.Signature OnGraphChanged;
 		public event Framework.Event<Workspace>.Signature OnWorkspaceChanged;
 
 		// properties
+		public KnowledgeGraph Graph => _graph.Get();
 		public Workspace Workspace => _workspace.Get();
-		public KnowledgeGraph Graph => _graph;
 
 		public Context ( string uid ) : base( uid ) {
 
 			// init observables
+			_graph = new Observable<KnowledgeGraph>(
+				initialValue: null,
+				onChange: graph => {
+
+					Framework.Event<KnowledgeGraph>.Fire(
+						@event: OnGraphChanged,
+						value: graph,
+						id: $"Explorer.Model.Context.OnGraphChanged()"
+					);
+				}
+			);
 			_workspace = new Observable<Workspace>(
 				initialValue: null,
 				onChange: workspace => {
+
+					_graph.Set( Application.Resources.Graphs.Get( workspace?.GraphUID ) );
+
 					Framework.Event<Workspace>.Fire(
 						@event: OnWorkspaceChanged,
 						value: workspace,
@@ -223,22 +218,12 @@ namespace Explorer.Model {
 		}
 		public void SetWorkspace ( string uid ) {
 
-			if ( uid != null ) {
-
-				// get workspace
-				_workspace.Set( Application.Resources.Workspaces.Get( uid ) );
-
-				// load graph needed by workspace
-				_graph = Application.Resources.Graphs.Get( _workspace.Get().GraphUID );
-
-			} else {
-				_workspace.Set( null );
-			}
+			_workspace.Set( Application.Resources.Workspaces.Get( uid ) );
 		}
 
 		// internal data
+		private Observable<KnowledgeGraph> _graph;
 		private Observable<Workspace> _workspace;
-		private KnowledgeGraph _graph;
 	}
 
 	public class Resources : ISubsystem {

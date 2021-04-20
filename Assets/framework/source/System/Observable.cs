@@ -9,11 +9,13 @@ namespace Framework {
 
 		public Observable ( T initialValue, Action<T> onChange ) {
 
-			SetValue( initialValue );
+			SetValue( _value, getter: () => _lastValue, setter: v => _lastValue = v );
+			SetValue( initialValue, getter: () => _value, setter: v => _value = v );
 			_onChange = onChange;
 			_onChange?.Invoke( _value );
 		}
 
+		public T Previous () => _lastValue;
 		public T Get () => _value;
 		public virtual void Set ( T value ) {
 
@@ -21,15 +23,17 @@ namespace Framework {
 				return;
 			}
 
-			SetValue( value );
+			SetValue( _value, getter: () => _lastValue, setter: v => _lastValue = v );
+			SetValue( value, getter: () => _value, setter: v => _value = v );
 			_onChange?.Invoke( _value );
 		}
 
+		protected T _lastValue;
 		protected T _value;
 		protected Action<T> _onChange;
 
-		protected virtual void SetValue ( T value ) {
-			_value = value;
+		protected virtual void SetValue ( T value, Func<T> getter, Action<T> setter ) {
+			setter( value );
 		}
 		protected virtual bool CheckEquality ( T a, T b ) {
 			return EqualityComparer<T>.Default.Equals( a, b );
@@ -50,14 +54,15 @@ namespace Framework {
 			}
 			return ( a == null && b == null );
 		}
-		protected override void SetValue ( IList<T> value ) {
+		protected override void SetValue ( IList<T> value, Func<IList<T>> get, Action<IList<T>> set ) {
 
 			if ( value != null ) {
-				if ( _value == null ) { _value = new List<T>(); }
-				_value.Clear();
-				foreach ( var v in value ) { _value.Add( v ); }
+				if ( get() == null ) { set( new List<T>() ); }
+				var list = get();
+				list.Clear();
+				foreach ( var v in value ) { list.Add( v ); }
 			} else {
-				_value = null;
+				set( null );
 			}
 		}
 	}
@@ -76,14 +81,15 @@ namespace Framework {
 			}
 			return ( a == null && b == null );
 		}
-		protected override void SetValue ( HashSet<T> value ) {
+		protected override void SetValue ( HashSet<T> value, Func<HashSet<T>> get, Action<HashSet<T>> set ) {
 
 			if ( value != null ) {
-				if ( _value == null ) { _value = new HashSet<T>(); }
-				_value.Clear();
-				_value.UnionWith( value );
+				if ( get() == null ) { set( new HashSet<T>() ); }
+				var hashSet = get();
+				hashSet.Clear();
+				hashSet.UnionWith( value );
 			} else {
-				_value = null;
+				set( null );
 			}
 		}
 	}
@@ -107,6 +113,8 @@ namespace Framework {
 		// validation modifiers
 		public void SetValidators ( Func<T, bool> validator )
 			=> SetValidators( new List<Func<T, bool>> { validator } );
+		public void SetValidators ( Func<T, bool>[] validators )
+			=> SetValidators( new List<Func<T, bool>>( validators ) );
 		public void SetValidators ( List<Func<T, bool>> validators ) {
 
 			_validators.Clear();

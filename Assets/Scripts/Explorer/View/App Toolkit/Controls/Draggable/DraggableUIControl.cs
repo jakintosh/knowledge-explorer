@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace Explorer.View {
 
 	[RequireComponent( typeof( Graphic ) )]
-	public class DraggableControl : MonoBehaviour,
+	public class DraggableUIControl : MonoBehaviour,
 		IPointerDownHandler,
 		IDragHandler,
 		IPointerUpHandler {
