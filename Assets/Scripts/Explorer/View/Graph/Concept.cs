@@ -1,11 +1,11 @@
 using Framework;
+using Graph;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
 
-using Link = Explorer.Model.KnowledgeGraph.Link;
 using ConceptModel = Explorer.Model.View.Concept;
 
 namespace Explorer.View {
@@ -34,7 +34,7 @@ namespace Explorer.View {
 		public UnityEvent<string> OnDragLinkBegin = new UnityEvent<string>();
 		public UnityEvent<string> OnDragLinkEnd = new UnityEvent<string>();
 		public UnityEvent<DragLinkEventData> OnDragLinkReceiving = new UnityEvent<DragLinkEventData>();
-		public UnityEvent<string> OnOpenRelationship = new UnityEvent<string>();
+		public UnityEvent<string> OnOpenLink = new UnityEvent<string>();
 
 		public UnityEvent<Float3> OnPositionChange = new UnityEvent<Float3>();
 
@@ -50,8 +50,8 @@ namespace Explorer.View {
 		public override ConceptModel GetInitData () {
 
 			return new ConceptModel(
-				nodeUid: _nodeUID.Get(),
 				graphUid: _graphUID.Get(),
+				nodeUid: _nodeUID.Get(),
 				position: _position.Get(),
 				size: _presenceControl.Size
 			);
@@ -79,7 +79,7 @@ namespace Explorer.View {
 		// model data
 		private Observable<string> _graphUID;
 		private Observable<string> _nodeUID;
-		private HashSetObservable<Link> _links;
+		private HashSetObservable<Graph.Link> _links;
 		private Observable<Float3> _size;
 		private Observable<Float3> _position;
 		private Observable<Mode> _mode;
@@ -89,7 +89,7 @@ namespace Explorer.View {
 		private Observable<string> _title;
 
 		// internal data
-		private Model.KnowledgeGraph _graph;
+		private Knowledge.Graph _graph;
 
 		protected override void InitFrom ( ConceptModel data ) {
 
@@ -110,7 +110,7 @@ namespace Explorer.View {
 			_graphUID = new Observable<string>(
 				initialValue: null,
 				onChange: graphUID => {
-					_graph = Application.Resources.Graphs.Get( graphUID );
+					_graph = Client.Application.Resources.Graphs.Get( graphUID );
 				}
 			);
 			_nodeUID = new Observable<string>(
@@ -119,12 +119,12 @@ namespace Explorer.View {
 					_draggableControl?.ClearPayloads();
 					_draggableControl?.AddPayload( mode: Drag.Mode.Secondary, payload: nodeUID );
 					if ( _graph != null ) {
-						_title.Set( _graph.GetTitle( nodeUID ) );
-						_links.Set( new HashSet<Link>( _graph.GetLinksFromConcept( nodeUID ) ) );
+						_title.Set( _graph.GetConceptTitle( nodeUID ) );
+						_links.Set( new HashSet<Graph.Link>( _graph.GetLinksFromConcept( nodeUID ) ) );
 					}
 				}
 			);
-			_links = new HashSetObservable<Link>(
+			_links = new HashSetObservable<Graph.Link>(
 				initialValue: null,
 				onChange: links => {
 					if ( links == null ) { return; }
@@ -196,7 +196,7 @@ namespace Explorer.View {
 			} );
 			_presenceControl.OnSizeChanged.AddListener( size => {
 				_size.Set( GetPhysicalSizeForPresence( size ) );
-				_editToggle.gameObject.SetActive( size == Model.Presence.Sizes.Expanded );
+				_editToggle.gameObject.SetActive( size == PresenceControl.Sizes.Expanded );
 			} );
 			_editToggle.OnToggled.AddListener( isEditing => {
 				_mode.Set( isEditing ? Mode.Edit : Mode.View );
@@ -213,8 +213,8 @@ namespace Explorer.View {
 				if ( payload is string ) {
 					var sourceUid = payload as string;
 					Debug.Log( $"{_title.Get()}[{_nodeUID.Get()}] recieved uid [{sourceUid}]" );
-					var relationshipUID = _graph.LinkConcepts( from: sourceUid, to: _nodeUID.Get() );
-					OnOpenRelationship?.Invoke( relationshipUID );
+					var linkUid = _graph.CreateLink( fromConceptUID: sourceUid, toConceptUID: _nodeUID.Get() );
+					OnOpenLink?.Invoke( linkUid );
 				}
 			} );
 
@@ -258,10 +258,10 @@ namespace Explorer.View {
 		// helpers
 		private static Float3 COMPACT_SIZE = new Float3( 3f, 0.64f, 0.1f );
 		private static Float3 EXPANDED_SIZE = new Float3( 4f, 4.64f, 0.1f );
-		private Float3 GetPhysicalSizeForPresence ( Model.Presence.Sizes size ) =>
+		private Float3 GetPhysicalSizeForPresence ( PresenceControl.Sizes size ) =>
 			size switch {
-				Model.Presence.Sizes.Compact => COMPACT_SIZE,
-				Model.Presence.Sizes.Expanded => EXPANDED_SIZE,
+				PresenceControl.Sizes.Compact => COMPACT_SIZE,
+				PresenceControl.Sizes.Expanded => EXPANDED_SIZE,
 				_ => Float3.One
 			};
 	}

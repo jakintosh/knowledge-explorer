@@ -1,8 +1,8 @@
 {
-    "name": "project",
+    "name": "knowledge-framework",
     "rootNamespace": "",
     "references": [
-        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:58d33ae603ad947b5bd61021860051c3",
         "GUID:7a60cbec7ea824ffcb244d0126240d40"
     ],
     "includePlatforms": [],

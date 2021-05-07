@@ -1,0 +1,16 @@
+{
+    "name": "graph",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7a60cbec7ea824ffcb244d0126240d40"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

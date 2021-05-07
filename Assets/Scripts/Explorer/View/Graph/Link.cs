@@ -19,7 +19,7 @@ namespace Explorer.View {
 		- Free / Docked / Anchored
 		- Show Label (bool)
 	*/
-	public class Relationship : View {
+	public class Link : View {
 
 		/*
 			really these concept views and points just want a scene anchor,

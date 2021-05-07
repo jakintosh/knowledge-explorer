@@ -114,7 +114,7 @@ namespace Framework {
 		public void SetValidators ( Func<T, bool> validator )
 			=> SetValidators( new List<Func<T, bool>> { validator } );
 		public void SetValidators ( Func<T, bool>[] validators )
-			=> SetValidators( new List<Func<T, bool>>( validators ) );
+			=> SetValidators( validators != null ? new List<Func<T, bool>>( validators ) : null );
 		public void SetValidators ( List<Func<T, bool>> validators ) {
 
 			_validators.Clear();

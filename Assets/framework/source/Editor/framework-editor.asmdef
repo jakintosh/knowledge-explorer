@@ -1,5 +1,5 @@
 {
-    "name": "utilities-editor",
+    "name": "framework-editor",
     "rootNamespace": "",
     "references": [
         "GUID:7a60cbec7ea824ffcb244d0126240d40"

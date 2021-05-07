@@ -1,11 +1,14 @@
 using Newtonsoft.Json;
 using System;
 
-public class IdentifiableResource : IEquatable<IdentifiableResource> {
+public abstract class IdentifiableResource<T> : IEquatable<T>
+	where T : IdentifiableResource<T> {
 
 	// *********** Public Interface ***********
 
+	public string UID => uid;
 	public IdentifiableResource ( string uid ) => this.uid = uid;
+
 
 	// ********** Private Interface ***********
 
@@ -14,14 +17,15 @@ public class IdentifiableResource : IEquatable<IdentifiableResource> {
 
 	// *** IEquatable<IdentifiableResource> ***
 
-	public bool Equals ( IdentifiableResource other ) =>
+	public bool Equals ( T other ) =>
 		other?.uid.Equals( uid ) ?? false;
+
 
 	// ********** Equality Overrides **********
 
 	public override bool Equals ( object obj ) =>
-		obj is IdentifiableResource ?
-			this.Equals( obj as IdentifiableResource ) :
+		obj is IdentifiableResource<T> ?
+			this.Equals( obj as IdentifiableResource<T> ) :
 			false;
 	public override int GetHashCode () =>
 		uid.GetHashCode();

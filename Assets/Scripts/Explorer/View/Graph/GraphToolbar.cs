@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Explorer.View {
 
-	public class WorkspaceToolbar : View {
+	public class GraphToolbar : View {
 
 		// ********** Private Interface **********
 

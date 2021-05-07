@@ -1,7 +1,13 @@
 using System;
 using System.Text;
 
+public static class String_Extensions {
+
+	public static bool IsNullOrEmpty ( this string str ) => string.IsNullOrEmpty( str );
+}
+
 namespace StringHelpers {
+
 
 	public static class UID {
 

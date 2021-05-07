@@ -2,9 +2,10 @@
     "name": "Tests",
     "rootNamespace": "",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "project"
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:7a60cbec7ea824ffcb244d0126240d40",
+        "GUID:f56f79f1ac7814067b36cc04bfb23508"
     ],
     "includePlatforms": [
         "Editor"

@@ -11,9 +11,15 @@ namespace Explorer.View {
 
 		// to init other views
 		protected void InitView ( View view ) {
+			if ( view == null ) {
+				Debug.LogError( $"View: Cannot initialize null instance of {view.GetType()}" );
+			}
 			view.Init();
 		}
 		protected void InitView<TView, TData> ( TView view, TData data ) where TView : IViewInit<TData> {
+			if ( view == null ) {
+				Debug.LogError( $"View: Cannot initialize null instance of {view.GetType()}" );
+			}
 			view.InitFrom( data );
 		}
 	}

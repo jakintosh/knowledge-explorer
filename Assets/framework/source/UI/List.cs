@@ -12,7 +12,7 @@ namespace Framework.UI {
 
 		public UnityEvent<TData> OnCellClicked = new UnityEvent<TData>();
 
-		public void SetData ( List<TData> data ) {
+		public void SetData ( IList<TData> data ) {
 
 			int i = 0;
 
@@ -65,7 +65,7 @@ namespace Framework.UI {
 			_verticalLayoutGroup.childForceExpandHeight = false;
 
 			// spacing
-			_verticalLayoutGroup.spacing = 12;
+			_verticalLayoutGroup.spacing = 4;
 			_verticalLayoutGroup.padding = new RectOffset(
 				left: 4,
 				right: 4,

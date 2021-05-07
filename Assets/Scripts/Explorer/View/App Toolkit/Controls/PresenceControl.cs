@@ -1,4 +1,3 @@
-using Explorer.Model.Presence;
 using Framework;
 using System;
 using UnityEngine;
@@ -12,15 +11,16 @@ namespace Explorer.View {
 
 		// ********** Public Interface **********
 
-		// // data types
-		// public enum Contexts {
-		// 	Floating,
-		// 	Focused
-		// }
-		// public enum Sizes {
-		// 	Expanded,
-		// 	Compact
-		// }
+		// data types
+		public enum Contexts {
+			Floating,
+			Focused
+		}
+		public enum Sizes {
+			Expanded,
+			Compact
+		}
+
 
 		// events
 		public UnityEvent OnClosed = new UnityEvent();

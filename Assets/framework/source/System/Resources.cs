@@ -47,17 +47,11 @@ namespace Framework.Data {
 
 			// ********** IEquatable Implementation **********
 
-			bool IEquatable<Resource>.Equals ( Resource other ) => other.UID.Equals( this.UID );
+			bool IEquatable<Resource>.Equals ( Resource other ) => other?.UID.Equals( this.UID ) ?? false;
 		}
 	}
 
 	// TODO: Resources need dependencies
-	// public class Resource<T> {
-
-	// 	public void Load ( Metadata.Resource metadata ) {
-
-	// 	}
-	// }
 
 	[Serializable]
 	public class Resources<TMetadata, TResource>
