@@ -1,85 +1,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using WorkspaceModel = Explorer.Model.View.Workspace;
-using ConceptModel = Explorer.Model.View.Concept;
+using ConceptModel = Explorer.View.Model.Concept;
+using LinkModel = Explorer.View.Model.Link;
 
 namespace Explorer.View {
 
-	public class GraphViewport : View {
+	/*
+		Graph Viewport
 
-		// *********** Public Interface ***********
+		This is a view where the user can create, link, and drag the
+		concept views. Its main function is to render those two view
+		types (concepts and links), and to communicate those visual
+		changes back to the underlying source graph.
+	*/
+	public class GraphViewport : ReuseableView<Model.GraphViewport> {
 
-		public void SetContext ( WorkspaceModel workspace, Knowledge.Graph graph ) {
+		// *********** Public Interface **********
 
-			_graph = graph;
-			_workspace = workspace;
+		// concepts
+		public void NewConcept ( string graphUid ) {
 
+			var graph = Client.Application.Resources.Graphs.Get( graphUid );
+			if ( graph == null ) { return; }
 
-			_uiContainer.SetActive( _workspace != null );
-
-			ClearViewport();
-
-			if ( _workspace == null ) { return; }
-
-			_workspace.Concepts?.ForEach( concept => OpenConcept( concept ) );
-			_workspace.Links?.ForEach( linkUid => OpenLink( linkUid ) );
+			var newConceptUid = graph.CreateConcept();
+			Debug.Log( $"Created new concept with uid-{newConceptUid} in graph uid-{graphUid}" );
+			var model = ConceptModel.Default(
+				graphUid: graphUid,
+				nodeUid: newConceptUid
+			);
+			OpenConcept( model );
 		}
-
-		// *********** Private Interface ***********
-
-		[Header( "UI Controls" )]
-		[SerializeField] private GraphToolbar _graphToolbar = null;
-
-		[Header( "UI Display" )]
-		[SerializeField] private GameObject _uiContainer = null;
-
-		[Header( "Prefabs" )]
-		[SerializeField] private Concept _conceptViewPrefab = null;
-		[SerializeField] private Link _linkViewPrefab = null;
-
-
-		// private data
-		private WorkspaceModel _workspace;
-		private Knowledge.Graph _graph;
-		private Dictionary<string, Concept> _conceptViewsByNodeId = new Dictionary<string, Concept>();
-		private Dictionary<string, Link> _linksById = new Dictionary<string, Link>();
-
-		protected override void Init () {
-
-			// init subviews
-			InitView( _graphToolbar );
-
-			// subscribe to controls
-			_graphToolbar.OnNewItem.AddListener( () => {
-				var model = ConceptModel.Default(
-					graphUid: _graph?.UID,
-					nodeUid: _graph?.NewConcept()
-				);
-				OpenConcept( model );
-			} );
-			_graphToolbar.OnSave.AddListener( () => {
-				_workspace?.SetConcepts( _conceptViewsByNodeId.Values.Convert( view => view.GetInitData() ) );
-				_workspace?.SetOpenLinks( _linksById.Keys );
-			} );
-		}
-
-		private void OpenLink ( string linkUid ) {
-
-			// create and instantiate link
-			var link = _graph?.GetLink( linkUid );
-			var linkView = Instantiate<Link>( _linkViewPrefab );
-			InitView( linkView );
-
-			// view setup
-			linkView.SetSource( _conceptViewsByNodeId[link.FromUID] );
-			linkView.SetAnchored( _conceptViewsByNodeId[link.ToUID] );
-
-			// track
-			_linksById.Add( linkUid, linkView );
-		}
-
-		private void OpenConcept ( ConceptModel model ) {
+		public void OpenConcept ( ConceptModel model ) {
 
 			// validate model
 			if ( model == null || model.GraphUID.IsNullOrEmpty() || model.NodeUID.IsNullOrEmpty() ) {
@@ -88,57 +41,111 @@ namespace Explorer.View {
 			}
 
 			// create and init view
-			var view = Instantiate<Concept>(
+			var conceptView = Instantiate<Concept>(
 				original: _conceptViewPrefab,
 				parent: this.transform,
 				worldPositionStays: false
 			);
-			InitView( view, model );
+			conceptView.InitWith( model );
 
 			// view setup
-			view.OnClose.AddListener( CloseConcept );
-			view.OnDragLinkBegin.AddListener( NewDragLink );
-			view.OnDragLinkEnd.AddListener( DestroyDragLink );
-			view.OnDragLinkReceiving.AddListener( DragLinkReceiving );
-			view.OnOpenLink.AddListener( OpenLink );
+			conceptView.OnClose.AddListener( CloseConcept );
+			conceptView.OnOpenLink.AddListener( OpenLink );
+			conceptView.OnDragLinkBegin.AddListener( NewDragLink );
+			conceptView.OnDragLinkEnd.AddListener( DestroyDragLink );
+			conceptView.OnDragLinkReceiving.AddListener( DragLinkReceiving );
 
 			// track
-			_conceptViewsByNodeId.Add( model.NodeUID, view );
+			_conceptViewsByNodeUid.Add( model.NodeUID, conceptView );
 		}
-		private void CloseConcept ( string nodeUid ) {
+		public void CloseConcept ( string conceptUid ) {
 
-			var nodeView = _conceptViewsByNodeId[nodeUid];
-			nodeView.OnClose.RemoveListener( CloseConcept );
-			nodeView.OnDragLinkBegin.RemoveListener( NewDragLink );
-			nodeView.OnDragLinkEnd.RemoveListener( DestroyDragLink );
-			nodeView.OnDragLinkReceiving.RemoveListener( DragLinkReceiving );
-			nodeView.OnOpenLink.RemoveListener( OpenLink );
-			_conceptViewsByNodeId.Remove( nodeUid );
-			Destroy( nodeView.gameObject );
+			var conceptView = _conceptViewsByNodeUid[conceptUid];
+			conceptView.OnClose.RemoveListener( CloseConcept );
+			conceptView.OnOpenLink.RemoveListener( OpenLink );
+			conceptView.OnDragLinkBegin.RemoveListener( NewDragLink );
+			conceptView.OnDragLinkEnd.RemoveListener( DestroyDragLink );
+			conceptView.OnDragLinkReceiving.RemoveListener( DragLinkReceiving );
+			_conceptViewsByNodeUid.Remove( conceptUid );
+			Destroy( conceptView.gameObject );
 		}
-		private void ClearViewport () {
+
+		// links
+		public void OpenLink ( LinkModel linkModel ) {
+
+			// create and instantiate link
+			var uid = linkModel.LinkUID;
+			var graph = Client.Application.Resources.Graphs.Get( linkModel.GraphUID );
+			var link = graph?.GetLink( uid );
+			var linkView = Instantiate<Link>( _linkViewPrefab );
+			linkView.InitWith( linkModel );
+
+			// view setup
+			linkView.SetSource( _conceptViewsByNodeUid[link.FromUID] );
+			linkView.SetAnchored( _conceptViewsByNodeUid[link.ToUID] );
+
+			// track
+			_linksByUid.Add( uid, linkView );
+		}
+
+		// viewport
+		public void Clear () {
 
 			// clear concepts
-			_conceptViewsByNodeId.ForEach( ( _, view ) => Destroy( view.gameObject ) );
-			_conceptViewsByNodeId.Clear();
+			_conceptViewsByNodeUid.ForEach( ( _, view ) => Destroy( view.gameObject ) );
+			_conceptViewsByNodeUid.Clear();
 
 			// clear links
-			_linksById.ForEach( ( _, view ) => Destroy( view.gameObject ) );
-			_linksById.Clear();
+			_linksByUid.ForEach( ( _, view ) => Destroy( view.gameObject ) );
+			_linksByUid.Clear();
 		}
 
+
+		// *********** Private Interface ***********
+
+		[Header( "Prefabs" )]
+		[SerializeField] private Concept _conceptViewPrefab = null;
+		[SerializeField] private Link _linkViewPrefab = null;
+
+		// private data
+		private Dictionary<string, Concept> _conceptViewsByNodeUid = new Dictionary<string, Concept>();
+		private Dictionary<string, Link> _linksByUid = new Dictionary<string, Link>();
+
+		// view lifecycle
+		public override Model.GraphViewport GetState () {
+
+			return new Model.GraphViewport(
+				concepts: _conceptViewsByNodeUid.ConvertToList( ( _, conceptView ) => conceptView.GetState() ),
+				links: _linksByUid.ConvertToList( ( _, linkView ) => linkView.GetState() )
+			);
+		}
+		protected override void OnInitialize () { }
+		protected override void OnPopulate ( Model.GraphViewport graphViewport ) {
+
+			graphViewport?.Concepts.ForEach( concept => OpenConcept( concept ) );
+			graphViewport?.Links.ForEach( link => OpenLink( link ) );
+		}
+		protected override void OnRecycle () {
+
+			Clear();
+		}
+
+
+
+
+		// bunch of temp link stuff this is trash
 		private Link _tempLink;
 		private void NewDragLink ( string nodeUid ) {
 
 			_tempLink = Instantiate<Link>( _linkViewPrefab );
-			InitView( _tempLink );
-			_tempLink.SetSource( _conceptViewsByNodeId[nodeUid] );
+			_tempLink.InitWith( new LinkModel( null, null ) );
+			_tempLink.SetSource( _conceptViewsByNodeUid[nodeUid] );
 			_tempLink.SetFree();
 		}
 		private void DragLinkReceiving ( Concept.DragLinkEventData eventData ) {
 
 			if ( eventData.IsReceiving ) {
-				_tempLink.SetDocked( _conceptViewsByNodeId[eventData.NodeUID] );
+				_tempLink.SetDocked( _conceptViewsByNodeUid[eventData.NodeUID] );
 			} else {
 				_tempLink.SetFree();
 			}
@@ -148,6 +155,7 @@ namespace Explorer.View {
 			Destroy( _tempLink.gameObject );
 			_tempLink = null;
 		}
+
 	}
 
 }

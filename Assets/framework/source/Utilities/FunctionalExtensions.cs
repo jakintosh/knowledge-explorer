@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 public static class List_T_FunctionalExtensions {
 
+	public static void ForEach<T> ( this IEnumerable<T> collection, Action<T> action ) {
+
+		foreach ( var element in collection ) {
+			action( element );
+		}
+	}
+
 	public static T First<T> ( this IList<T> collection ) {
 
 		foreach ( var value in collection ) { return value; }
@@ -14,35 +21,6 @@ public static class List_T_FunctionalExtensions {
 		foreach ( var value in collection ) { last = value; }
 		return last;
 	}
-
-
-	public static HashSet<T> Map<T> ( this HashSet<T> set, Func<T, T> modify ) {
-
-		var results = new HashSet<T>();
-		foreach ( var element in set ) {
-			results.Add( modify( element ) );
-		}
-		return results;
-	}
-	public static HashSet<T> Filter<T> ( this HashSet<T> set, Func<T, bool> evaluate ) {
-
-		var results = new HashSet<T>();
-		foreach ( var element in set ) {
-			if ( evaluate( element ) ) {
-				results.Add( element );
-			}
-		}
-		return results;
-	}
-	public static HashSet<U> Convert<T, U> ( this HashSet<T> list, Func<T, U> convert ) {
-
-		var results = new HashSet<U>();
-		foreach ( var element in list ) {
-			results.Add( convert( element ) );
-		}
-		return results;
-	}
-
 	public static List<T> Map<T> ( this IList<T> list, Func<T, T> modify ) {
 
 		var results = new List<T>();
@@ -88,6 +66,36 @@ public static class List_T_FunctionalExtensions {
 	public static List<U> Convert<T, U> ( this IEnumerable<T> list, Func<T, U> convert ) {
 
 		var results = new List<U>();
+		foreach ( var element in list ) {
+			results.Add( convert( element ) );
+		}
+		return results;
+	}
+}
+
+public static class HashSet_T_FunctionalExtensions {
+
+	public static HashSet<T> Map<T> ( this HashSet<T> set, Func<T, T> modify ) {
+
+		var results = new HashSet<T>();
+		foreach ( var element in set ) {
+			results.Add( modify( element ) );
+		}
+		return results;
+	}
+	public static HashSet<T> Filter<T> ( this HashSet<T> set, Func<T, bool> evaluate ) {
+
+		var results = new HashSet<T>();
+		foreach ( var element in set ) {
+			if ( evaluate( element ) ) {
+				results.Add( element );
+			}
+		}
+		return results;
+	}
+	public static HashSet<U> Convert<T, U> ( this HashSet<T> list, Func<T, U> convert ) {
+
+		var results = new HashSet<U>();
 		foreach ( var element in list ) {
 			results.Add( convert( element ) );
 		}

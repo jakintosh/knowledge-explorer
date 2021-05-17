@@ -13,9 +13,11 @@ namespace StringHelpers {
 
 		private static char[] ID_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
 
+		private static System.Random random = new System.Random( (int)DateTime.Now.Ticks );
+
 		public static string Generate ( int length, Func<string, bool> validateUniqueness ) {
 
-			var random = new System.Random( (int)( DateTime.Now.Ticks ) );
+			// var random = new System.Random( (int)( DateTime.Now.Ticks ) );
 			var sb = new StringBuilder( capacity: length );
 			string id;
 			do {

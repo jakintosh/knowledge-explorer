@@ -38,7 +38,7 @@ namespace Explorer.View {
 		// model data
 		private Observable<bool> _isOn;
 
-		protected override void Init () {
+		protected override void OnInitialize () {
 
 			_backgroundImage.color = _backgroundColor;
 			_offImage.sprite = _offSprite;
@@ -58,11 +58,12 @@ namespace Explorer.View {
 				}
 			);
 
-			// subscribe to controls
+			// sub to owned controls
 			_button.onClick.AddListener( () => {
 				_isOn.Set( !_isOn.Get() );
 			} );
 		}
+		protected override void OnCleanup () { }
 	}
 
 }

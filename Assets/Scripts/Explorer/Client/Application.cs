@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Explorer.Client {
 
-	public class Application : View.RootView {
+	public class Application : MonoBehaviour {
 
 		// ********** Public Interface **********
 
@@ -45,8 +45,8 @@ namespace Explorer.Client {
 			// init all views
 			_state.Contexts.All.ForEach( ( uid, context ) => {
 				var view = Instantiate<View.Context>( _contextPrefab );
-				InitView( view, context );
-				view.gameObject.SetActive( uid == _state.Contexts.Current.UID );
+				view.InitWith( context );
+				view.gameObject.SetActive( uid == _state.Contexts.CurrentUID );
 				_contextViewsByUID.Add( uid, view );
 			} );
 
@@ -59,8 +59,8 @@ namespace Explorer.Client {
 			_state.Contexts.OnContextCreated += context => {
 				var uid = context.UID;
 				var view = Instantiate<View.Context>( _contextPrefab );
-				InitView( view, context );
-				view.gameObject.SetActive( uid == _state.Contexts.Current.UID );
+				view.InitWith( context );
+				view.gameObject.SetActive( uid == _state.Contexts.CurrentUID );
 				_contextViewsByUID.Add( uid, view );
 			};
 			_state.Contexts.OnContextDeleted += uid => {
@@ -83,7 +83,7 @@ namespace Explorer.Client {
 				return _instance;
 			}
 		}
-		protected override void Init () {
+		private void Awake () {
 
 			if ( _instance == null ) {
 				_instance = this;

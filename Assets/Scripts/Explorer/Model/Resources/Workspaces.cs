@@ -2,7 +2,7 @@ using Framework.Data;
 using System.Collections.Generic;
 
 using Metadata = Framework.Data.Metadata.Resource;
-using Workspace = Explorer.Model.View.Workspace;
+using Workspace = Explorer.View.Model.Workspace;
 
 namespace Explorer.Model {
 
@@ -14,7 +14,7 @@ namespace Explorer.Model {
 		Metadata New ( string name, string graphID = null );
 		bool Delete ( string uid );
 
-		View.Workspace Get ( string uid );
+		Workspace Get ( string uid );
 		IList<Metadata> GetAll ();
 
 		bool ValidateName ( string name );
@@ -78,7 +78,6 @@ namespace Explorer.Model {
 			workspaceResource.Initialize(
 				uid: workspaceMetadata.UID,
 				name: workspaceMetadata.Name,
-				graphUID: graphUid,
 				graph: graphResource
 			);
 

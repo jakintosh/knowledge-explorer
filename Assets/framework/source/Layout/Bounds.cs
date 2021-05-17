@@ -32,10 +32,10 @@ namespace Framework.Layout {
 
 		[Header( "Sizing" )]
 		public Vector3 PreferredSize = Vector3.one;
+		// public Vector3 MinimumSize = Vector3.zero;
 		public Vector3 Pivot = new Vector3( 0.5f, 0.5f, 0.5f );
 		public EdgeDelta Margin;
 		public EdgeDelta Padding;
-		// public Vector3 MinimumSize = Vector3.zero;
 
 		[Header( "Scale Units" )]
 		public ScaleContext ScaleContext;
@@ -107,13 +107,13 @@ namespace Framework.Layout {
 			var displayScale = GetScale( this.ScaleContext );
 
 			Gizmos.color = Color.red;
-			Gizmos.DrawWireCube( _marginCenter, _marginSize * displayScale );
+			Gizmos.DrawWireCube( _marginCenter * displayScale, _marginSize * displayScale );
 
 			Gizmos.color = Color.green;
-			Gizmos.DrawWireCube( _paddingCenter, _paddingSize * displayScale );
+			Gizmos.DrawWireCube( _paddingCenter * displayScale, _paddingSize * displayScale );
 
 			Gizmos.color = Color.white;
-			Gizmos.DrawWireCube( _center, _size * displayScale );
+			Gizmos.DrawWireCube( _center * displayScale, _size * displayScale );
 
 			Gizmos.color = color;
 		}

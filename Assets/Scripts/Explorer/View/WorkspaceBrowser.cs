@@ -1,10 +1,11 @@
 using Framework;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 using Metadata = Framework.Data.Metadata.Resource;
-using WorkspaceModel = Explorer.Model.View.Workspace;
+using WorkspaceModel = Explorer.View.Model.Workspace;
 
 namespace Explorer.View {
 
@@ -12,6 +13,7 @@ namespace Explorer.View {
 
 		// *********** Public Interface ***********
 
+		public void SetCurrentContextUID ( string contextUID ) => _contextUID = contextUID;
 		public void SetActiveWorkspace ( WorkspaceModel workspace ) => _activeWorkspace.Set( workspace );
 
 
@@ -38,12 +40,13 @@ namespace Explorer.View {
 		private Observable<WorkspaceModel> _activeWorkspace;
 		private ListObservable<Metadata> _allWorkspaces;
 
+		private string _contextUID;
 
-		protected override void Init () {
+		protected override void OnInitialize () {
 
 			// init subviews
-			InitView( _presenceControl );
-			InitView( _newWorkspaceDialog );
+			_presenceControl.Init();
+			_newWorkspaceDialog.Init();
 
 			// init observables
 			_dialogOpen = new Observable<bool>(
@@ -81,11 +84,11 @@ namespace Explorer.View {
 				Client.Application.Resources.Workspaces.New( name: name );
 			} );
 			_workspaceListLayout.OnCellClicked.AddListener( cellData => {
-				Client.Application.State.Contexts.Current.SetWorkspace( cellData.WorkspaceMetadata.UID );
+				Client.Application.State.Contexts.GetContext( _contextUID )?.SetWorkspace( cellData.WorkspaceMetadata.UID );
 				_presenceControl.Force( size: PresenceControl.Sizes.Compact );
 			} );
 			_closeActiveWorkspaceButton.onClick.AddListener( () => {
-				Client.Application.State.Contexts.Current.SetWorkspace( null );
+				Client.Application.State.Contexts.GetContext( _contextUID )?.SetWorkspace( null );
 				_presenceControl.Force( size: PresenceControl.Sizes.Expanded );
 			} );
 			_presenceControl.OnSizeChanged.AddListener( presenceSize => {
@@ -94,14 +97,20 @@ namespace Explorer.View {
 				_newWorkspaceButton.gameObject.SetActive( isExpanded );
 			} );
 
-			// listen to application events
-			Client.Application.Resources.Workspaces.OnMetadataChanged += metadata => _allWorkspaces.Set( metadata );
-
 			// configure subviews
 			_presenceControl.SetEnabled( close: false, size: true, context: false );
 			_newWorkspaceDialog.SetTitle( title: "New Workspace" );
 			_newWorkspaceDialog.SetValidators( validators: Client.Application.Resources.Workspaces.ValidateName );
+
+			// sub to app events
+			Client.Application.Resources.Workspaces.OnMetadataChanged += HandleNewWorkspaceMetadata;
 		}
+		protected override void OnCleanup () {
+
+			Client.Application.Resources.Workspaces.OnMetadataChanged -= HandleNewWorkspaceMetadata;
+		}
+
+		private void HandleNewWorkspaceMetadata ( IList<Metadata> metadata ) => _allWorkspaces.Set( metadata );
 	}
 
 }

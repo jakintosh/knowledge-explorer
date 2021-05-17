@@ -17,6 +17,9 @@ namespace Graph {
 			Name = name;
 		}
 
+		public override string ToString () {
+			return $"Graph.RelationType {{\n    uid: {UID},\n    Name: {Name}\n}}";
+		}
 
 		// ********** IEditableRelationshipType **********
 

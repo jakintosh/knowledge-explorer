@@ -1,16 +1,15 @@
 using Framework;
-using Graph;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
 
-using ConceptModel = Explorer.Model.View.Concept;
+using ConceptModel = Explorer.View.Model.Concept;
 
 namespace Explorer.View {
 
-	public class Concept : View<ConceptModel> {
+	public class Concept : ReuseableView<ConceptModel> {
 
 		// ********** Public Interface **********
 
@@ -34,20 +33,12 @@ namespace Explorer.View {
 		public UnityEvent<string> OnDragLinkBegin = new UnityEvent<string>();
 		public UnityEvent<string> OnDragLinkEnd = new UnityEvent<string>();
 		public UnityEvent<DragLinkEventData> OnDragLinkReceiving = new UnityEvent<DragLinkEventData>();
-		public UnityEvent<string> OnOpenLink = new UnityEvent<string>();
+		public UnityEvent<Model.Link> OnOpenLink = new UnityEvent<Model.Link>();
 
 		public UnityEvent<Float3> OnPositionChange = new UnityEvent<Float3>();
 
 		// functions
-		public void SetModel ( ConceptModel model ) {
-
-			// set relevant view model data
-			_graphUID.Set( model.GraphUID );
-			_nodeUID.Set( model.NodeUID );
-			_presenceControl.Force( size: model.Size );
-			_position.Set( model.Position );
-		}
-		public override ConceptModel GetInitData () {
+		public override ConceptModel GetState () {
 
 			return new ConceptModel(
 				graphUid: _graphUID.Get(),
@@ -66,6 +57,7 @@ namespace Explorer.View {
 		[SerializeField] private DraggableReceiver _draggableReceiver;
 		[SerializeField] private PresenceControl _presenceControl;
 		[SerializeField] private ToggleControl _editToggle;
+		[SerializeField] private TMP_InputField _titleInputField;
 
 		[Header( "UI Display" )]
 		[SerializeField] private TextMeshProUGUI _titleView;
@@ -91,16 +83,11 @@ namespace Explorer.View {
 		// internal data
 		private Knowledge.Graph _graph;
 
-		protected override void InitFrom ( ConceptModel data ) {
-
-			Init();
-			SetModel( data );
-		}
-		protected override void Init () {
+		protected override void OnInitialize () {
 
 			// init subviews
-			InitView( _presenceControl );
-			InitView( _editToggle );
+			_presenceControl.Init();
+			_editToggle.Init();
 
 			// configure controls
 			_draggableReceiver.SetReceivableTypes( typeof( string ) );
@@ -120,7 +107,7 @@ namespace Explorer.View {
 					_draggableControl?.AddPayload( mode: Drag.Mode.Secondary, payload: nodeUID );
 					if ( _graph != null ) {
 						_title.Set( _graph.GetConceptTitle( nodeUID ) );
-						_links.Set( new HashSet<Graph.Link>( _graph.GetLinksFromConcept( nodeUID ) ) );
+						_links.Set( new HashSet<Graph.Link>( _graph.GetConceptLinks( nodeUID ) ) );
 					}
 				}
 			);
@@ -156,17 +143,15 @@ namespace Explorer.View {
 				initialValue: "{Uninitialized}",
 				onChange: title => {
 					_titleView.text = title;
+					_titleInputField.SetTextWithoutNotify( title );
 				}
 			);
 			_mode = new Observable<Mode>(
 				initialValue: Mode.View,
 				onChange: mode => {
+					_titleInputField.interactable = mode == Mode.Edit;
 					_headerEditOverlay.gameObject.SetActive( mode == Mode.Edit );
-					_presenceControl.SetEnabled(
-						close: mode == Mode.View,
-						size: mode == Mode.View,
-						context: mode == Mode.View
-					);
+					_presenceControl.gameObject.SetActive( mode == Mode.View );
 				}
 			);
 			_selected = new Observable<bool>(
@@ -202,6 +187,13 @@ namespace Explorer.View {
 				_mode.Set( isEditing ? Mode.Edit : Mode.View );
 			} );
 
+			_titleInputField.onEndEdit.AddListener( newTitle => {
+				var conceptUID = _nodeUID.Get();
+				if ( _graph != null && conceptUID != null ) {
+					_graph.UpdateConceptTitle( conceptUID, newTitle );
+				}
+			} );
+
 			_draggableReceiver.OnHover.AddListener( isHovering => {
 				_hovering.Set( isHovering );
 				OnDragLinkReceiving?.Invoke( new DragLinkEventData( _nodeUID.Get(), isHovering ) );
@@ -214,7 +206,7 @@ namespace Explorer.View {
 					var sourceUid = payload as string;
 					Debug.Log( $"{_title.Get()}[{_nodeUID.Get()}] recieved uid [{sourceUid}]" );
 					var linkUid = _graph.CreateLink( fromConceptUID: sourceUid, toConceptUID: _nodeUID.Get() );
-					OnOpenLink?.Invoke( linkUid );
+					OnOpenLink?.Invoke( new Model.Link( _graphUID.Get(), linkUid ) );
 				}
 			} );
 
@@ -254,6 +246,15 @@ namespace Explorer.View {
 				}
 			} );
 		}
+		protected override void OnPopulate ( ConceptModel model ) {
+
+			_graphUID.Set( model.GraphUID );
+			_nodeUID.Set( model.NodeUID );
+			_presenceControl.Force( size: model.Size );
+			_position.Set( model.Position );
+		}
+		protected override void OnRecycle () { }
+
 
 		// helpers
 		private static Float3 COMPACT_SIZE = new Float3( 3f, 0.64f, 0.1f );

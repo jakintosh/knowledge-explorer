@@ -1,6 +1,5 @@
 using Framework;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -42,7 +41,7 @@ namespace Explorer.View {
 		private Func<string, bool> _textValidator;
 		private ValidatedObservable<string> _text;
 
-		protected override void Init () {
+		protected override void OnInitialize () {
 
 			// init observables
 			_text = new ValidatedObservable<string>(
@@ -56,7 +55,6 @@ namespace Explorer.View {
 				}
 			);
 
-			// connect controls
 			_cancelControl.onClick.AddListener( () => {
 				Close();
 			} );
@@ -69,6 +67,13 @@ namespace Explorer.View {
 			_confirmControl.onClick.AddListener( () => {
 				Confirm();
 			} );
+		}
+		protected override void OnCleanup () {
+
+			_cancelControl.onClick.RemoveAllListeners();
+			_nameInputControl.onValueChanged.RemoveAllListeners();
+			_nameInputControl.onSubmit.RemoveAllListeners();
+			_confirmControl.onClick.RemoveAllListeners();
 		}
 
 		private void Close () {

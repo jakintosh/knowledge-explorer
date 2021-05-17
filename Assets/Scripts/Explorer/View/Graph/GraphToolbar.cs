@@ -17,9 +17,8 @@ namespace Explorer.View {
 		[SerializeField] private Button _saveButton;
 
 
-		protected override void Init () {
+		protected override void OnInitialize () {
 
-			// connect controls
 			_addButton.onClick.AddListener( () => {
 				OnNewItem?.Invoke();
 			} );
@@ -27,6 +26,7 @@ namespace Explorer.View {
 				OnSave?.Invoke();
 			} );
 		}
+		protected override void OnCleanup () { }
 	}
 
 }

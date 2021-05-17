@@ -5,28 +5,7 @@ using UnityEngine.UI;
 
 namespace Explorer.View {
 
-	public class RelationTypeBrowser : View {
-
-		// *********** Public Interface ***********
-
-		public void SetContext ( Model.View.Workspace workspace, Knowledge.Graph graph ) {
-
-			_workspace = workspace;
-
-			_graph?.OnRelationTypeEvent.RemoveListener( HandleRelationTypeEvent );
-			_graph = graph;
-			_graph?.OnRelationTypeEvent.AddListener( HandleRelationTypeEvent );
-
-			_windowOpen.Set( _graph != null );
-			_cellData.Set( GetCellData( _graph, _workspace ) );
-
-			if ( _graph != null ) {
-				_newRelationTypeDialog.SetValidators( validators: _graph.ValidateRelationTypeName );
-			} else {
-				_newRelationTypeDialog.SetValidators( null );
-			}
-		}
-
+	public class RelationTypeBrowser : ReuseableView<Model.Workspace> {
 
 		// *********** Private Interface ***********
 
@@ -43,7 +22,6 @@ namespace Explorer.View {
 		[SerializeField] private GameObject _contentContainer;
 		[SerializeField] private GameObject _fade;
 
-
 		// view model data
 		private Observable<bool> _windowOpen;
 		private Observable<bool> _dialogOpen;
@@ -52,14 +30,22 @@ namespace Explorer.View {
 
 		// internal data
 		private Knowledge.Graph _graph;
-		private Model.View.Workspace _workspace;
+		private Model.Workspace _workspace;
 
-		protected override void Init () {
+		// view lifecycle
+		public override Model.Workspace GetState () {
+			return _workspace;
+		}
+		protected override void OnInitialize () {
 
 			// init subviews
-			InitView( _presenceControl );
-			InitView( _newRelationTypeDialog );
-			InitView( _relationTypeEditor );
+			_presenceControl.Init();
+			_newRelationTypeDialog.Init();
+			_relationTypeEditor.InitWith( null );
+
+			// configure subviews
+			_presenceControl.SetEnabled( close: false, size: true, context: false );
+			_newRelationTypeDialog.SetTitle( title: "New Relation Type" );
 
 			// init observables
 			_windowOpen = new Observable<bool>(
@@ -80,21 +66,18 @@ namespace Explorer.View {
 			_selectedRelationTypeUID = new Observable<string>(
 				initialValue: null,
 				onChange: relationTypeID => {
-					if ( relationTypeID == null ) { return; }
-					var relType = _graph.GetRelationType( relationTypeID );
-					_relationTypeEditor.SetRelationType( relType );
+					var relType = _graph?.GetRelationType( relationTypeID );
+					_relationTypeEditor.InitWith( relType );
 				}
 			);
 			_cellData = new ListObservable<RelationTypeCellData>(
 				initialValue: null,
 				onChange: cellData => {
-					Debug.Log( "getting new list data" );
 					_relationList.SetData( cellData );
 				}
 			);
 
-
-			// connect controls
+			// sub to controls
 			_presenceControl.OnSizeChanged.AddListener( presenceSize => {
 				_contentContainer.gameObject.SetActive( presenceSize == PresenceControl.Sizes.Expanded );
 			} );
@@ -118,39 +101,63 @@ namespace Explorer.View {
 				_graph?.UpdateRelationTypeName( uid, name );
 			} );
 			_relationTypeEditor.OnColorStringChanged.AddListener( ( uid, colorString ) => {
-				Debug.Log( $"got new color {colorString} for {uid}" );
-				_workspace?.SetRelationTypeColor( uid, colorString );
+				var metadata = _graph?.GetMetadataForRelationType( uid ) ?? new Knowledge.Metadata.RelationType();
+				metadata.Display.HexColor = colorString;
+				_graph?.SetMetadataForRelationType( uid, metadata );
+
 				_cellData.Set( GetCellData( _graph, _workspace ) );
 			} );
-
-			// configure subviews
-			_presenceControl.SetEnabled( close: false, size: true, context: false );
-			_newRelationTypeDialog.SetTitle( title: "New Relation Type" );
 		}
+		protected override void OnPopulate ( Model.Workspace workspace ) {
 
-		private List<RelationTypeCellData> GetCellData ( Knowledge.Graph graph, Model.View.Workspace workspace ) {
+			_workspace = workspace;
+			_graph = Client.Application.Resources.Graphs.Get( _workspace?.GraphUID );
 
-			if ( graph == null || workspace == null ) {
-				Debug.Log( $"RelationTypeBrowser: Can't get cell data, mission (graph || workspace)" );
-				return new List<RelationTypeCellData>();
+			_windowOpen.Set( _graph != null );
+			_dialogOpen.Set( false );
+			_selectedRelationTypeUID.Set( null );
+			_cellData.Set( GetCellData( _graph, _workspace ) );
+
+			if ( _graph != null ) {
+				_graph.OnRelationTypeEvent.AddListener( HandleRelationTypeEvent );
+				_newRelationTypeDialog.SetValidators( validators: _graph.ValidateRelationTypeName );
 			}
+		}
+		protected override void OnRecycle () {
 
-			return graph.AllRelationTypes.ConvertToList( ( uid, relType ) =>
-				new RelationTypeCellData(
-					uid: uid,
-					name: relType.Name,
-					colorString: workspace.GetRelationTypeColor( uid )
-				)
-			);
+			_newRelationTypeDialog.SetValidators( null );
+			_graph?.OnRelationTypeEvent.RemoveListener( HandleRelationTypeEvent );
 		}
 
 		// event handlers
 		private void HandleRelationTypeEvent ( Knowledge.Graph.ResourceEventData eventData ) {
 
 			// update cell data
-			var cellData = GetCellData( _graph, _workspace );
-			_cellData.Set( cellData );
+			_cellData.Set( GetCellData( _graph, _workspace ) );
 		}
+
+		// helpers
+		private List<RelationTypeCellData> GetCellData ( Knowledge.Graph graph, Model.Workspace workspace ) {
+
+			if ( graph == null ) {
+				Debug.Log( $"RelationTypeBrowser: Can't get cell data, missing graph." );
+				return new List<RelationTypeCellData>();
+			}
+			if ( workspace == null ) {
+				Debug.Log( $"RelationTypeBrowser: Can't get cell data, missing workspace." );
+				return new List<RelationTypeCellData>();
+			}
+
+			return graph.AllRelationTypes.ConvertToList( ( uid, relType ) => {
+
+				return new RelationTypeCellData(
+					uid: uid,
+					name: relType.Name,
+					colorString: graph.GetMetadataForRelationType( uid )?.Display.HexColor ?? ""
+				);
+			} );
+		}
+
 	}
 
 }

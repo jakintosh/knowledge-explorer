@@ -35,6 +35,15 @@ namespace Framework.UI {
 			}
 		}
 
+		protected virtual float GetSpacing () => 4;
+		protected virtual RectOffset GetPadding ()
+			=> new RectOffset(
+				left: 4,
+				right: 4,
+				top: 4,
+				bottom: 4
+			);
+
 		// ********** Private Interface **********
 
 		[Header( "Options" )]
@@ -65,13 +74,8 @@ namespace Framework.UI {
 			_verticalLayoutGroup.childForceExpandHeight = false;
 
 			// spacing
-			_verticalLayoutGroup.spacing = 4;
-			_verticalLayoutGroup.padding = new RectOffset(
-				left: 4,
-				right: 4,
-				top: 4,
-				bottom: 4
-			);
+			_verticalLayoutGroup.spacing = GetSpacing();
+			_verticalLayoutGroup.padding = GetPadding();
 
 			// size fitter
 			_contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();

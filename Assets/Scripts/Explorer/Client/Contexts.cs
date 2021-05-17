@@ -1,4 +1,5 @@
 using Framework;
+using System;
 using System.Collections.Generic;
 
 namespace Explorer.Client {
@@ -6,13 +7,15 @@ namespace Explorer.Client {
 	// manages the set of contexts of the application
 	public class Contexts {
 
+		// *********** Public Interface ***********
+
 		// events
 		public event Event<Context>.Signature OnCurrentContextChanged;
 		public event Event<Context>.Signature OnContextCreated;
 		public event Event<string>.Signature OnContextDeleted;
 
 		// properties
-		public Context Current => _current.Get();
+		public string CurrentUID => _current.Get()?.UID;
 		public IReadOnlyDictionary<string, Context> All => _contexts;
 
 		public Contexts () {
@@ -32,9 +35,22 @@ namespace Explorer.Client {
 			);
 		}
 
-		public string NewContext ( bool setToCurrent = true ) {
+		public Context GetContext ( string uid ) {
 
-			var uid = GetUID();
+			if ( !_contexts.TryGetValue( uid, out var context ) ) {
+				UnityEngine.Debug.LogError( $"Contexts.GetContext: Can't find context for UID-{uid}" );
+				return null;
+			}
+			return context;
+		}
+		public void SetCurrentContext ( string uid ) {
+
+			var context = _contexts[uid];
+			_current.Set( context );
+		}
+		public string CreateContext ( bool setToCurrent = true ) {
+
+			var uid = NewUID();
 			var context = new Context( uid );
 			_contexts.Add( uid, context );
 
@@ -44,9 +60,7 @@ namespace Explorer.Client {
 				id: $"Explorer.Model.Contexts.OnContextCreated"
 			);
 
-			if ( setToCurrent ) {
-				SetCurrentContext( uid );
-			}
+			if ( setToCurrent ) { SetCurrentContext( uid ); }
 
 			return uid;
 		}
@@ -70,18 +84,16 @@ namespace Explorer.Client {
 			);
 
 		}
-		public void SetCurrentContext ( string uid ) {
 
-			var context = _contexts[uid];
-			_current.Set( context );
-		}
+
+		// *********** Private Interface ***********
 
 		// internal data
 		private Dictionary<string, Context> _contexts;
 		private Observable<Context> _current;
 
 		// private helpers
-		private string GetUID () {
+		private string NewUID () {
 
 			return StringHelpers.UID.Generate(
 				length: 4,
@@ -90,33 +102,75 @@ namespace Explorer.Client {
 		}
 	}
 
+	public struct ContextState : IEquatable<ContextState> {
+
+		// static defaults
+		public static ContextState Null => new ContextState( null );
+
+		// properties
+		public View.Model.Workspace Workspace { get; private set; }
+
+		// constructor
+		public ContextState ( View.Model.Workspace workspace ) => Workspace = workspace;
+
+		// IEquatable<ContextState>
+		public bool Equals ( ContextState other ) => ReferenceEquals( Workspace, other.Workspace );
+	}
+
 	// an instance of the application state
 	public class Context : IdentifiableResource<Context> {
 
+		// *********** Public Interface ***********
+
 		// events
-		public event Event<Context>.Signature OnContextModified;
+		public event Event<ContextState>.Signature OnContextStateModified;
 
 		// properties
-		public Knowledge.Graph Graph => _graph;
-		public Model.View.Workspace Workspace => _workspace;
+		public ContextState State => _state.Get();
 
-		public Context ( string uid ) : base( uid ) { }
+		public Context ( string uid ) : base( uid ) {
 
-		public void SetWorkspace ( string uid ) {
+			_state = new Observable<ContextState>(
+				initialValue: new ContextState( null ),
+				onChange: state => {
 
-			_workspace = Client.Application.Resources.Workspaces.Get( uid );
-			_graph = Client.Application.Resources.Graphs.Get( _workspace?.GraphUID );
-
-			Event<Context>.Fire(
-				@event: OnContextModified,
-				value: this,
-				id: $"Explorer.Model.Context.OnContextModified()"
+					// fire event
+					Event<ContextState>.Fire(
+						@event: OnContextStateModified,
+						value: state,
+						id: $"Explorer.Model.Context.OnContextStateModified"
+					);
+				}
 			);
 		}
+		public void SetWorkspace ( string uid ) {
+
+			// don't bother loading if null
+			if ( uid == null ) {
+				_state.Set( ContextState.Null );
+				return;
+			}
+
+			var workspace = Client.Application.Resources.Workspaces.Get( uid );
+			if ( workspace == null ) {
+				UnityEngine.Debug.LogError( $"Context.SetWorkspace: Couldn't find workspace for UID-{uid}" );
+				return;
+			}
+
+			// ensure this is a valid graph, and pre-load it
+			var graph = Client.Application.Resources.Graphs.Get( workspace.GraphUID );
+			if ( graph == null ) {
+				UnityEngine.Debug.LogError( $"Context.SetWorkspace: Couldn't find graph for UID-{workspace.GraphUID}" );
+				return;
+			}
+
+			_state.Set( new ContextState( workspace ) );
+		}
+
+		// *********** Private Interface ***********
 
 		// internal data
-		private Knowledge.Graph _graph;
-		private Model.View.Workspace _workspace;
+		private Observable<ContextState> _state;
 	}
 
 }

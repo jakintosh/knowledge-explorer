@@ -11,7 +11,7 @@ namespace Explorer.Client.Subsystems {
 		public void Initialize () {
 
 			// TODO: make this load something
-			_contexts.NewContext();
+			_contexts.CreateContext();
 		}
 		public void Teardown () { }
 

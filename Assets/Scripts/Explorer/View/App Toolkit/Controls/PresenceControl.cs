@@ -76,7 +76,7 @@ namespace Explorer.View {
 
 
 		// lifecycle
-		protected override void Init () {
+		protected override void OnInitialize () {
 
 			// init observables
 			_size = new Observable<Sizes>(
@@ -102,11 +102,12 @@ namespace Explorer.View {
 				}
 			);
 
-			// connect controls to model inputs
+			// sub to owned controls
 			_closeButton.onClick.AddListener( Close );
 			_sizeButton.onClick.AddListener( CycleSize );
 			_contextButton.onClick.AddListener( CycleContext );
 		}
+		protected override void OnCleanup () { }
 
 		private void Close () {
 

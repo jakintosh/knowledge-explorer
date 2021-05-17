@@ -36,11 +36,17 @@ namespace Graph {
 			relationTypes = new Dictionary<string, RelationType>();
 
 			_linkUIDsByType = new Dictionary<string, HashSet<string>>();
+
+			ProcessRuntimeData();
 		}
 
 		// nodes
-		public Node GetNode ( string uid )
-			=> nodes[uid];
+		public Node GetNode ( string uid ) {
+			if ( !nodes.TryGetValue( uid, out var node ) ) {
+				UnityEngine.Debug.LogError( $"Graph.Database.GetNode(): Node not found for uid: {uid}" );
+			}
+			return node;
+		}
 		public List<Node> GetNodes ( IEnumerable<string> uids )
 			=> uids.Convert( uid => GetNode( uid ) );
 		public string CreateNode () {
@@ -82,8 +88,18 @@ namespace Graph {
 		}
 		public void UpdateNodeValue<T> ( string uid, T value ) {
 
-			var node = GetNode( uid ) as IEditableNode<T>;
-			node.SetValue( value );
+			var node = GetNode( uid );
+			if ( node == null ) {
+				return;
+			}
+
+			var editableNode = node as IEditableNode<T>;
+			if ( editableNode == null ) {
+				UnityEngine.Debug.LogError( $"Graph.Database.UpdateNodeValue(): Node {uid} not of expected type {typeof( T )}" );
+				return;
+			}
+
+			editableNode.SetValue( value );
 
 			Event<string>.Fire(
 				@event: OnNodeUpdated,
@@ -229,6 +245,7 @@ namespace Graph {
 		public void DeleteRelationType ( string uid ) {
 
 			// TODO: what should happen here
+			_linkUIDsByType.Remove( uid );
 			Event<string>.Fire(
 				@event: OnRelationTypeDeleted,
 				value: uid,
@@ -269,8 +286,9 @@ namespace Graph {
 
 		[JsonIgnore] protected Dictionary<string, HashSet<string>> _linkUIDsByType;
 
-		[OnDeserialized] private void OnAfterDeserialize ( StreamingContext context ) => ProcessAfterDeserialization();
-		protected virtual void ProcessAfterDeserialization () {
+		[OnDeserialized] private void OnAfterDeserialize ( StreamingContext context ) => ProcessRuntimeData();
+
+		protected virtual void ProcessRuntimeData () {
 
 			TrackLinksByType();
 		}
@@ -281,9 +299,6 @@ namespace Graph {
 				_linkUIDsByType[uid] = new HashSet<string>();
 			} );
 			_linkUIDsByType["null"] = new HashSet<string>();
-			foreach ( var relationType in relationTypes.Keys ) {
-				_linkUIDsByType[relationType] = new HashSet<string>();
-			}
 
 			// populate hashset with link UIDs
 			foreach ( var pair in links ) {

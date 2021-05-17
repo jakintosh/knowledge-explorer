@@ -1,65 +1,87 @@
-using Framework;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Explorer.View {
 
 	public abstract class View : MonoBehaviour {
 
-		// override to implement
-		protected abstract void Init ();
-
-		// to init other views
-		protected void InitView ( View view ) {
-			if ( view == null ) {
-				Debug.LogError( $"View: Cannot initialize null instance of {view.GetType()}" );
-			}
-			view.Init();
-		}
-		protected void InitView<TView, TData> ( TView view, TData data ) where TView : IViewInit<TData> {
-			if ( view == null ) {
-				Debug.LogError( $"View: Cannot initialize null instance of {view.GetType()}" );
-			}
-			view.InitFrom( data );
-		}
-	}
-
-	public interface IViewInit<T> {
-		void InitFrom ( T data );
-	}
-
-	public abstract class View<T> : View, IViewInit<T> {
-
-		void IViewInit<T>.InitFrom ( T data ) => this.InitFrom( data );
-
-		protected abstract void InitFrom ( T data );
-		public abstract T GetInitData ();
-	}
-
-	public abstract class RootView : View {
-
-		private void Awake () {
-			Init();
-		}
-	}
-
-
-	public class Anchor {
-
-		public UnityEvent<Float3> OnPositionChange = new UnityEvent<Float3>();
-
-		public Float3 Position;
-
-		private Observable<Float3> _position;
-
 		public void Init () {
 
-			_position = new Observable<Float3>(
-				initialValue: Float3.Zero,
-				onChange: position => {
-					OnPositionChange?.Invoke( position );
-				}
-			);
+			if ( !_isInitialized ) {
+				OnInitialize();
+				_isInitialized = true;
+			} else {
+				Debug.LogWarning( $"View.Init(): Object \"{name}\" tried to init more than once" );
+			}
 		}
+
+		private void OnApplicationQuit () {
+
+			_isQuitting = true;
+		}
+		private void OnDestroy () {
+
+			if ( _isInitialized && !_isQuitting ) {
+				OnCleanup();
+			}
+		}
+
+		protected abstract void OnInitialize ();
+		protected abstract void OnCleanup ();
+
+		private bool _isInitialized;
+		private bool _isQuitting;
 	}
+
+	public abstract class ReuseableView<T> : MonoBehaviour {
+
+		public void InitWith ( T data ) {
+
+			if ( !_isInitialized ) {
+				OnInitialize();
+				_isInitialized = true;
+			} else {
+				OnRecycle();
+			}
+			OnPopulate( data );
+		}
+		public abstract T GetState ();
+
+		private void OnApplicationQuit () {
+
+			_isQuitting = true;
+		}
+		private void OnDestroy () {
+
+			if ( _isInitialized && !_isQuitting ) {
+				OnRecycle();
+			}
+		}
+
+		protected abstract void OnInitialize ();
+		protected abstract void OnPopulate ( T data );
+		protected abstract void OnRecycle ();
+
+		private bool _isInitialized;
+		private bool _isQuitting;
+	}
+
+
+	// public class Anchor {
+
+	// 	public UnityEvent<Float3> OnPositionChange = new UnityEvent<Float3>();
+
+	// 	public Float3 Position;
+
+	// 	private Observable<Float3> _position;
+
+	// 	public void Init () {
+
+	// 		_position = new Observable<Float3>(
+	// 			initialValue: Float3.Zero,
+	// 			onChange: position => {
+	// 				OnPositionChange?.Invoke( position );
+	// 			}
+	// 		);
+	// 	}
+	// }
 }

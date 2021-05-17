@@ -69,7 +69,6 @@ namespace Explorer.View {
 				initialValue: Color.magenta,
 				onChange: color => {
 					_colorImage.color = color;
-					Debug.Log( $"Setting color to {color.ToString()}" );
 				}
 			);
 		}
@@ -79,10 +78,8 @@ namespace Explorer.View {
 			_name.Set( data.Name );
 
 			// parse color
-			Debug.Log( $"ReceiveData data {data.UID} - {data.Color?.ToString()}" );
 			if ( ColorUtility.TryParseHtmlString( data.Color, out var color ) ) {
 				_color.Set( color );
-				Debug.Log( $"Parse data {data.UID} - {color.ToString()}" );
 			};
 
 		}

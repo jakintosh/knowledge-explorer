@@ -39,46 +39,32 @@ namespace Knowledge {
 		// Initialization
 		public Graph () {
 
-			UnityEngine.Debug.Log( "First Init" );
-
 			graph = new GraphDatabase();
+			relationTypeMetadata = new Dictionary<string, Metadata.RelationType>();
+
 			titleRelationTypeUID = graph.CreateRelationType( name: "Title" );
-			bodyRelationTypeUID = graph.CreateRelationType( name: "Description" );
+			relationTypeMetadata.Add( titleRelationTypeUID, new Metadata.RelationType() );
+			bodyRelationTypeUID = graph.CreateRelationType( name: "Body" );
+			relationTypeMetadata.Add( bodyRelationTypeUID, new Metadata.RelationType() );
 
 			SubscribeToEvents( graph );
 		}
-		[JsonConstructor]
-		public Graph ( GraphDatabase graph, string titleRelationTypeUID, string bodyRelationTypeUID ) {
+		public void Initialize ( string uid ) {
 
-			UnityEngine.Debug.Log( "Json Init" );
+			this.uid = uid;
+		}
+		[JsonConstructor] // so that we don't "create" the graph every time it's deserialized
+		public Graph ( string uid, GraphDatabase graph, string titleRelationTypeUID, string bodyRelationTypeUID ) {
 
+			this.uid = uid;
 			this.graph = graph;
 			this.titleRelationTypeUID = titleRelationTypeUID;
 			this.bodyRelationTypeUID = bodyRelationTypeUID;
 
 			SubscribeToEvents( this.graph );
 		}
-		public void Initialize ( string uid ) {
-
-			this.uid = uid;
-		}
 
 		// Concepts
-		public string NewConcept ( string title = null ) {
-
-			// ensure no null titles make it in
-			if ( title == null ) {
-				title = GetEmptyTitle();
-			}
-
-			var rootUID = graph.CreateNode();
-			var titleUID = graph.CreateNode( title );
-			var descriptionUID = graph.CreateNode( "" );
-			graph.CreateLink( rootUID, titleRelationTypeUID, titleUID );
-			graph.CreateLink( rootUID, bodyRelationTypeUID, descriptionUID );
-
-			return rootUID;
-		}
 		public string GetConceptTitle ( string conceptUID ) {
 
 			var results = QueryFromConcept( conceptUID )
@@ -101,21 +87,31 @@ namespace Knowledge {
 				return "{ERROR}";
 			}
 		}
-		public void SetConceptTitle ( string conceptUID, string title ) {
+		public string CreateConcept ( string title = null ) {
+
+			var rootUID = graph.CreateNode();
+			var titleUID = graph.CreateNode( title ?? rootUID );
+			var descriptionUID = graph.CreateNode( "" );
+			graph.CreateLink( rootUID, titleRelationTypeUID, titleUID );
+			graph.CreateLink( rootUID, bodyRelationTypeUID, descriptionUID );
+
+			return rootUID;
+		}
+		public void UpdateConceptTitle ( string conceptUID, string title ) {
 
 			var node = graph.GetNode( conceptUID );
 			var titleLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == titleRelationTypeUID ).First();
 			var titleNode = graph.GetNode( titleLink.ToUID ) as Node<string>;
 			var oldTitle = titleNode.Value;
 			if ( oldTitle == title ) { return; }
-			graph.UpdateNodeValue( conceptUID, title );
+			graph.UpdateNodeValue( titleNode.UID, title );
 		}
-		public void SetConceptBody ( string conceptUID, string body ) {
+		public void UpdateConceptBody ( string conceptUID, string body ) {
 
 			var node = graph.GetNode( conceptUID );
 			var bodyLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == bodyRelationTypeUID ).First();
 			var bodyNode = graph.GetNode( bodyLink.ToUID ) as Node<string>;
-			graph.UpdateNodeValue( conceptUID, body );
+			graph.UpdateNodeValue( bodyNode.UID, body );
 		}
 
 		// Links
@@ -126,7 +122,7 @@ namespace Knowledge {
 			var equal = ( link as IEquatable<Link> ).Equals( link2 );
 			return graph.GetLink( linkUID );
 		}
-		public List<Link> GetLinksFromConcept ( string conceptUID ) {
+		public List<Link> GetConceptLinks ( string conceptUID ) {
 
 			var node = graph.GetNode( conceptUID );
 			var links = graph
@@ -135,7 +131,7 @@ namespace Knowledge {
 
 			return links;
 		}
-		public List<Link> GetBacklinksFromConcept ( string conceptUID ) {
+		public List<Link> GetConceptBacklinks ( string conceptUID ) {
 
 			var node = graph.GetNode( conceptUID );
 			var links = graph.GetLinks( node.BacklinkUIDs );
@@ -162,11 +158,12 @@ namespace Knowledge {
 		[JsonIgnore] public IReadOnlyDictionary<string, RelationType> AllRelationTypes => graph.GetAllRelationTypes();
 		public RelationType GetRelationType ( string relationTypeUID ) {
 
-			return graph.GetRelationType( relationTypeUID );
+			return relationTypeUID != null ? graph.GetRelationType( relationTypeUID ) : null;
 		}
 		public void NewRelationType ( string name ) {
 
-			graph.CreateRelationType( name );
+			var uid = graph.CreateRelationType( name );
+			relationTypeMetadata.Add( uid, new Metadata.RelationType() );
 		}
 		public void UpdateRelationTypeName ( string relationTypeUID, string name ) {
 
@@ -175,7 +172,14 @@ namespace Knowledge {
 		public void DeleteRelationType ( string relationTypeUID ) {
 
 			graph.DeleteRelationType( relationTypeUID );
+			relationTypeMetadata.Remove( relationTypeUID );
 		}
+		public Metadata.RelationType GetMetadataForRelationType ( string resourceUid ) {
+			if ( resourceUid == null ) { return null; }
+			return relationTypeMetadata.TryGetValue( resourceUid, out var metadata ) ? metadata : null;
+		}
+		public void SetMetadataForRelationType ( string resourceUid, Metadata.RelationType metadata )
+			=> relationTypeMetadata[resourceUid] = metadata;
 
 		// Queries
 		public Query QueryFromConcept ( string conceptUID ) => Query.WithGraph( graph ).FromNode( conceptUID );
@@ -215,6 +219,7 @@ namespace Knowledge {
 
 		// internal data
 		[JsonProperty] private GraphDatabase graph = null;
+		[JsonProperty] private Dictionary<string, Metadata.RelationType> relationTypeMetadata = null;
 		[JsonProperty] private string uid = null;
 		[JsonProperty] private string titleRelationTypeUID = null;
 		[JsonProperty] private string bodyRelationTypeUID = null;

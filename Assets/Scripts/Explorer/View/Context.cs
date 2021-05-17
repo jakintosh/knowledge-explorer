@@ -9,45 +9,73 @@ namespace Explorer.View {
 		View that represents a full "instance" of the application. To follow
 		changes to a new context, there should be a new instance of a context.
 	*/
-	public class Context : View<Client.Context> {
+	public class Context : ReuseableView<Client.Context> {
+
 
 		[Header( "UI Controls" )]
 		[SerializeField] private WorkspaceBrowser _workspaceBrowser = null;
 		[SerializeField] private RelationTypeBrowser _relationTypeBrowser = null;
+		[SerializeField] private GraphToolbar _graphToolbar = null;
 
 		[Header( "UI Display" )]
 		[SerializeField] private GraphViewport _graphViewport = null;
 
-		// view model data
-		private Observable<Model.View.Workspace> _workspace;
-		private Observable<Knowledge.Graph> _graph;
+		// data
+		private Client.Context _context;
+		private Observable<Client.ContextState> _contextState;
 
-		protected override void InitFrom ( Client.Context context ) {
+		// view lifecycle
+		public override Client.Context GetState () {
+			return _context;
+		}
+		protected override void OnInitialize () {
 
 			// init subviews
-			InitView( _workspaceBrowser );
-			InitView( _relationTypeBrowser );
-			InitView( _graphViewport );
+			_workspaceBrowser.Init();
+			_graphToolbar.Init();
 
-			// listen for context changes
-			context.OnContextModified += context => {
+			// init observables
+			_contextState = new Observable<Client.ContextState>(
+				initialValue: Client.ContextState.Null,
+				onChange: contextState => {
+					_workspaceBrowser.SetActiveWorkspace( contextState.Workspace );
+					_relationTypeBrowser.InitWith( contextState.Workspace );
+					_graphViewport.InitWith( contextState.Workspace?.GraphViewport );
+				}
+			);
 
-				_workspaceBrowser.SetActiveWorkspace(
-					workspace: context.Workspace
-				);
-				_relationTypeBrowser.SetContext(
-					workspace: context.Workspace,
-					graph: context.Graph
-				);
-				_graphViewport.SetContext(
-					workspace: context.Workspace,
-					graph: context.Graph
-				);
-			};
+			// sub to controls
+			_graphToolbar.OnNewItem.AddListener( () => {
+				Debug.Log( "Toolbar: New Item" );
+				var graphUid = _context.State.Workspace?.GraphUID;
+				_graphViewport.NewConcept( graphUid );
+			} );
+			_graphToolbar.OnSave.AddListener( () => {
+				Debug.Log( "Toolbar: Save" );
+				var workspace = _context.State.Workspace;
+				if ( workspace == null ) { return; }
+				workspace.GraphViewport = _graphViewport.GetState();
+			} );
 		}
-		protected override void Init () { throw new System.NotImplementedException(); }
-		public override Client.Context GetInitData () { throw new System.NotImplementedException(); }
+		protected override void OnPopulate ( Client.Context context ) {
 
+			if ( context == null ) {
+				throw new System.NullReferenceException( message: "View.Context.OnPopulate: Tried to populate with null context." );
+			}
+
+			Debug.Log( $"View.Context: OnPopulate(uid: {context.UID})" );
+
+			_context = context;
+			_workspaceBrowser.SetCurrentContextUID( context.UID );
+
+			// context state
+			_contextState.Set( _context.State );
+			_context.OnContextStateModified += _contextState.Set;
+		}
+		protected override void OnRecycle () {
+
+			_context.OnContextStateModified -= _contextState.Set;
+		}
 	}
 
 }

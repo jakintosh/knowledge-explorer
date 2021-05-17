@@ -1,6 +1,7 @@
 using Framework;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace Explorer.View {
 
@@ -19,7 +20,7 @@ namespace Explorer.View {
 		- Free / Docked / Anchored
 		- Show Label (bool)
 	*/
-	public class Link : View {
+	public class Link : ReuseableView<Model.Link> {
 
 		/*
 			really these concept views and points just want a scene anchor,
@@ -33,13 +34,6 @@ namespace Explorer.View {
 			Free,
 			Docked,
 			Anchored
-		}
-
-		public void SetModel ( Model.View.Relationship model ) {
-
-			// what state am i in
-			// how do i resolve connected views from last session
-
 		}
 
 		public void SetSource ( Concept source ) {
@@ -69,19 +63,36 @@ namespace Explorer.View {
 		[SerializeField] private Button _typeLabelButton;
 
 		[Header( "UI Display" )]
+		[SerializeField] private Transform _buttonCanvas;
+		[SerializeField] private Image _backgroundImage;
+		[SerializeField] private TextMeshProUGUI _titleLabel;
 		[SerializeField] private LineRenderer _lineRenderer;
 
 		[Header( "UI Assets" )]
 		[SerializeField] private Color _sourceColor;
 		[SerializeField] private Color _destColor;
+		[SerializeField] private ContextMenu _contextMenuPrefab;
+
+		private Model.Link _linkModel;
 
 		private Observable<State> _state;
 		private Observable<Concept> _sourceConceptView;
 		private Observable<Concept> _destinationConceptView;
 		private Observable<Float3> _startPoint;
 		private Observable<Float3> _endPoint;
+		private Observable<bool> _selected;
 
-		protected override void Init () {
+		// view lifecycle
+		public override Model.Link GetState () {
+
+			return new Model.Link(
+				graphUid: _linkModel.GraphUID,
+				linkUid: _linkModel.LinkUID
+			);
+		}
+		protected override void OnInitialize () {
+
+			_lineRenderer.textureMode = LineTextureMode.Tile;
 
 			_state = new Observable<State>(
 				initialValue: State.Free,
@@ -114,7 +125,7 @@ namespace Explorer.View {
 					var positions = GetPositions( startPoint.ToVector3(), _endPoint?.Get().ToVector3() ?? Vector3.zero );
 					_lineRenderer.SetPositions( positions );
 					_lineRenderer.positionCount = positions.Length;
-					_typeLabelButton.transform.position = positions[0] + ( ( positions[positions.Length - 1] - positions[0] ) / 2f );
+					_buttonCanvas.position = positions[0] + ( ( positions[positions.Length - 1] - positions[0] ) / 2f );
 				}
 			);
 			_endPoint = new Observable<Float3>(
@@ -123,10 +134,83 @@ namespace Explorer.View {
 					var positions = GetPositions( _startPoint?.Get().ToVector3() ?? Vector3.zero, endPoint.ToVector3() );
 					_lineRenderer.SetPositions( positions );
 					_lineRenderer.positionCount = positions.Length;
-					_typeLabelButton.transform.position = positions[0] + ( ( positions[positions.Length - 1] - positions[0] ) / 2f );
+					_buttonCanvas.position = positions[0] + ( ( positions[positions.Length - 1] - positions[0] ) / 2f );
 				}
 			);
+			_selected = new Observable<bool>(
+				initialValue: false,
+				onChange: selected => {
+
+				}
+			);
+
+			_typeLabelButton.onClick.AddListener( () => {
+
+				var contextMenu = Instantiate<ContextMenu>(
+						original: _contextMenuPrefab,
+						parent: transform,
+						worldPositionStays: false );
+
+				contextMenu.transform.position = _typeLabelButton.transform.position + _typeLabelButton.transform.forward * -0.1f;
+
+				var graph = Client.Application.Resources.Graphs.Get( _linkModel.GraphUID );
+
+				contextMenu.InitWith(
+					new Model.ContextMenu(
+						graph
+							.AllRelationTypes
+							.ConvertToList( ( _, relType ) =>
+								new Model.ContextAction(
+									name: relType.Name,
+									action: () => {
+										graph.UpdateLinkType( _linkModel.LinkUID, relType.UID );
+										Destroy( contextMenu.gameObject );
+										this.InitWith( _linkModel );
+									}
+								)
+							)
+							.ToArray()
+				) );
+			} );
 		}
+		protected override void OnPopulate ( Model.Link linkModel ) {
+
+			_linkModel = linkModel;
+			// what state am i in
+			// how do i resolve connected views from last session
+			var graph = Client.Application.Resources.Graphs.Get( linkModel.GraphUID );
+			if ( graph == null ) { return; }
+			var link = graph.GetLink( linkModel.LinkUID );
+			if ( link == null ) { return; }
+
+			Debug.Log( $"View.Link.OnPopulate: link = {link.ToString()}" );
+
+			var relType = graph.GetRelationType( link.TypeUID );
+			var metadata = graph.GetMetadataForRelationType( link.TypeUID );
+
+			if ( relType == null ) {
+
+				_titleLabel.text = "Undefined";
+				_backgroundImage.color = Color.magenta;
+
+			} else {
+
+				Debug.Log( $"View.Link.OnPopulate: relType = {relType.ToString()}" );
+				Debug.Log( $"View.Link.OnPopulate: relTypeMetadata = {metadata.ToString()}" );
+
+				// set name
+				_titleLabel.text = graph.GetRelationType( link.TypeUID ).Name;
+
+				// set color
+				var colorString = graph.GetMetadataForRelationType( link.TypeUID ).Display.HexColor;
+				if ( ColorUtility.TryParseHtmlString( colorString, out var color ) ) {
+					_backgroundImage.color = color;
+				}
+			}
+
+
+		}
+		protected override void OnRecycle () { }
 
 		private void Update () {
 
@@ -182,6 +266,7 @@ namespace Explorer.View {
 			}
 			return positions;
 		}
+
 	}
 
 }

@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 using Presence = Explorer.View.PresenceControl;
 
-namespace Explorer.Model.View {
+namespace Explorer.View.Model {
 
 	public class Concept {
 
@@ -20,15 +20,13 @@ namespace Explorer.Model.View {
 			this.position = position;
 			this.size = size;
 		}
-
-		public static Concept Default ( string graphUid, string nodeUid )
-			=> new Concept(
+		public static Concept Default ( string graphUid, string nodeUid ) =>
+			new Concept(
 				graphUid: graphUid,
 				nodeUid: nodeUid,
 				position: Float3.Zero,
 				size: Presence.Sizes.Expanded
 			);
-
 
 		// private data
 		[JsonProperty] private string graphUid;

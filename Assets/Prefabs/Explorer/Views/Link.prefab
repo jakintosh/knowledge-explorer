@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1138835609603538244}
   - component: {fileID: 1138835609603538245}
   m_Layer: 0
-  m_Name: Relationship
+  m_Name: Link
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -46,9 +46,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _typeLabelButton: {fileID: 8583625087621563108}
+  _buttonCanvas: {fileID: 9010989949655290999}
+  _backgroundImage: {fileID: 3516596954564987590}
+  _titleLabel: {fileID: 2395552977788737656}
   _lineRenderer: {fileID: 1138835609603538245}
   _sourceColor: {r: 0.06666667, g: 0.58431375, b: 0.9372549, a: 1}
   _destColor: {r: 0.06666667, g: 0.9372549, b: 0.13333334, a: 1}
+  _contextMenuPrefab: {fileID: 2235149642854619586, guid: f65064fd1a77e4151a88ed63033ea1bb, type: 3}
 --- !u!120 &1138835609603538245
 LineRenderer:
   m_ObjectHideFlags: 0
@@ -68,7 +72,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: b1215e704573e4ca4a36c094fbf0a7f8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -239,8 +243,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10.58
-  m_fontSizeBase: 10.58
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -357,7 +361,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 5
+  m_PixelsPerUnitMultiplier: 4
 --- !u!114 &8583625087621563108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,7 +433,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8086436192101476147}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0.05}
   m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_Children:
   - {fileID: 5609392283779920370}
@@ -439,7 +443,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 80, y: 20}
+  m_SizeDelta: {x: 96, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &6451922550305479389
 Canvas:

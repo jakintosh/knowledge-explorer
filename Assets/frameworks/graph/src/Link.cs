@@ -22,6 +22,10 @@ namespace Graph {
 		}
 
 
+		public override string ToString () {
+			return $"Graph.Link {{\n    uid: {UID},\n    TypeUID: {TypeUID},\n    FromUID: {FromUID},\n    ToUID: {ToUID}\n}}";
+		}
+
 		// ********** IEditableLink **********
 
 		void IEditableLink.SetTypeUID ( string typeUID ) => TypeUID = typeUID;

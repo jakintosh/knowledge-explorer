@@ -57,8 +57,12 @@ namespace Framework {
 		protected override void SetValue ( IList<T> value, Func<IList<T>> get, Action<IList<T>> set ) {
 
 			if ( value != null ) {
-				if ( get() == null ) { set( new List<T>() ); }
+
 				var list = get();
+				if ( list == null ) {
+					list = new List<T>();
+					set( list );
+				}
 				list.Clear();
 				foreach ( var v in value ) { list.Add( v ); }
 			} else {
@@ -84,10 +88,57 @@ namespace Framework {
 		protected override void SetValue ( HashSet<T> value, Func<HashSet<T>> get, Action<HashSet<T>> set ) {
 
 			if ( value != null ) {
-				if ( get() == null ) { set( new HashSet<T>() ); }
 				var hashSet = get();
+				if ( hashSet == null ) {
+					hashSet = new HashSet<T>();
+					set( hashSet );
+				}
 				hashSet.Clear();
 				hashSet.UnionWith( value );
+			} else {
+				set( null );
+			}
+		}
+	}
+
+
+	[Serializable]
+	public class DictionaryObservable<K, V> : Observable<Dictionary<K, V>>
+		where K : IEquatable<K>
+		where V : IEquatable<V> {
+
+		public DictionaryObservable ( Dictionary<K, V> initialValue, Action<Dictionary<K, V>> onChange )
+			: base( initialValue, onChange ) { }
+
+		protected override bool CheckEquality ( Dictionary<K, V> a, Dictionary<K, V> b ) {
+
+			if ( a != null && b != null ) {
+				if ( a.Count == b.Count && a.Keys.All( b.Keys.Contains ) ) {
+					foreach ( var kvp in a ) {
+						var value = kvp.Value;
+						var other = b[kvp.Key];
+						if ( !value.Equals( other ) ) {
+							return false;
+						}
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+			return ( a == null && b == null );
+		}
+		protected override void SetValue ( Dictionary<K, V> value, Func<Dictionary<K, V>> get, Action<Dictionary<K, V>> set ) {
+
+			if ( value != null ) {
+
+				var dictionary = get();
+				if ( dictionary == null ) {
+					dictionary = new Dictionary<K, V>();
+					set( dictionary );
+				}
+				dictionary.Clear();
+				value.ForEach( ( k, v ) => dictionary[k] = v );
 			} else {
 				set( null );
 			}
