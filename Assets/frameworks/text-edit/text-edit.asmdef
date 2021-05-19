@@ -1,0 +1,17 @@
+{
+    "name": "text-edit",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7a60cbec7ea824ffcb244d0126240d40",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
