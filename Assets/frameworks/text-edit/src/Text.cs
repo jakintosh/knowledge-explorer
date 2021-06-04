@@ -1,4 +1,3 @@
-using Framework;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -19,47 +18,69 @@ namespace TextEdit {
 			Right
 		}
 
+		public enum ScrollType {
+			Natural = -1,
+			Wrong = 1
+		}
+
 		private static int NULL_WIDTH_SPACE_ASCII_CODE = 8203;
 
 		[Serializable]
 		public struct Span : IEquatable<Span> {
 
-			public int Min { get; private set; }
-			public int Max { get; private set; }
-			public int Length => Max - Min;
+			public int Min => min;
+			public int Max => max;
+			public int Length => max - min;
 
-			public bool Equals ( Span other ) => Min.Equals( other.Min ) && Max.Equals( other.Max );
-			public bool IsValid () => Min >= 0 && Max >= 0;
-			public bool Contains ( int i ) => i >= Min && i <= Max;
+			public bool Equals ( Span other ) => min.Equals( other.min ) && max.Equals( other.max );
+			public bool IsValid () => min >= 0 && max >= 0;
+			public bool Contains ( int i ) => i >= min && i <= max;
+
+			public static Span Invalid => new Span( -1, -1 );
 
 			public Span ( int a, int b ) {
 
-				Min = a < b ? a : b;
-				Max = a > b ? a : b;
+				min = a < b ? a : b;
+				max = a > b ? a : b;
 			}
+
+			// backing data
+			[SerializeField] private int min;
+			[SerializeField] private int max;
 		}
 
 		[Serializable]
-		public struct Bounds {
+		public struct Bounds : IEquatable<Bounds> {
 
-			public float Left { get; private set; }
-			public float Right { get; private set; }
-			public float Center => Left + ( Width / 2f );
-			public float Width => Right - Left;
+			public float Top => top;
+			public float Bottom => bottom;
+			public float Middle => bottom + ( Height / 2f );
+			public float Height => top - bottom;
 
-			public float Top { get; private set; }
-			public float Bottom { get; private set; }
-			public float Middle => Bottom + ( Height / 2f );
-			public float Height => Top - Bottom;
+			public float Left => left;
+			public float Right => right;
+			public float Center => left + ( Width / 2f );
+			public float Width => right - left;
 
-			public bool Contains ( Vector2 point ) => point.x > Left && point.x < Right && point.y < Top && point.y > Bottom;
+			public Vector2 TopLeft => new Vector2( left, top );
+			public Vector2 TopCenter => new Vector2( Center, top );
+			public Vector2 TopRight => new Vector2( right, top );
+			public Vector2 MiddleLeft => new Vector2( left, Middle );
+			public Vector2 MiddleCenter => new Vector2( Center, Middle );
+			public Vector2 MiddleRight => new Vector2( right, Middle );
+			public Vector2 BottomLeft => new Vector2( left, bottom );
+			public Vector2 BottomCenter => new Vector2( Center, bottom );
+			public Vector2 BottomRight => new Vector2( right, bottom );
 
-			public Bounds ( float top, float bottom, float left, float right ) {
+			public bool Equals ( Bounds other ) => TopLeft.Equals( other.TopLeft ) && BottomRight.Equals( other.BottomRight );
+			public bool Contains ( Vector2 point ) => point.x >= Left && point.x <= Right && point.y <= Top && point.y >= Bottom;
 
-				Top = top;
-				Bottom = bottom;
-				Left = left;
-				Right = right;
+			public Bounds ( float top = 0f, float bottom = 0f, float left = 0f, float right = 0f ) {
+
+				this.top = top;
+				this.bottom = bottom;
+				this.left = left;
+				this.right = right;
 			}
 			public static Bounds FromRect ( Rect rect ) =>
 				new Bounds(
@@ -68,21 +89,71 @@ namespace TextEdit {
 					left: rect.xMin,
 					right: rect.xMax
 				);
-		}
+			public static Bounds Zero => new Bounds( 0, 0, 0, 0 );
 
-		[Serializable]
-		public struct CharacterInfo {
+			public Bounds Duplicate ()
+				=> new Bounds( top, bottom, left, right );
+			public Bounds ApplyPadding ( Bounds? padding ) {
 
-			public char Character { get; private set; }
-			public Bounds Extents { get; private set; }
-			public Bounds Margin { get; private set; }
+				if ( !padding.HasValue ) {
+					return this;
+				}
 
-			public CharacterInfo ( char character, Bounds margin, Bounds extents ) {
-
-				Character = character;
-				Margin = margin;
-				Extents = extents;
+				top -= padding.Value.top;
+				bottom += padding.Value.bottom;
+				left += padding.Value.left;
+				right -= padding.Value.right;
+				return this;
 			}
+			public Bounds ApplyOffset ( Vector2? offset ) {
+
+				if ( !offset.HasValue ) {
+					return this;
+				}
+
+				top += offset.Value.y;
+				bottom += offset.Value.y;
+				right += offset.Value.x;
+				left += offset.Value.x;
+				return this;
+			}
+			public Vector3 Clamp ( Vector3 vector )
+				=> new Vector3(
+					x: vector.x.ClampedBetween( Left, Right ),
+					y: vector.y.ClampedBetween( Bottom, Top ),
+					z: 0
+				);
+
+			public void DrawGizmos ( Transform container, Color color ) {
+
+				var bounds = this;
+				// if ( offset.HasValue ) {
+				// 	bounds = this.Duplicate();
+				// 	bounds.top += offset.Value.y;
+				// 	bounds.bottom += offset.Value.y;
+				// 	bounds.left += offset.Value.x;
+				// 	bounds.right += offset.Value.x;
+				// }
+
+				var topLeft = container.TransformPoint( bounds.TopLeft );
+				var topRight = container.TransformPoint( bounds.TopRight );
+				var bottomLeft = container.TransformPoint( bounds.BottomLeft );
+				var bottomRight = container.TransformPoint( bounds.BottomRight );
+
+				var oldColor = Gizmos.color;
+				Gizmos.color = color;
+				Gizmos.DrawLine( topLeft, topRight );
+				Gizmos.DrawLine( topLeft, bottomLeft );
+				Gizmos.DrawLine( topRight, bottomRight );
+				Gizmos.DrawLine( bottomLeft, bottomRight );
+				Gizmos.color = oldColor;
+			}
+
+			// backing data
+			[SerializeField] private float top;
+			[SerializeField] private float bottom;
+			[SerializeField] private float left;
+			[SerializeField] private float right;
 		}
 
 		[Serializable]
@@ -99,6 +170,111 @@ namespace TextEdit {
 				Extents = extents;
 				CharacterSpan = chars;
 				CaretSpan = carets;
+			}
+
+			public LineInfo After ( int numChars, int numCarets ) {
+
+				var lineMargin = new Bounds(
+					top: Extents.Bottom,
+					bottom: Extents.Bottom - Margin.Height,
+					left: Margin.Left,
+					right: Margin.Right
+				);
+				var lineExtents = new Bounds(
+					top: Extents.Bottom,
+					bottom: Extents.Bottom - Extents.Height,
+					left: Extents.Left,
+					right: Extents.Right
+				);
+				var lineCharacterSpan = new Span(
+					a: CharacterSpan.Max + 1,
+					b: CharacterSpan.Max + numChars
+				);
+				var lineCaretSpan = new Span(
+					a: CaretSpan.Max + 1,
+					b: CaretSpan.Max + numCarets
+				);
+
+				return new LineInfo(
+					margin: lineMargin,
+					extents: lineExtents,
+					chars: lineCharacterSpan,
+					carets: lineCaretSpan
+				);
+			}
+		}
+
+		[Serializable]
+		public struct WordInfo {
+
+			public int LineIndex { get; private set; }
+			public Span CharacterSpan { get; private set; }
+			public Span CaretSpan { get; private set; }
+
+			public int CaretIndexBefore => CaretSpan.Min;
+			public int CaretIndexAfter => CaretSpan.Max;
+
+			public WordInfo ( int lineIndex, Span chars, Span carets ) {
+
+				LineIndex = lineIndex;
+				CharacterSpan = chars;
+				CaretSpan = carets;
+			}
+
+
+			public void DrawGizmos_Carets ( CaretInfo[] carets, Transform container, Color color, Vector3? offset = null ) {
+
+				carets[CaretIndexBefore].Target.Duplicate().ApplyPadding( new Bounds( 0, 0, -0.25f, -0.25f ) ).ApplyOffset( offset ).DrawGizmos( container, color );
+				carets[CaretIndexAfter].Target.Duplicate().ApplyPadding( new Bounds( 0, 0, -0.25f, -0.25f ) ).ApplyOffset( offset ).DrawGizmos( container, color );
+			}
+			public void DrawGizmos_Extents ( CharacterInfo[] characters, Transform container, Color color, Vector3? offset = null ) {
+
+				var off = offset.HasValue ? (Vector2)offset.Value : Vector2.zero;
+				var topLeft = container.TransformPoint( characters[CharacterSpan.Min].Extents.TopLeft + off );
+				var topRight = container.TransformPoint( characters[CharacterSpan.Max].Extents.TopRight + off );
+				var bottomLeft = container.TransformPoint( characters[CharacterSpan.Min].Extents.BottomLeft + off );
+				var bottomRight = container.TransformPoint( characters[CharacterSpan.Max].Extents.BottomRight + off );
+
+				var oldColor = Gizmos.color;
+				Gizmos.color = color;
+				Gizmos.DrawLine( topLeft, topRight );
+				Gizmos.DrawLine( topLeft, bottomLeft );
+				Gizmos.DrawLine( topRight, bottomRight );
+				Gizmos.DrawLine( bottomLeft, bottomRight );
+				Gizmos.color = oldColor;
+			}
+			public void DrawGizmos_Margins ( CharacterInfo[] characters, Transform container, Color color, Vector3? offset = null ) {
+
+				var off = offset.HasValue ? (Vector2)offset.Value : Vector2.zero;
+				var topLeft = container.TransformPoint( characters[CharacterSpan.Min].Margin.TopLeft + off );
+				var topRight = container.TransformPoint( characters[CharacterSpan.Max].Margin.TopRight + off );
+				var bottomLeft = container.TransformPoint( characters[CharacterSpan.Min].Margin.BottomLeft + off );
+				var bottomRight = container.TransformPoint( characters[CharacterSpan.Max].Margin.BottomRight + off );
+
+				var oldColor = Gizmos.color;
+				Gizmos.color = color;
+				Gizmos.DrawLine( topLeft, topRight );
+				Gizmos.DrawLine( topLeft, bottomLeft );
+				Gizmos.DrawLine( topRight, bottomRight );
+				Gizmos.DrawLine( bottomLeft, bottomRight );
+				Gizmos.color = oldColor;
+			}
+		}
+
+		[Serializable]
+		public struct CharacterInfo {
+
+			public char Character { get; private set; }
+			public int CharacterInt { get; private set; }
+			public Bounds Extents { get; private set; }
+			public Bounds Margin { get; private set; }
+
+			public CharacterInfo ( char character, Bounds margin, Bounds extents ) {
+
+				Character = character;
+				CharacterInt = Convert.ToInt32( character );
+				Margin = margin;
+				Extents = extents;
 			}
 		}
 
@@ -117,6 +293,135 @@ namespace TextEdit {
 				HitBox = hitBox;
 				Target = target;
 			}
+
+			public CaretInfo After ( float right, float target ) {
+
+				var caretHitBox = new Bounds(
+					top: HitBox.Top,
+					bottom: HitBox.Bottom,
+					left: HitBox.Right,
+					right: right
+				);
+				return InContainer(
+					container: caretHitBox,
+					charIndex: CharIndex + 1,
+					lineIndex: LineIndex,
+					target: target
+				);
+			}
+			public static CaretInfo InContainer ( Bounds container, int charIndex, int lineIndex, float left, float right, float target ) {
+
+				var caretHitBox = new Bounds(
+					top: container.Top,
+					bottom: container.Bottom,
+					left: left,
+					right: right
+				);
+				return CaretInfo.InContainer(
+					container: caretHitBox,
+					charIndex: charIndex,
+					lineIndex: lineIndex,
+					target: target
+				);
+			}
+			public static CaretInfo InContainer ( Bounds container, int charIndex, int lineIndex, float target ) {
+
+				var caretTarget = new Bounds(
+					top: container.Top,
+					bottom: container.Bottom,
+					left: target,
+					right: target
+				);
+				return new CaretInfo(
+					charIndex: charIndex,
+					lineIndex: lineIndex,
+					hitBox: container,
+					target: caretTarget
+				);
+			}
+
+		}
+
+		[Serializable]
+		public class SelectionInfo : IEquatable<SelectionInfo> {
+
+			public Span CaretSpan { get; private set; }
+
+			public Span CharacterSpan => new Span( LeadingCaret.CharIndex, TrailingCaret.CharIndex );
+			public Span LineSpan => new Span( LeadingCaret.LineIndex, TrailingCaret.LineIndex );
+
+			public int AnchorCaretIndex => _anchorIndex;
+			public int FloatCaretIndex => _floatIndex;
+
+			public CaretInfo AnchorCaret => _caretInfo[_anchorIndex];
+			public CaretInfo FloatCaret => _caretInfo[_floatIndex];
+			public CaretInfo LeadingCaret => _caretInfo[CaretSpan.Min];
+			public CaretInfo TrailingCaret => _caretInfo[CaretSpan.Max];
+
+			public bool Equals ( SelectionInfo other ) => CharacterSpan.Equals( other.CharacterSpan ) && CaretSpan.Equals( other.CaretSpan );
+
+
+			public SelectionInfo ( Span caretSpan, CaretInfo[] caretInfo ) {
+
+				CaretSpan = caretSpan;
+				_caretInfo = caretInfo;
+			}
+
+			public void SetAnchorCaretIndex ( int index ) {
+
+				if ( _anchorIndex == index && _floatIndex == index ) { return; }
+				_anchorIndex = index;
+				_floatIndex = index;
+				SetCaretRange( _anchorIndex, _floatIndex );
+			}
+			public void SetFloatCaretIndex ( int index ) {
+
+				if ( _floatIndex == index ) { return; }
+				_floatIndex = index;
+				SetCaretRange( _anchorIndex, _floatIndex );
+			}
+			public void SetCaretInfo ( CaretInfo[] caretInfo ) {
+
+				_caretInfo = caretInfo;
+			}
+
+			private int _anchorIndex = -1;
+			private int _floatIndex = -1;
+			private CaretInfo[] _caretInfo;
+
+			private void SetCaretRange ( int a, int b ) {
+
+				var newRange = new Span( a, b );
+				if ( CaretSpan.Equals( newRange ) ) { return; }
+				CaretSpan = newRange;
+			}
+		}
+
+		[Serializable]
+		public class ScrollInfo {
+
+			public float ViewportHeight { get; private set; }
+			public float ContentHeight { get; set; }
+			public float ViewTop { get; private set; }
+			public float ViewBottom => ViewTop + ViewportHeight;
+
+			public float ScrollableHeight => ( ContentHeight - ViewportHeight ).WithFloor( 0f );
+
+			public float MinViewTopPosition => 0f;
+			public float MaxViewTopPosition => ScrollableHeight;
+
+			public ScrollInfo ( float viewportHeight, float contentHeight ) {
+
+				ViewportHeight = viewportHeight;
+				ContentHeight = contentHeight;
+				ViewTop = 0f;
+			}
+
+			public void ScrollByPoints ( float points ) {
+
+				ViewTop = ( ViewTop + points ).ClampedBetween( MinViewTopPosition, MaxViewTopPosition );
+			}
+
 		}
 	}
 
@@ -126,7 +431,19 @@ namespace TextEdit {
 		IPointerDownHandler,
 		IDragHandler,
 		IPointerUpHandler,
-		IPointerExitHandler {
+		IPointerExitHandler,
+		IScrollHandler,
+		ISelectHandler,
+		IDeselectHandler,
+		ICancelHandler {
+
+		public string GetText () => _textMesh.text;
+
+		[Header( "UI Configuration" )]
+		[SerializeField] private Bounds _focusPadding = Bounds.Zero;
+		[SerializeField] private Bounds _scrollPadding = Bounds.Zero;
+		[SerializeField] private ScrollType _scrollType = ScrollType.Natural;
+		[SerializeField] private float _scrollSpeed = 1f;
 
 		[Header( "UI Display" )]
 		[SerializeField] private TextMeshProUGUI _textMesh;
@@ -138,605 +455,599 @@ namespace TextEdit {
 		[SerializeField] private Color _highlightColor;
 
 		[Header( "UI Debug" )]
+		[SerializeField] private bool _visualizeFocusPadding;
+		[SerializeField] private bool _visualizeScrollPadding;
 		[SerializeField] private bool _visualizeLineMargins;
 		[SerializeField] private bool _visualizeLineExtents;
+		[SerializeField] private bool _visualizeWordMargins;
+		[SerializeField] private bool _visualizeWordExtents;
+		[SerializeField] private bool _visualizeWordCarets;
 		[SerializeField] private bool _visualizeCharacterMargins;
-		[SerializeField] private bool _visualizeCharExtents;
+		[SerializeField] private bool _visualizeCharacterExtents;
 		[SerializeField] private bool _visualizeCaretBounds;
 		[SerializeField] private bool _showContactPoint;
 
-		// private data
-		[Space]
-		public Span _caretRange;
+		// ui elements
+		private Image _primarySelection;
+		private Image _leftCapSelection;
+		private Image _rightCapSelection;
+
+		// text information
 		public LineInfo[] _lineInfo;
+		public WordInfo[] _wordInfo;
 		public CharacterInfo[] _charInfo;
 		public CaretInfo[] _caretInfo;
+		public SelectionInfo _selection;
+		public ScrollInfo _scrollInfo;
 
-
-		// observable
-		private Observable<bool> _isInside;
-		private Observable<bool> _isTrackingCursor;
-		private Observable<Vector3?> _contactPoint;
-		private Observable<int> _caretAnchorIndex;
-		private Observable<int> _caretFloatIndex;
-		private Observable<float> _cursorPositionX;
-		private Observable<float> _cursorPositionY;
-
-
-		// observable data
-		/*
-			* whenever the anchor index is changed, the float index changes too
-			* the float index is the “active” cursor index for determining position
-			* the selection changes when the text changes, or the cursor range changes
-			* when the selection changes, the cursor positions are updated
-			* when click goes down, position x/y are set
-			* when click drags, position x/y are updated
-			* when click goes up, position x/y are resolved to contained caret
-			* when arrow horizontal, position x/y are set to new pos
-			* when arrow vertical position y is set to new pos (x unchanged)
-		*/
-
+		// state data
+		private bool _isInside;
+		private bool _isDown;
+		private bool _isSelected;
+		private Vector2 _intendedCaretPosition = Vector2.zero;
 
 		// mono lifecycle
 		private void Awake () {
 
-			UnityEngine.InputSystem.Keyboard.current.onTextInput += Insert;
+			_selection = new SelectionInfo(
+				caretSpan: Span.Invalid,
+				caretInfo: _caretInfo
+			);
+			_scrollInfo = new ScrollInfo(
+				viewportHeight: GetRect().height,
+				contentHeight: GetTextHeight()
+			);
 
 			// set up carets
-			_leadingCaret.rectTransform.anchorMin = ( transform as RectTransform ).pivot;
-			_leadingCaret.rectTransform.anchorMax = ( transform as RectTransform ).pivot;
-			_trailingCaret.rectTransform.anchorMin = ( transform as RectTransform ).pivot;
-			_trailingCaret.rectTransform.anchorMax = ( transform as RectTransform ).pivot;
-			_leadingCaret.gameObject.SetActive( false );
-			_trailingCaret.gameObject.SetActive( false );
+			InitCaret( _leadingCaret );
+			InitCaret( _trailingCaret );
 
-			_caretRange = new Span( -1, -1 );
+			// set up selections
+			_primarySelection = CreateSelectionRect( "Primary Selection" );
+			_leftCapSelection = CreateSelectionRect( "Left-cap Selection" );
+			_rightCapSelection = CreateSelectionRect( "Right-cap Selection" );
 
-			_isInside = new Observable<bool>(
-				initialValue: false,
-				onChange: inside => { }
-			);
-			_isTrackingCursor = new Observable<bool>(
-				initialValue: false,
-				onChange: trackingCursor => { }
-			);
-			_contactPoint = new Observable<Vector3?>(
-				initialValue: null,
-				onChange: contactPoint => { }
-			);
+			// refresh everything
+			ProcessText( _textMesh );
+			_selection.SetCaretInfo( _caretInfo );
+			RefreshSelection( _selection );
 
-			_caretFloatIndex = new Observable<int>(
-				initialValue: -1,
-				onChange: floatIndex => {
-					if ( _caretAnchorIndex == null ) { return; }
-					_caretRange = new Span( _caretAnchorIndex.Get(), floatIndex );
-					RefreshSelection();
-				}
-			);
-			_caretAnchorIndex = new Observable<int>(
-				initialValue: -1,
-				onChange: anchorIndex => {
-					_caretFloatIndex.Set( anchorIndex );
-					_caretRange = new Span( anchorIndex, _caretFloatIndex.Get() );
-					RefreshSelection();
-				}
-			);
-			_cursorPositionX = new Observable<float>(
-				initialValue: 0f,
-				onChange: x => {
-
-				}
-			);
-			_cursorPositionY = new Observable<float>(
-				initialValue: 0f,
-				onChange: y => {
-
-				}
-			);
-
-			_textMesh.ForceMeshUpdate();
-			ProcessAllChars( _textMesh );
+			// listen to events
+			SubscribeToEvents();
 		}
 		private void OnDestroy () {
 
-			UnityEngine.InputSystem.Keyboard.current.onTextInput -= Insert;
+			UnsubscribeFromEvents();
 		}
 		private void Update () {
 
-			if ( _isTrackingCursor.Get() ) {
-				_contactPoint.Set( GetContactPoint( Input.mousePosition ) );
-			}
+			ReadInput();
 
-			// delete
-			if ( Input.GetKeyDown( KeyCode.Delete ) || Input.GetKeyDown( KeyCode.Backspace ) ) {
-				Delete();
-			}
-
-			if ( Input.GetKeyDown( KeyCode.UpArrow ) ) {
-				MoveCaret( Directions.Up );
-			}
-			if ( Input.GetKeyDown( KeyCode.DownArrow ) ) {
-				MoveCaret( Directions.Down );
-			}
-			if ( Input.GetKeyDown( KeyCode.LeftArrow ) ) {
-				MoveCaret( Directions.Left );
-			}
-			if ( Input.GetKeyDown( KeyCode.RightArrow ) ) {
-				MoveCaret( Directions.Right );
-			}
+			RefreshScroll();
+			RefreshSelection( _selection );
 		}
 		private void OnDrawGizmos () {
 
 			if ( !Application.isPlaying && ( _visualizeCharacterMargins || _visualizeCaretBounds || _showContactPoint || _visualizeLineMargins || _visualizeLineExtents ) ) {
-				ProcessAllChars( _textMesh );
+				ProcessText( _textMesh );
 			}
 
-			// draw line margin
+			if ( _visualizeFocusPadding ) {
+				GetFocusBounds().DrawGizmos( container: transform, color: Color.green );
+			}
+			if ( _visualizeScrollPadding ) {
+				GetScrollBounds().DrawGizmos( container: transform, color: Color.black );
+			}
 			if ( _visualizeLineMargins ) {
-
-				_lineInfo.ForEach( lineInfo => {
-
-					var boundsTopLeft = transform.TransformPoint( new Vector3( lineInfo.Margin.Left, lineInfo.Margin.Top ) );
-					var boundsTopRight = transform.TransformPoint( new Vector3( lineInfo.Margin.Right, lineInfo.Margin.Top ) );
-					var boundsBottomLeft = transform.TransformPoint( new Vector3( lineInfo.Margin.Left, lineInfo.Margin.Bottom ) );
-					var boundsBottomRight = transform.TransformPoint( new Vector3( lineInfo.Margin.Right, lineInfo.Margin.Bottom ) );
-
-					Gizmos.color = Color.blue;
-					Gizmos.DrawLine( boundsTopLeft, boundsTopRight );
-					Gizmos.DrawLine( boundsTopLeft, boundsBottomLeft );
-					Gizmos.DrawLine( boundsTopRight, boundsBottomRight );
-					Gizmos.DrawLine( boundsBottomLeft, boundsBottomRight );
-					Gizmos.color = Color.white;
-				} );
+				_lineInfo.ForEach( lineInfo => lineInfo.Margin.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: Color.blue ) );
 			}
-
-			// draw line margin
 			if ( _visualizeLineExtents ) {
-
-				_lineInfo.ForEach( lineInfo => {
-
-					var boundsTopLeft = transform.TransformPoint( new Vector3( lineInfo.Extents.Left, lineInfo.Extents.Top ) );
-					var boundsTopRight = transform.TransformPoint( new Vector3( lineInfo.Extents.Right, lineInfo.Extents.Top ) );
-					var boundsBottomLeft = transform.TransformPoint( new Vector3( lineInfo.Extents.Left, lineInfo.Extents.Bottom ) );
-					var boundsBottomRight = transform.TransformPoint( new Vector3( lineInfo.Extents.Right, lineInfo.Extents.Bottom ) );
-
-					Gizmos.color = Color.blue;
-					Gizmos.DrawLine( boundsTopLeft, boundsTopRight );
-					Gizmos.DrawLine( boundsTopLeft, boundsBottomLeft );
-					Gizmos.DrawLine( boundsTopRight, boundsBottomRight );
-					Gizmos.DrawLine( boundsBottomLeft, boundsBottomRight );
-					Gizmos.color = Color.white;
-				} );
+				_lineInfo.ForEach( lineInfo => lineInfo.Extents.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: Color.blue ) );
 			}
-
-			// draw char margins
+			if ( _visualizeWordMargins ) {
+				_wordInfo.ForEach( wordInfo => wordInfo.DrawGizmos_Margins( characters: _charInfo, container: transform, color: Color.blue, offset: GetScrollOffset() ) );
+			}
+			if ( _visualizeWordExtents ) {
+				_wordInfo.ForEach( wordInfo => wordInfo.DrawGizmos_Extents( characters: _charInfo, container: transform, color: Color.blue, offset: GetScrollOffset() ) );
+			}
+			if ( _visualizeWordCarets ) {
+				_wordInfo.ForEach( wordInfo => wordInfo.DrawGizmos_Carets( carets: _caretInfo, container: transform, color: Color.red, offset: GetScrollOffset() ) );
+			}
 			if ( _visualizeCharacterMargins ) {
-
-				_charInfo.ForEach( charInfo => {
-
-					var tl = transform.TransformPoint( new Vector3( charInfo.Margin.Left, charInfo.Margin.Top ) );
-					var tr = transform.TransformPoint( new Vector3( charInfo.Margin.Right, charInfo.Margin.Top ) );
-					var bl = transform.TransformPoint( new Vector3( charInfo.Margin.Left, charInfo.Margin.Bottom ) );
-					var br = transform.TransformPoint( new Vector3( charInfo.Margin.Right, charInfo.Margin.Bottom ) );
-
-					Gizmos.color = Color.blue;
-					Gizmos.DrawLine( tl, tr );
-					Gizmos.DrawLine( tl, bl );
-					Gizmos.DrawLine( tr, br );
-					Gizmos.DrawLine( bl, br );
-					Gizmos.color = Color.white;
-				} );
+				_charInfo.ForEach( charInfo => charInfo.Margin.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: Color.blue ) );
 			}
-
-			// draw char margins
-			if ( _visualizeCharExtents ) {
-
-				_charInfo.ForEach( charInfo => {
-
-					var tl = transform.TransformPoint( new Vector3( charInfo.Extents.Left, charInfo.Extents.Top ) );
-					var tr = transform.TransformPoint( new Vector3( charInfo.Extents.Right, charInfo.Extents.Top ) );
-					var bl = transform.TransformPoint( new Vector3( charInfo.Extents.Left, charInfo.Extents.Bottom ) );
-					var br = transform.TransformPoint( new Vector3( charInfo.Extents.Right, charInfo.Extents.Bottom ) );
-
-					Gizmos.color = Color.blue;
-					Gizmos.DrawLine( tl, tr );
-					Gizmos.DrawLine( tl, bl );
-					Gizmos.DrawLine( tr, br );
-					Gizmos.DrawLine( bl, br );
-					Gizmos.color = Color.white;
-				} );
+			if ( _visualizeCharacterExtents ) {
+				_charInfo.ForEach( charInfo => charInfo.Extents.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: Color.blue ) );
 			}
-
-			// draw caret bounds
 			if ( _visualizeCaretBounds ) {
-
-				int caretIndex = 0;
 				_caretInfo.ForEach( caretInfo => {
-
-					var caretTop = transform.TransformPoint( new Vector3( caretInfo.Target.Center, caretInfo.Target.Top ) );
-					var caretBottom = transform.TransformPoint( new Vector3( caretInfo.Target.Center, caretInfo.Target.Bottom ) );
-					var tl = transform.TransformPoint( new Vector3( caretInfo.HitBox.Left, caretInfo.HitBox.Top ) );
-					var tr = transform.TransformPoint( new Vector3( caretInfo.HitBox.Right, caretInfo.HitBox.Top ) );
-					var bl = transform.TransformPoint( new Vector3( caretInfo.HitBox.Left, caretInfo.HitBox.Bottom ) );
-					var br = transform.TransformPoint( new Vector3( caretInfo.HitBox.Right, caretInfo.HitBox.Bottom ) );
-
-					Gizmos.color = Color.black;
-					Gizmos.DrawLine( tl, tr );
-					Gizmos.DrawLine( tl, bl );
-					Gizmos.DrawLine( tr, br );
-					Gizmos.DrawLine( bl, br );
-					Gizmos.color = new Color( 0f, 0.5f, 0.5f, 0.5f );
-					Gizmos.DrawLine( caretTop, caretBottom );
-					Gizmos.color = Color.white;
-					caretIndex++;
+					caretInfo.Target.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: new Color( 0f, 0.5f, 0.5f, 0.5f ) );
+					caretInfo.HitBox.ApplyOffset( GetScrollOffset() ).DrawGizmos( container: transform, color: Color.black );
 				} );
 			}
-
-			// draw contact point
-			if ( _showContactPoint && _contactPoint?.Get() != null ) {
-
+			if ( _showContactPoint ) {
 				Gizmos.color = Color.red;
-				var worldPoint = transform.TransformPoint( _contactPoint.Get().Value );
-				Gizmos.DrawSphere( worldPoint, 1f / 256f );
+				Gizmos.DrawSphere( transform.TransformPoint( _intendedCaretPosition ), 1f / 128f );
 				Gizmos.color = Color.white;
 			}
 		}
 
-		// private methods
-		private void Insert ( char c ) => Insert( c.ToString() );
+		// user manipulation functions
+		private void Insert ( char c )
+			=> Insert( c.ToString() );
 		private void Insert ( string text ) {
 
-			/*
-				all chars in selection should be removed, and then
-				all chars in text should be inserted, and caret should go to
-				directly after the last char of the insertion
-			*/
-
-			// if no caret, abort
-			if ( !_caretRange.IsValid() ) { return; }
-
-			// cull garbage, and abort if empty now
-			text = Regex.Replace( text, @"\p{C}+", string.Empty );
+			// guards
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
 			if ( text.IsNullOrEmpty() ) { return; }
 
-			var charStart = _caretInfo[_caretRange.Min].CharIndex;
-			var charEnd = _caretInfo[_caretRange.Max].CharIndex;
-			var range = charEnd - charStart;
+			// modify text
+			var charIndex = _selection.CharacterSpan.Min;
+			var range = _selection.CharacterSpan.Length;
+			if ( range > 0 ) { _textMesh.text = _textMesh.text.Remove( startIndex: charIndex, count: range ); }
+			_textMesh.text = _textMesh.text.Insert( startIndex: charIndex, text );
 
-			// update text and update mesh
-			_textMesh.text = _textMesh.text
-				.Remove( startIndex: charStart, count: range )
-				.Insert( startIndex: charStart, text );
-			_textMesh.ForceMeshUpdate();
-			ProcessAllChars( _textMesh );
+			// process updated text
+			ProcessText( _textMesh );
 
-			// set new caret position
-			var caretIdx = GetCaretIndex( charStart + text.Length );
-			_caretAnchorIndex.Set( caretIdx );
-			_caretFloatIndex.Set( caretIdx );
-			RefreshSelection();
+			// update state after processing text
+			_selection.SetAnchorCaretIndex( GetCaretIndexFromCharIndex( charIndex + text.Length ) );
+			_selection.SetCaretInfo( _caretInfo );
+			SetCaretIntentToFloatCaret( x: true, y: true );
+			RefreshSelection( _selection );
 		}
 		private void Delete () {
 
-			/*
-				if there is a selection, all characters selected should be removed
-				and the caret should condense on the original index
+			// guards
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
 
-				if there is no selection, the character behind the caret should be
-				removed, and the caret index should be decremented
-			*/
-
-
-			if ( !_caretRange.IsValid() ) { return; }
-
-			// get indices and range for deletion
-			var charStart = _caretInfo[_caretRange.Min].CharIndex;
-			var charEnd = _caretInfo[_caretRange.Max].CharIndex;
-			var range = ( charEnd - charStart );
-			int charIdx;
-			if ( range == 0 ) { // delete prev char
-				range = 1;
-				charIdx = charStart - 1;
-				if ( charIdx < 0 ) { return; } // we're at the beginning, nothing to delete
+			// modify text
+			var charIndex = _selection.CharacterSpan.Min;
+			if ( _selection.CharacterSpan.Length > 0 ) {
+				ClearSelectedSubstring();
 			} else {
-				charIdx = charStart;
+				if ( Backspace() ) { charIndex--; }
 			}
 
-			// update text and update mesh
-			_textMesh.text = _textMesh.text.Remove( startIndex: charIdx, count: range );
-			_textMesh.ForceMeshUpdate();
-			ProcessAllChars( _textMesh );
+			// process updated text
+			ProcessText( _textMesh );
 
-			int caretIdx = GetCaretIndex( charIdx );
-			_caretAnchorIndex.Set( caretIdx );
-			_caretFloatIndex.Set( caretIdx );
-			RefreshSelection();
+			// update state after processing text
+			_selection.SetAnchorCaretIndex( GetCaretIndexFromCharIndex( charIndex ) );
+			_selection.SetCaretInfo( _caretInfo );
+			SetCaretIntentToFloatCaret( x: true, y: true );
+			RefreshSelection( _selection );
 		}
+		private bool ClearSelectedSubstring () {
 
-		private Vector2 _moveThingy = new Vector2();
-		private bool _isReset;
+			if ( !_selection.CaretSpan.IsValid() ) { return false; }
+			if ( _textMesh.text.IsNullOrEmpty() ) { return false; }
+
+			_textMesh.text = _textMesh.text.Remove(
+				startIndex: _selection.CharacterSpan.Min,
+				count: _selection.CharacterSpan.Length
+			);
+
+			return true;
+		}
+		private bool Backspace () {
+
+			if ( _selection.CaretSpan.Min <= 0 ) { return false; }
+
+			var isWordMovement = Input.GetKey( KeyCode.LeftAlt ) || Input.GetKey( KeyCode.RightAlt );
+			var isLineMovement = Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand );
+
+			// determine caret index for backspace
+			var caretIndex = _selection.CaretSpan.Min - 1;
+			if ( isWordMovement ) {
+				caretIndex = GetPreviousWordStartCaretIndex( _selection.CharacterSpan.Min );
+			} else if ( isLineMovement ) {
+				caretIndex = _lineInfo[_selection.LineSpan.Min].CaretSpan.Min;
+			}
+
+			var startIndex = _caretInfo[caretIndex].CharIndex;
+			var count = _selection.CharacterSpan.Min - startIndex;
+			_textMesh.text = _textMesh.text.Remove( startIndex, count );
+
+			return true;
+		}
 		private void MoveCaret ( Directions direction ) {
 
-			if ( !_caretRange.IsValid() ) { return; }
+			// ensure a caret range to manipulate
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
 
-			// the floating caret is the one moving
-			// we only update an "axis" when that's the one moving
+			// get some helper vars
+			var isExpandingSelection = Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift );
+			var isWordMovement = Input.GetKey( KeyCode.LeftAlt ) || Input.GetKey( KeyCode.RightAlt );
+			var isLineMovement = Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand );
+			var isHorizontalMove = direction == Directions.Left || direction == Directions.Right;
+			var isVerticalMove = direction == Directions.Up || direction == Directions.Down;
 
-			var expandSelection = Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift );
-			var macroJump = Input.GetKey( KeyCode.LeftAlt ) || Input.GetKey( KeyCode.RightAlt );
-			var horizontal = direction == Directions.Left || direction == Directions.Right;
-			var vertical = direction == Directions.Up || direction == Directions.Down;
+			var caretIndex = _selection.FloatCaretIndex;
+			var floatCaret = _selection.FloatCaret;
+			var currentLine = _lineInfo[floatCaret.LineIndex];
+			var forceUpdateXIntent = false;
 
-			var caretIndex = _caretFloatIndex.Get();
-			if ( horizontal ) {
-				if ( direction == Directions.Left ) {
-					caretIndex--;
-				}
-				if ( direction == Directions.Right ) {
-					caretIndex++;
-				}
-				caretIndex = Mathf.Clamp( caretIndex, 0, _caretInfo.Length - 2 );
-			}
+			if ( isHorizontalMove ) {
 
-			if ( vertical ) {
-				var lineNum = _caretInfo[_caretFloatIndex.Get()].LineIndex;
-				if ( direction == Directions.Up ) {
-					lineNum--;
-				}
-				if ( direction == Directions.Down ) {
-					lineNum++;
-				}
-				if ( lineNum < 0 ) {
-					caretIndex = 0;
-				} else if ( lineNum < _lineInfo.Length ) {
-					caretIndex = GetCaretIndex( new Vector2( _moveThingy.x, _lineInfo[lineNum].Extents.Middle ) );
+				if ( isLineMovement ) {
+
+					caretIndex = direction switch {
+						Directions.Left => currentLine.CaretSpan.Min,
+						Directions.Right => currentLine.CaretSpan.Max,
+						_ => caretIndex
+					};
+
+				} else if ( isWordMovement ) {
+
+					caretIndex = direction switch {
+						Directions.Left => GetPreviousWordStartCaretIndex( floatCaret.CharIndex ),
+						Directions.Right => GetNextWordEndCaretIndex( floatCaret.CharIndex ),
+						_ => caretIndex
+					};
+
 				} else {
-					caretIndex = _caretInfo.Length - 2;
+
+					caretIndex += direction switch {
+						Directions.Left => -1,
+						Directions.Right => 1,
+						_ => 0
+					};
+				}
+
+			} else if ( isVerticalMove ) {
+
+				if ( isLineMovement ) {
+
+					caretIndex = direction switch {
+						Directions.Up => 0,
+						Directions.Down => _caretInfo.LastIndex(),
+						_ => 0
+					};
+
+				} else {
+
+					var lineNum = floatCaret.LineIndex + direction switch {
+						Directions.Up => -1,
+						Directions.Down => 1,
+						_ => 0
+					};
+					if ( lineNum < 0 ) {
+						caretIndex = 0;
+						forceUpdateXIntent = true;
+					} else if ( lineNum < _lineInfo.Length ) {
+						var lineY = _lineInfo[lineNum].Extents.Middle;
+						caretIndex = GetCaretIndexFromTextPosition( new Vector2( _intendedCaretPosition.x, lineY ) );
+					} else {
+						caretIndex = _caretInfo.LastIndex();
+						forceUpdateXIntent = true;
+					}
 				}
 			}
+			caretIndex = Mathf.Clamp( caretIndex, 0, _caretInfo.LastIndex() );
 
-			if ( !expandSelection ) {
-				_caretAnchorIndex.Set( caretIndex );
+			if ( isExpandingSelection ) {
+				_selection.SetFloatCaretIndex( caretIndex );
+			} else {
+				_selection.SetAnchorCaretIndex( caretIndex );
 			}
-			_caretFloatIndex.Set( caretIndex );
 
-			if ( horizontal ) { // only reset when we moved horizontally
-				_moveThingy.x = _caretInfo[_caretFloatIndex.Get()].Target.Center;
-			}
-			_moveThingy.y = _caretInfo[_caretFloatIndex.Get()].HitBox.Middle;
+			// only update x-intent if moved horizontally
+			var updateXIntent = isHorizontalMove || forceUpdateXIntent;
+			SetCaretIntentToFloatCaret( x: updateXIntent, y: true );
+			RefreshSelection( _selection );
+		}
+		private void SelectAll () {
+
+			_selection.SetAnchorCaretIndex( 0 );
+			_selection.SetFloatCaretIndex( _caretInfo.LastIndex() );
+			RefreshSelection( _selection );
+		}
+		private void Copy () {
+
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
+			GUIUtility.systemCopyBuffer = GetSelectionString();
+		}
+		private void Cut () {
+
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
+			Copy();
+			Delete();
+		}
+		private void Paste () {
+
+			if ( !_selection.CaretSpan.IsValid() ) { return; }
+			Insert( GUIUtility.systemCopyBuffer );
 		}
 
-		private void ProcessAllChars ( TextMeshProUGUI textMesh ) {
+		// things
+		private void SubscribeToEvents () {
 
-			var frame = ( transform as RectTransform ).rect;
+			// UnityEngine.InputSystem.Keyboard.current.onTextInput += Insert;
+		}
+		private void UnsubscribeFromEvents () {
 
-			// look at text info
-			var textInfo = textMesh.text.IsNullOrEmpty() ?
+			// UnityEngine.InputSystem.Keyboard.current.onTextInput -= Insert;
+		}
+
+		// processing
+		private void ReadInput () {
+
+			if ( !_isSelected ) { return; }
+
+			// commands
+			if ( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) ) { Insert( Environment.NewLine ); }
+			if ( Input.GetKeyDown( KeyCode.Delete ) || Input.GetKeyDown( KeyCode.Backspace ) ) { Delete(); }
+			if ( Input.GetKeyDown( KeyCode.UpArrow ) ) { MoveCaret( Directions.Up ); }
+			if ( Input.GetKeyDown( KeyCode.DownArrow ) ) { MoveCaret( Directions.Down ); }
+			if ( Input.GetKeyDown( KeyCode.LeftArrow ) ) { MoveCaret( Directions.Left ); }
+			if ( Input.GetKeyDown( KeyCode.RightArrow ) ) { MoveCaret( Directions.Right ); }
+
+			// texty stuff
+			bool executedCommand = false;
+			if ( Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand ) ) {
+				if ( Input.GetKeyDown( KeyCode.A ) ) { SelectAll(); executedCommand = true; }
+				if ( Input.GetKeyDown( KeyCode.C ) ) { Copy(); executedCommand = true; }
+				if ( Input.GetKeyDown( KeyCode.X ) ) { Cut(); executedCommand = true; }
+				if ( Input.GetKeyDown( KeyCode.V ) ) { Paste(); executedCommand = true; }
+			}
+			if ( !executedCommand ) {
+				var filteredInput = FilterValidCharacterInput( Input.inputString );
+				Insert( filteredInput );
+			}
+		}
+		private void ProcessText ( TextMeshProUGUI textMesh ) {
+
+			// update mesh first
+			textMesh.ForceMeshUpdate();
+
+			// get text info
+			var textInfo_tmp = textMesh.text.IsNullOrEmpty() ?
 				textMesh.GetTextInfo( Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString() ) :
 				textMesh.textInfo;
-			var lines = textInfo.lineInfo;
-			var chars = textInfo.characterInfo;
-			var numLines = textInfo.lineCount;
-			var numChars = textInfo.characterCount;
+			var lines_tmp = textInfo_tmp.lineInfo;
+			var chars_tmp = textInfo_tmp.characterInfo;
+			var numLines_tmp = textInfo_tmp.lineCount;
+			var numChars_tmp = textInfo_tmp.characterCount;
 
-			_lineInfo = new LineInfo[numLines];
-			_charInfo = new CharacterInfo[numChars];
-			_caretInfo = new CaretInfo[numChars + numLines + 1];
+			// create info arrays
+			_charInfo = new CharacterInfo[numChars_tmp]; // this count we can be sure of ahead of time
+			var lines = new List<LineInfo>( capacity: numLines_tmp + 1 ); // this is a best guess, but not definitive
+			var words = new List<WordInfo>( capacity: textInfo_tmp.wordCount ); // use textInfo.wordCount as a guess; our calculation of words is different
+			var carets = new List<CaretInfo>( capacity: numChars_tmp + numLines_tmp + 1 ); // this is a best guess, and most likely a maximum
 
-			for ( int lineNum = 0; lineNum < numLines; lineNum++ ) {
+			// sizing for container rect
+			var rt = ( transform as RectTransform );
+			var bounds = Bounds.FromRect( rt.rect );
 
-				var line = lines[lineNum];
-				var prevLineNum = lineNum - 1;
-				var nextLineNum = lineNum + 1;
-				var isFirstLine = lineNum == 0;
-				var isLastLine = lineNum == numLines - 1;
+			// dimensions for text child-rect (in container coords)
+			var pivotOffset = GetPivotOffsetBetween( from: textMesh.rectTransform, to: rt );
+			var textBounds = Bounds.FromRect( textMesh.rectTransform.rect ).ApplyOffset( pivotOffset );
 
-				var top = isFirstLine ?
-					frame.yMax :
-					line.ascender + ( ( lines[prevLineNum].descender - line.ascender ) / 2f );
-				var bottom = isLastLine ?
-					line.descender :
-					line.descender + ( ( lines[nextLineNum].ascender - line.descender ) / 2f );
+			// some universal line sizing info
+			var lineMarginHeight = numLines_tmp switch {
+				0 => 0, // technically impossible
+				_ => lines_tmp[0].ascender - lines_tmp[0].descender
+			};
+			var lineExtentsHeight = numLines_tmp switch {
+				0 => 0, // technically impossible
+				1 => lines_tmp[0].ascender - lines_tmp[0].descender,
+				_ => lines_tmp[0].ascender - lines_tmp[1].ascender
+			};
+
+
+			// TODO: how do we tell if the frame can't support a single character width?
+			// if ( textFrame.width < 0 || textFrame.height < 0 ) {
+			// 	_charInfo = new CharacterInfo[0];
+			// 	_wordInfo = new WordInfo[0];
+			// 	_lineInfo = new LineInfo[0];
+			// 	_caretInfo = new CaretInfo[0];
+			// 	return;
+			// }
+
+
+			for ( int lineIndex = 0; lineIndex < numLines_tmp; lineIndex++ ) {
+
+				var line = lines_tmp[lineIndex];
+
+				// line dimensions
+				var lineTop = line.ascender - pivotOffset.y;
+				var lineBottom = line.descender - pivotOffset.y;
+				var lineExtentsTop = lineIndex == 0 ? bounds.Top : lineTop;
+				var lineExtentsBottom = lineTop - lineExtentsHeight;
 
 				var lineMargin = new Bounds(
-					top: ConvertYToLocalSpace( frame, line.ascender ),
-					bottom: ConvertYToLocalSpace( frame, line.descender ),
-					left: ConvertXToLocalSpace( frame, textMesh.rectTransform.rect.xMin ),
-					right: ConvertXToLocalSpace( frame, textMesh.rectTransform.rect.xMax )
+					top: lineTop,
+					bottom: lineBottom,
+					left: textBounds.Left,
+					right: textBounds.Right
 				);
 				var lineExtents = new Bounds(
-					top: ConvertYToLocalSpace( frame, top ),
-					bottom: ConvertYToLocalSpace( frame, bottom ),
-					left: frame.xMin,
-					right: frame.xMax
+					top: lineExtentsTop,
+					bottom: lineExtentsBottom,
+					left: bounds.Left,
+					right: bounds.Right
 				);
 				var lineCharacterSpan = new Span(
 					a: line.firstCharacterIndex,
 					b: line.lastCharacterIndex
 				);
+				var lastCharIsNewLine = IsNewLineCharacter( chars_tmp[line.lastCharacterIndex].character );
+				var caretSpanStart = lineIndex == 0 ? 0 : lines.Last().CaretSpan.Max + 1;
+				var caretSpanEnd = caretSpanStart + lineCharacterSpan.Length + ( lastCharIsNewLine ? 0 : 1 );
 				var lineCaretSpan = new Span(
-					a: line.firstCharacterIndex + lineNum,
-					b: line.lastCharacterIndex + lineNum + 1
+					a: caretSpanStart,
+					b: caretSpanEnd
 				);
-
 				var lineInfo = new LineInfo(
 					margin: lineMargin,
 					extents: lineExtents,
 					chars: lineCharacterSpan,
 					carets: lineCaretSpan
 				);
-				_lineInfo[lineNum] = lineInfo;
+				lines.Add( lineInfo );
 
 				// step through each character
-				for ( int charIndex = lineInfo.CharacterSpan.Min; charIndex <= lineInfo.CharacterSpan.Max; charIndex++ ) {
+				int wordCharStart = -1;
+				int wordCaretStart = -1;
+				for ( int charIndex = line.firstCharacterIndex; charIndex <= line.lastCharacterIndex; charIndex++ ) {
 
-					var charInfo_TMP = chars[charIndex];
-					var isFirstChar = charIndex == lineCharacterSpan.Min;
-					var isLastChar = charIndex == lineCharacterSpan.Max;
+					// helper info
+					var char_tmp = chars_tmp[charIndex];
+					var isFirstChar = charIndex == line.firstCharacterIndex;
+					var isLastChar = charIndex == line.lastCharacterIndex;
+					var isNewLineCharacter = IsNewLineCharacter( char_tmp.character );
 
-					// create character info
-					var right = isLastChar && charInfo_TMP.character == ' ' ?
-						charInfo_TMP.origin + 3.544f : // manually move over for spaces
-						charInfo_TMP.xAdvance; // TODO: remove this once spaces are fixed
+					// determine word status
+					var isWordActive = wordCharStart > -1;
+					var isWordCharacter = !IsNonWordCharacter( char_tmp.character );
+					if ( isWordCharacter && !isWordActive ) {
+						wordCharStart = charIndex;
+						wordCaretStart = carets.Count;
+					}
+					if ( isWordActive && ( !isWordCharacter || isLastChar ) ) { // the word is over
+						words.Add( new WordInfo(
+							lineIndex: lineIndex,
+							chars: new Span( wordCharStart, isWordCharacter ? charIndex : charIndex - 1 ), // if space, go back one
+							carets: new Span( wordCaretStart, isWordCharacter ? carets.Count + 1 : carets.Count ) // if not space, go forward one
+						) );
+						wordCharStart = -1;
+					}
+
+
+					// generate character position info
+					var charLeft = char_tmp.origin - pivotOffset.x;
+					var charRight = isLastChar && char_tmp.character == ' ' ?
+						char_tmp.origin + 3.544f - pivotOffset.x : // manually move over for spaces
+						char_tmp.xAdvance - pivotOffset.x; // TODO: remove this once spaces are fixed
 					var charMargin = new Bounds(
-						top: lineMargin.Top,
-						bottom: lineMargin.Bottom,
-						left: ConvertXToLocalSpace( frame, charInfo_TMP.origin ),
-						right: ConvertXToLocalSpace( frame, right )
-					//  right: ConvertXToLocalSpace( frame, charInfo_TMP.xAdvance )  // TODO: replace once spaces are fixed
+						top: lineTop,
+						bottom: lineBottom,
+						left: charLeft,
+						right: charRight //  right: charInfo_TMP.xAdvance - frameOffset.x  // TODO: replace once spaces are fixed
 					);
 					var charExtents = new Bounds(
 						top: lineExtents.Top,
 						bottom: lineExtents.Bottom,
-						left: ConvertXToLocalSpace( frame, charInfo_TMP.origin ),
-						right: ConvertXToLocalSpace( frame, right )
-					//  right: ConvertXToLocalSpace( frame, charInfo_TMP.xAdvance )  // TODO: replace once spaces are fixed
+						left: charLeft,
+						right: charRight //  right: charInfo_TMP.xAdvance - frameOffset.x  // TODO: replace once spaces are fixed
 					);
 					var charInfo = new CharacterInfo(
-						character: charInfo_TMP.character,
+						character: char_tmp.character,
 						margin: charMargin,
 						extents: charExtents
 					);
 					_charInfo[charIndex] = charInfo;
 
-					// create caret info
-					var caretHitBox = new Bounds(
-						top: charExtents.Top,
-						bottom: charExtents.Bottom,
-						left: isFirstChar ? frame.xMin : _charInfo[charIndex - 1].Margin.Center,
-						right: charMargin.Center
-					);
-					var caretBounds = new Bounds(
-						top: charExtents.Top,
-						bottom: charExtents.Bottom,
-						left: charMargin.Left,
-						right: charMargin.Left
-					);
-					_caretInfo[charIndex + lineNum] = new CaretInfo(
-						charIndex: charIndex,
-						lineIndex: lineNum,
-						hitBox: caretHitBox,
-						target: caretBounds
-					);
 
-					// create line-ending cursor sink info
-					if ( isLastChar ) {
-						var lastCaretHitBox = new Bounds(
-							top: charExtents.Top,
-							bottom: charExtents.Bottom,
-							left: charMargin.Center,
-							right: frame.xMax
+					// generate caret info
+					var caret = CaretInfo.InContainer(
+						container: lineExtents,
+						charIndex: charIndex,
+						lineIndex: lineIndex,
+						left: isFirstChar ? bounds.Left : _charInfo[charIndex - 1].Margin.Center,
+						right: isLastChar && isNewLineCharacter ? bounds.Right : charMargin.Center,
+						target: charMargin.Left
+					);
+					carets.Add( caret );
+
+					// add a line-end caret when relevant
+					if ( isLastChar && !isNewLineCharacter ) {
+						var endCaret = caret.After(
+							right: bounds.Right,
+							target: charMargin.Right
 						);
-						var lastCaretBounds = new Bounds(
-							top: charExtents.Top,
-							bottom: charExtents.Bottom,
-							left: charMargin.Right,
-							right: charMargin.Right
-						);
-						_caretInfo[charIndex + 1 + lineNum] = new CaretInfo(
-							charIndex: charIndex + 1, // + 1 because it references the char on next line
-							lineIndex: lineNum,
-							hitBox: lastCaretHitBox,
-							target: lastCaretBounds
-						);
+						carets.Add( endCaret );
 					}
 				}
-
-				// create final cursor sink under last line
-				if ( isLastLine ) {
-					var sinkCaretHitBox = new Bounds(
-						top: _lineInfo[_lineInfo.Length - 1].Extents.Bottom,
-						bottom: frame.yMin,
-						left: frame.xMin,
-						right: frame.xMax
-					);
-					_caretInfo[numChars + numLines] = new CaretInfo(
-						charIndex: numChars,
-						lineIndex: lineNum,
-						hitBox: sinkCaretHitBox,
-						target: _caretInfo[_caretInfo.Length - 2].Target
-					);
-				}
-			}
-		}
-
-		// helpers
-		private int GetCaretIndex ( int charIndex ) {
-
-			// if one past last char, return 2nd last caret index (before catchall)
-			if ( charIndex > _lineInfo.Last().CharacterSpan.Max ) {
-				return _caretInfo.Length - 2;
 			}
 
-			for ( int i = 0; i < _lineInfo.Length; i++ ) {
-				if ( _lineInfo[i].CharacterSpan.Contains( charIndex ) ) {
-					return charIndex + i;
-				}
+			// special case for last char is newline
+			if ( IsNewLineCharacter( _charInfo.Last().Character ) ) {
+
+				// create new line after last
+				var lineInfo = lines.Last().After(
+					numChars: 1,
+					numCarets: 1
+				);
+				lines.Add( lineInfo );
+
+				// create caret for line
+				var lineCaretInfo = CaretInfo.InContainer(
+					container: lineInfo.Extents,
+					charIndex: numChars_tmp, // points to just after the last character
+					lineIndex: lines.Count - 1, // last line
+					target: lineInfo.Margin.Left
+				);
+				carets.Add( lineCaretInfo );
 			}
-			return -1;
-		}
-		private int GetCaretIndex ( Vector2 localPosition ) {
 
-			for ( int i = 0; i < _caretInfo.Length; i++ ) {
-				var bounds = _caretInfo[i].HitBox;
-				if ( bounds.Contains( localPosition ) ) {
-					return i;
-				}
+			// create a sink for the remaining space
+			// var sinkContainer = new Bounds(
+			// 	top: lines.Last().Extents.Bottom,
+			// 	bottom: bounds.Bottom,
+			// 	left: bounds.Left,
+			// 	right: bounds.Right
+			// );
+			// if ( sinkContainer.Height > 0 ) {
+			// 	Debug.Log( "made a sink" );
+			// 	var finalSinkCaret = new CaretInfo(
+			// 		charIndex: numChars_tmp,
+			// 		lineIndex: lines.Count - 1,
+			// 		hitBox: sinkContainer,
+			// 		target: carets.Last().Target
+			// 	);
+			// 	carets.Add( finalSinkCaret );
+			// }
+
+			// save out the words
+			_lineInfo = lines.ToArray();
+			_wordInfo = words.ToArray();
+			_caretInfo = carets.ToArray();
+
+			// update height
+			_scrollInfo.ContentHeight = GetTextHeight();
+		}
+		private void RefreshSelection ( SelectionInfo selection ) {
+
+			// enable/disable game objects
+			var rangeValid = selection.CaretSpan.IsValid();
+			_leadingCaret.gameObject.SetActive( rangeValid );
+			_trailingCaret.gameObject.SetActive( rangeValid );
+			if ( !rangeValid ) {
+				_primarySelection?.gameObject.SetActive( false );
+				_leftCapSelection?.gameObject.SetActive( false );
+				_rightCapSelection?.gameObject.SetActive( false );
+				return;
 			}
-			return -1;
-		}
-		private float ConvertXToLocalSpace ( Rect rect, float x ) {
 
-			var pivot = ( transform as RectTransform ).pivot;
-			var pivotDifference = new Vector2( 0.5f, 0.5f ) - pivot;
-			var xDif = rect.width * pivotDifference.x;
-			return x + xDif;
-		}
-		private float ConvertYToLocalSpace ( Rect rect, float y ) {
+			// render carets
+			SetCaretBounds( _leadingCaret.rectTransform, _selection.LeadingCaret.Target );
+			SetCaretBounds( _trailingCaret.rectTransform, _selection.TrailingCaret.Target );
 
-			var pivot = ( transform as RectTransform ).pivot;
-			var pivotDifference = new Vector2( 0.5f, 0.5f ) - pivot;
-			var yDif = rect.height * pivotDifference.y;
-			return y + yDif;
-		}
-
-		// selection
-		private List<Image> _selections = new List<Image>();
-		private void RefreshSelection () {
-
-			// set caret sprits active
-			_leadingCaret.gameObject.SetActive( _caretRange.IsValid() );
-			_trailingCaret.gameObject.SetActive( _caretRange.IsValid() );
-
-			// clear selection sprites
-			_selections.ForEach( selection => Destroy( selection.gameObject ) );
-			_selections.Clear();
-
-			if ( !_caretRange.IsValid() ) { return; }
-
-			var range = _caretRange;
-
-			// set caret position
-			SetCaretBounds( _leadingCaret, _caretInfo[range.Min] );
-			SetCaretBounds( _trailingCaret, _caretInfo[range.Max] );
-
-			var leadingBounds = _caretInfo[range.Min];
-			var trailingBounds = _caretInfo[range.Max];
-			var startingLineIndex = leadingBounds.LineIndex;
-			var endingLineIndex = trailingBounds.LineIndex;
+			// render selection rects
+			var leadingCaret = _selection.LeadingCaret;
+			var trailingCaret = _selection.TrailingCaret;
+			var startingLineIndex = leadingCaret.LineIndex;
+			var endingLineIndex = trailingCaret.LineIndex;
 			var startingLine = _lineInfo[startingLineIndex];
 			var endingLine = _lineInfo[endingLineIndex];
 
-			var left = leadingBounds.Target.Center;
-			var right = trailingBounds.Target.Center;
+			var left = leadingCaret.Target.Center;
+			var right = trailingCaret.Target.Center;
 			var top = startingLine.Extents.Top;
 			var bottom = endingLine.Extents.Bottom;
 
 			var hasWidth = right - left > 0;
 			var hasHeight = hasWidth ? true : endingLineIndex - startingLineIndex > 1;
+			var showPrimarySelection = hasWidth || hasHeight;
+			var showCapSelections = endingLineIndex - startingLineIndex > 0;
 
-			// draw main center block
-			if ( hasHeight || hasWidth ) {
+			_primarySelection.gameObject.SetActive( showPrimarySelection );
+			_leftCapSelection.gameObject.SetActive( showCapSelections );
+			_rightCapSelection.gameObject.SetActive( showCapSelections );
+
+			if ( showPrimarySelection ) {
 				var blockTop = top;
 				var blockBottom = bottom;
 				if ( !hasWidth ) {
@@ -746,18 +1057,24 @@ namespace TextEdit {
 					left = right;
 					right = temp;
 				}
-				CreateSelectionRect( blockTop, blockBottom, left, right );
+				SetSelectionRect(
+					rt: _primarySelection.rectTransform,
+					top: blockTop,
+					bottom: blockBottom,
+					left: left,
+					right: right
+				);
 			}
-
-			// draw left and right caps
-			if ( endingLineIndex - startingLineIndex > 0 ) {
-				CreateSelectionRect( // left cap
+			if ( showCapSelections ) {
+				SetSelectionRect(
+					rt: _leftCapSelection.rectTransform,
 					top: startingLine.Extents.Bottom,
 					bottom: bottom,
 					left: startingLine.Extents.Left,
 					right: left < right ? left : right
 				);
-				CreateSelectionRect( // right cap
+				SetSelectionRect(
+					rt: _rightCapSelection.rectTransform,
 					top: top,
 					bottom: endingLine.Extents.Top,
 					left: right > left ? right : left,
@@ -765,9 +1082,221 @@ namespace TextEdit {
 				);
 			}
 		}
-		private void CreateSelectionRect ( float top, float bottom, float left, float right ) {
+		private void RefreshScroll () {
 
-			var go = new GameObject( "Selection" );
+			_textMesh.rectTransform.anchoredPosition = GetScrollOffset();
+		}
+
+
+		// scroll data
+		private float _scrollPercent = 0f;
+
+		private Rect GetRect ()
+			=> ( transform as RectTransform ).rect;
+		private Bounds GetFocusBounds ()
+			=> Bounds.FromRect( GetRect() ).ApplyPadding( _focusPadding );
+		private Bounds GetScrollBounds ()
+			=> Bounds.FromRect( GetRect() ).ApplyPadding( _scrollPadding );
+		private Bounds GetTextBounds () {
+
+			var firstLine = _lineInfo.First();
+			var lastLine = _lineInfo.Last();
+			return new Bounds(
+				top: firstLine.Extents.Top,
+				bottom: lastLine.Extents.Bottom,
+				left: firstLine.Extents.Left,
+				right: firstLine.Extents.Right
+			);
+		}
+		private float GetTextHeight ()
+			=> _lineInfo.First().Extents.Top - _lineInfo.Last().Extents.Bottom;
+		private bool GetIsScrollable ()
+			=> GetScrollableHeight() > 0f;
+		private float GetScrollableHeight ()
+			=> ( GetTextHeight() - GetRect().height ).WithFloor( 0f );
+		private Vector3 GetScrollOffset ()
+			=> Vector3.up * _scrollInfo.ViewTop;
+
+		private void ScrollPoints ( float points ) {
+
+			// var scrolledPercentage = points / GetScrollableHeight();
+			// SetScrollPercentage( _scrollPercent + scrolledPercentage );
+		}
+		private void SetScrollPercentage ( float scrollPct ) {
+
+			// _scrollPercent = scrollPct.ClampedBetween( 0f, 1f );
+			// _textMesh.rectTransform.anchoredPosition = GetScrollOffset();
+		}
+
+
+		// getters and setters
+		private string GetSelectionString () {
+
+			var charSpan = _selection.CharacterSpan;
+			return _selection.CaretSpan.IsValid() ? _textMesh.text.Substring( startIndex: charSpan.Min, length: charSpan.Length ) : "";
+		}
+		private int GetCaretIndexFromCharIndex ( int charIndex ) {
+
+			// if past last char, return last caret index
+			if ( _lineInfo.Last().CharacterSpan.IsValid() ) {
+				if ( charIndex > _lineInfo.Last().CharacterSpan.Max ) {
+					return _caretInfo.LastIndex();
+				}
+			}
+
+			for ( int i = 0; i < _lineInfo.Length; i++ ) {
+				var line = _lineInfo[i];
+				if ( line.CharacterSpan.Contains( charIndex ) ) {
+					return ( charIndex - line.CharacterSpan.Min ) + line.CaretSpan.Min;
+				}
+			}
+			return -1;
+		}
+		private int GetCaretIndexFromLocalPosition ( Vector2 localPosition )
+			=> GetCaretIndexFromTextPosition( localPosition - (Vector2)GetScrollOffset() );
+		private int GetCaretIndexFromTextPosition ( Vector2 textPosition ) {
+
+			var pos = ClampTextPositionToTextBounds( textPosition );
+			for ( int i = 0; i < _lineInfo.Length; i++ ) {
+				var line = _lineInfo[i];
+				if ( line.Extents.Contains( pos ) ) {
+					for ( int j = line.CaretSpan.Min; j <= line.CaretSpan.Max; j++ ) {
+						if ( _caretInfo[j].HitBox.Contains( pos ) ) {
+							return j;
+						}
+					}
+				}
+			}
+			return -1;
+		}
+		private int GetWordIndexFromCharIndex ( int charIndex ) {
+
+			if ( _wordInfo.Length == 0 ) { return int.MinValue; }
+
+			for ( int i = 0; i < _wordInfo.Length; i++ ) {
+				if ( charIndex <= _wordInfo[i].CharacterSpan.Max ) {
+					return i;
+				}
+			}
+			return int.MaxValue;
+		}
+		private int GetNextWordEndCaretIndex ( int charIndex ) {
+
+			// get current word, if invalid we're at the end
+			var wordIndex = GetWordIndexFromCharIndex( charIndex );
+			if ( wordIndex == int.MaxValue ) { wordIndex = _wordInfo.Length - 1; }
+
+			// check invalidated for current word
+			var isInvalidated = charIndex >= _caretInfo[_wordInfo[wordIndex].CaretIndexAfter].CharIndex;
+			if ( isInvalidated ) { wordIndex++; }
+
+			// if we're after end, return last
+			if ( wordIndex >= _wordInfo.Length ) {
+				return _caretInfo.LastIndex(); // ignore sink
+			} else {
+				wordIndex = Mathf.Clamp( wordIndex, 0, _wordInfo.Length - 1 );
+				return _wordInfo[wordIndex].CaretIndexAfter;
+			}
+		}
+		private int GetPreviousWordStartCaretIndex ( int charIndex ) {
+
+			// get current word, if invalid we're at the end
+			var wordIndex = GetWordIndexFromCharIndex( charIndex );
+			if ( wordIndex == int.MaxValue ) { wordIndex = _wordInfo.Length - 1; }
+
+			// check invalidated for current word
+			var isInvalidated = charIndex <= _caretInfo[_wordInfo[wordIndex].CaretIndexBefore].CharIndex;
+			if ( isInvalidated ) { wordIndex--; }
+
+			// if we're before beginning, return 0
+			if ( wordIndex < 0 ) {
+				return 0;
+			} else {
+				wordIndex = Mathf.Clamp( wordIndex, 0, _wordInfo.Length - 1 );
+				return _wordInfo[wordIndex].CaretIndexBefore;
+			}
+		}
+
+		private Vector3 GetLocalPositionFromScreenPoint ( Vector2 screenPosition ) {
+
+			var ray = Camera.main.ScreenPointToRay( screenPosition );
+			var plane = new Plane( inNormal: -transform.forward, inPoint: transform.position );
+			plane.Raycast( ray, out float distance );
+			var contactPoint = ray.origin + ( ray.direction * distance );
+			return transform.InverseTransformPoint( contactPoint );
+		}
+		private Vector3 ClampLocalPositionToFrame ( Vector3 localPosition ) {
+
+			var frame = ( transform as RectTransform ).rect;
+			var x = Mathf.Clamp( localPosition.x, frame.xMin, frame.xMax );
+			var y = Mathf.Clamp( localPosition.y, frame.yMin, frame.yMax );
+			var z = 0f;
+			return new Vector3( x, y, z );
+		}
+		private Vector3 ClampTextPositionToTextBounds ( Vector3 textPosition )
+			=> GetTextBounds().Clamp( textPosition );
+		private Vector2 GetPivotOffsetBetween ( RectTransform from, RectTransform to ) {
+
+			var pivotDifference = ( to.pivot - from.pivot );
+			return new Vector2(
+				x: to.rect.width * pivotDifference.x,
+				y: to.rect.height * pivotDifference.y
+			);
+		}
+
+		private void SetCaretBounds ( RectTransform rt, Bounds bounds ) {
+
+			rt.anchoredPosition = bounds.TopCenter + (Vector2)GetScrollOffset();
+
+			var sizeDelta = rt.sizeDelta;
+			sizeDelta.y = bounds.Height;
+			rt.sizeDelta = sizeDelta;
+		}
+		private void SetSelectionRect ( RectTransform rt, float top, float bottom, float left, float right ) {
+
+			rt.offsetMax = new Vector2( right, top ) + (Vector2)GetScrollOffset();
+			rt.offsetMin = new Vector2( left, bottom ) + (Vector2)GetScrollOffset();
+		}
+		private void SetCaretIntentToFloatCaret ( bool x, bool y ) {
+
+			var position = _selection.FloatCaret.Target.MiddleCenter;
+			if ( x ) { _intendedCaretPosition.x = position.x; }
+			if ( y ) { _intendedCaretPosition.y = position.y; }
+		}
+		private void SetCaretIndexFromLocalPosition ( Vector2 localPosition, bool setAnchor ) {
+
+			var clampedPosition = ClampLocalPositionToFrame( localPosition );
+			var caretIndex = GetCaretIndexFromLocalPosition( clampedPosition );
+			if ( setAnchor ) {
+				_selection.SetAnchorCaretIndex( caretIndex );
+			} else {
+				_selection.SetFloatCaretIndex( caretIndex );
+			}
+			SetCaretIntentToFloatCaret( x: true, y: true );
+			RefreshSelection( _selection );
+		}
+
+		// text processing
+		private bool IsNewLineCharacter ( char c ) {
+			return Regex.IsMatch( c.ToString(), @"(\r\n|\r|\n)" );
+		}
+		private bool IsNonWordCharacter ( char c ) {
+			return char.IsWhiteSpace( c ) || char.IsPunctuation( c );
+		}
+		private string FilterValidCharacterInput ( string input ) {
+			return Regex.Replace( input, @"\p{C}+", string.Empty );
+		}
+
+		// create stuff
+		private void InitCaret ( Image caret ) {
+
+			caret.rectTransform.anchorMin = ( transform as RectTransform ).pivot;
+			caret.rectTransform.anchorMax = ( transform as RectTransform ).pivot;
+			caret.gameObject.SetActive( false );
+		}
+		private Image CreateSelectionRect ( string name ) {
+
+			var go = new GameObject( name );
 			go.transform.SetParent( transform, false );
 			go.transform.SetAsFirstSibling();
 
@@ -775,30 +1304,7 @@ namespace TextEdit {
 			selection.rectTransform.anchorMin = ( transform as RectTransform ).pivot;
 			selection.rectTransform.anchorMax = ( transform as RectTransform ).pivot;
 			selection.color = _highlightColor;
-			selection.rectTransform.offsetMax = new Vector2( right, top );
-			selection.rectTransform.offsetMin = new Vector2( left, bottom );
-			_selections.Add( selection );
-		}
-		private void SetCaretBounds ( Image caret, Text.CaretInfo location ) {
-
-			// set position
-			caret.rectTransform.anchoredPosition = new Vector2( location.Target.Center, location.Target.Top );
-
-			// set height
-			var sizeDelta = caret.rectTransform.sizeDelta;
-			sizeDelta.y = location.Target.Height;
-			caret.rectTransform.sizeDelta = sizeDelta;
-		}
-
-		// helpers
-		private Plane GetPlane () => new Plane( inNormal: -transform.forward, inPoint: transform.position );
-		private Ray GetRay ( Vector2 mousePosition ) => Camera.main.ScreenPointToRay( mousePosition );
-		private Vector3 GetContactPoint ( Vector2 mousePosition ) {
-
-			var ray = GetRay( mousePosition );
-			GetPlane().Raycast( ray, out float distance );
-			var contactPoint = ray.origin + ( ray.direction * distance );
-			return transform.InverseTransformPoint( contactPoint );
+			return selection;
 		}
 
 
@@ -806,37 +1312,50 @@ namespace TextEdit {
 
 		void IPointerEnterHandler.OnPointerEnter ( PointerEventData eventData ) {
 
-			// Debug.Log( $"Enter" );
-			_isInside.Set( true );
+			_isInside = true;
 		}
 		void IPointerDownHandler.OnPointerDown ( PointerEventData eventData ) {
 
-			// Debug.Log( $"On Down" );
-			_isTrackingCursor.Set( true );
-			var localPosition = GetContactPoint( eventData.position );
-			var caretIndex = GetCaretIndex( localPosition );
-			if ( caretIndex == _caretInfo.Length - 1 ) { caretIndex--; } // don't ever actually select the sink
-			_caretAnchorIndex.Set( caretIndex );
-			_caretFloatIndex.Set( caretIndex );
+			_isDown = true;
+			var localPosition = GetLocalPositionFromScreenPoint( eventData.position );
+			SetCaretIndexFromLocalPosition( localPosition, setAnchor: true );
 		}
 		void IDragHandler.OnDrag ( PointerEventData eventData ) {
 
-			// Debug.Log( $"On Drag" );
-			var localPosition = GetContactPoint( eventData.position );
-			var caretIndex = GetCaretIndex( localPosition );
-			if ( caretIndex == _caretInfo.Length - 1 ) { caretIndex--; } // don't ever actually select the sink
-			_caretFloatIndex.Set( caretIndex );
+			var localPosition = GetLocalPositionFromScreenPoint( eventData.position );
+			SetCaretIndexFromLocalPosition( localPosition, setAnchor: false );
 		}
 		void IPointerUpHandler.OnPointerUp ( PointerEventData eventData ) {
 
-			// Debug.Log( $"On Up" );
-			_isTrackingCursor.Set( false );
+			_isDown = false;
 		}
 		void IPointerExitHandler.OnPointerExit ( PointerEventData eventData ) {
 
-			// Debug.Log( $"Exit" );
-			_isInside.Set( false );
-			_contactPoint.Set( null );
+			_isInside = false;
+		}
+		void IScrollHandler.OnScroll ( PointerEventData eventData ) {
+
+			// Debug.Log( $"Is scrolling {eventData.IsScrolling()}" );
+
+			var points = (int)_scrollType * _scrollSpeed * eventData.scrollDelta.y;
+			_scrollInfo.ScrollByPoints( points );
+			ScrollPoints( points );
+		}
+		void ISelectHandler.OnSelect ( BaseEventData eventData ) {
+
+			_isSelected = true;
+		}
+		void IDeselectHandler.OnDeselect ( BaseEventData eventData ) {
+
+			_isSelected = false;
+			_selection = new SelectionInfo( Span.Invalid, _caretInfo );
+			RefreshSelection( _selection );
+		}
+		void ICancelHandler.OnCancel ( BaseEventData eventData ) {
+
+			_isSelected = false;
+			_selection = new SelectionInfo( Span.Invalid, _caretInfo );
+			RefreshSelection( _selection );
 		}
 	}
 

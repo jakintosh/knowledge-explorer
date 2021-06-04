@@ -58,6 +58,9 @@ public static class Float_Extensions {
 	public static float WithFloor ( this float value, float other )
 		=> value > other ? value : other;
 
+	public static float ClampedBetween ( this float value, float min, float max )
+		=> value.WithCeiling( max ).WithFloor( min );
+
 	public static float WithSign ( this float value, Sign sign )
 		=> value * (int)sign;
 
@@ -67,6 +70,8 @@ public static class Float_Extensions {
 	public static Sign ToSign ( this float value )
 		=> value >= 0f ? Sign.Positive : Sign.Negative;
 
+	public static float Sin ( this float value, float min, float max )
+		=> min + ( ( ( Mathf.Sin( value ) / 2f ) + 0.5f ) * ( max - min ) );
 
 	// comparison
 	public static bool IsApproximately ( this float value, float to )

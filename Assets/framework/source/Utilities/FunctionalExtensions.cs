@@ -10,16 +10,17 @@ public static class List_T_FunctionalExtensions {
 		}
 	}
 
+	public static int LastIndex<T> ( this IList<T> collection ) {
+
+		return ( collection.Count == 0 ) ? throw new IndexOutOfRangeException() : collection.Count - 1;
+	}
 	public static T First<T> ( this IList<T> collection ) {
 
-		foreach ( var value in collection ) { return value; }
-		return default( T );
+		return ( collection.Count == 0 ) ? throw new IndexOutOfRangeException() : collection[0];
 	}
 	public static T Last<T> ( this IList<T> collection ) {
 
-		T last = default( T );
-		foreach ( var value in collection ) { last = value; }
-		return last;
+		return ( collection.Count == 0 ) ? throw new IndexOutOfRangeException() : collection[collection.Count - 1];
 	}
 	public static List<T> Map<T> ( this IList<T> list, Func<T, T> modify ) {
 
