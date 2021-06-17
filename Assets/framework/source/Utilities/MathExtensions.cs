@@ -109,6 +109,12 @@ public static class Vector2Int_Extensions {
 		=> new Vector3( vector.x, y, vector.y );
 }
 
+public static class Vector2_Extensions {
+
+	public static Vector2 Clamp ( this Vector2 vector, Vector2 min, Vector2 max )
+		=> new Vector2( vector.x.ClampedBetween( min.x, max.x ), vector.y.ClampedBetween( min.y, max.y ) );
+}
+
 public static class Vector3_Extensions {
 
 	// acceleration
@@ -120,6 +126,18 @@ public static class Vector3_Extensions {
 
 	public static Vector3 RelativeTo ( this Vector3 worldDirection, Vector3 referenceDirection )
 		=> Quaternion.FromToRotation( referenceDirection, worldDirection ) * ( Vector3.forward * worldDirection.magnitude );
+}
+
+public static class RectTransform_Extensions {
+
+	public static Vector3 ConvertPointToOtherSpace ( this RectTransform rt, Vector3 point, RectTransform otherRT )
+		=> otherRT.InverseTransformPoint( rt.TransformPoint( point ) );
+}
+
+public static class GameObject_Extensions {
+
+	public static RectTransform GetRectTransform ( this GameObject gameObject )
+		=> ( gameObject.transform as RectTransform );
 }
 
 public static class Quaternion_Extensions {

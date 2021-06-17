@@ -9,7 +9,9 @@ namespace Explorer.View {
 		View that represents a full "instance" of the application. To follow
 		changes to a new context, there should be a new instance of a context.
 	*/
-	public class Context : ReuseableView<Client.Context> {
+	public abstract class BaseContext : ReuseableView<Client.ExplorerContext> { }
+
+	public class ExplorerContext : BaseContext {
 
 
 		[Header( "UI Controls" )]
@@ -21,11 +23,11 @@ namespace Explorer.View {
 		[SerializeField] private GraphViewport _graphViewport = null;
 
 		// data
-		private Client.Context _context;
-		private Observable<Client.ContextState> _contextState;
+		private Client.ExplorerContext _context;
+		private Observable<Client.ExplorerContextState> _contextState;
 
 		// view lifecycle
-		public override Client.Context GetState () {
+		public override Client.ExplorerContext GetState () {
 			return _context;
 		}
 		protected override void OnInitialize () {
@@ -35,8 +37,8 @@ namespace Explorer.View {
 			_graphToolbar.Init();
 
 			// init observables
-			_contextState = new Observable<Client.ContextState>(
-				initialValue: Client.ContextState.Null,
+			_contextState = new Observable<Client.ExplorerContextState>(
+				initialValue: Client.ExplorerContextState.Null,
 				onChange: contextState => {
 					_workspaceBrowser.SetActiveWorkspace( contextState.Workspace );
 					_relationTypeBrowser.InitWith( contextState.Workspace );
@@ -57,7 +59,7 @@ namespace Explorer.View {
 				workspace.GraphViewport = _graphViewport.GetState();
 			} );
 		}
-		protected override void OnPopulate ( Client.Context context ) {
+		protected override void OnPopulate ( Client.ExplorerContext context ) {
 
 			if ( context == null ) {
 				throw new System.NullReferenceException( message: "View.Context.OnPopulate: Tried to populate with null context." );

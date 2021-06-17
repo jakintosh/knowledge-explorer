@@ -198,6 +198,96 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 117123262}
   m_CullTransparentMesh: 1
+--- !u!1 &269198517
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 269198518}
+  - component: {fileID: 269198520}
+  - component: {fileID: 269198521}
+  - component: {fileID: 269198519}
+  m_Layer: 0
+  m_Name: Background
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &269198518
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269198517}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1650075233}
+  m_Father: {fileID: 1818916015}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &269198519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269198517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 3410ec00bb7134e3187d1a3ed16cc000, type: 3}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 3
+--- !u!222 &269198520
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269198517}
+  m_CullTransparentMesh: 1
+--- !u!114 &269198521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269198517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShowMaskGraphic: 1
 --- !u!1 &638056632
 GameObject:
   m_ObjectHideFlags: 0
@@ -480,6 +570,7 @@ GameObject:
   - component: {fileID: 886496600}
   - component: {fileID: 886496601}
   - component: {fileID: 886496598}
+  - component: {fileID: 886496602}
   m_Layer: 0
   m_Name: Text Edit
   m_TagString: Untagged
@@ -506,8 +597,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000015258789, y: 0}
-  m_SizeDelta: {x: -200.00003, y: -100}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &886496597
 MonoBehaviour:
@@ -551,25 +642,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ecb3788419d54df0a40522a640fd7d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _focusPadding:
-    top: 0
-    bottom: 45
-    left: 0
-    right: 0
-  _scrollPadding:
-    top: 0
-    bottom: 0
-    left: 0
-    right: 0
-  _scrollType: -1
-  _scrollSpeed: 5
+  _scroll: {fileID: 886496602}
   _textMesh: {fileID: 1808755828}
   _leadingCaret: {fileID: 1449469658}
   _trailingCaret: {fileID: 1964338878}
   _caretColor: {r: 0, g: 0.67058825, b: 0.90588236, a: 1}
   _highlightColor: {r: 0, g: 0.67058825, b: 0.90588236, a: 0.74509805}
-  _visualizeFocusPadding: 1
-  _visualizeScrollPadding: 1
   _visualizeLineMargins: 0
   _visualizeLineExtents: 0
   _visualizeWordMargins: 0
@@ -579,2842 +657,6 @@ MonoBehaviour:
   _visualizeCharacterExtents: 0
   _visualizeCaretBounds: 0
   _showContactPoint: 0
-  _lineInfo: []
-  _wordInfo: []
-  _charInfo: []
-  _caretInfo:
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -112.499985
-      right: -100.151146
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 0
-    CharIndex: 0
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -100.151146
-      right: -93.453476
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -96.80231
-      right: -96.80231
-    LineIndex: 0
-    CharIndex: 1
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -93.453476
-      right: -88.081375
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -90.10464
-      right: -90.10464
-    LineIndex: 0
-    CharIndex: 2
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -88.081375
-      right: -82.70928
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -86.05812
-      right: -86.05812
-    LineIndex: 0
-    CharIndex: 3
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -82.70928
-      right: -74.197655
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -79.36044
-      right: -79.36044
-    LineIndex: 0
-    CharIndex: 4
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -74.197655
-      right: -67.36044
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -69.03487
-      right: -69.03487
-    LineIndex: 0
-    CharIndex: 5
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -67.36044
-      right: -64.36044
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -65.68603
-      right: -65.68603
-    LineIndex: 0
-    CharIndex: 6
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -64.36044
-      right: -59.686028
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -63.034866
-      right: -63.034866
-    LineIndex: 0
-    CharIndex: 7
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -59.686028
-      right: -53.337193
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -56.337193
-      right: -56.337193
-    LineIndex: 0
-    CharIndex: 8
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -53.337193
-      right: -46.988358
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -50.337193
-      right: -50.337193
-    LineIndex: 0
-    CharIndex: 9
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -46.988358
-      right: -38.476727
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -43.63952
-      right: -43.63952
-    LineIndex: 0
-    CharIndex: 10
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -38.476727
-      right: -31.639515
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -33.313934
-      right: -33.313934
-    LineIndex: 0
-    CharIndex: 11
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -31.639515
-      right: -26.616257
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -29.965096
-      right: -29.965096
-    LineIndex: 0
-    CharIndex: 12
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -26.616257
-      right: -19.91858
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -23.267418
-      right: -23.267418
-    LineIndex: 0
-    CharIndex: 13
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -19.91858
-      right: -15.24416
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -16.56974
-      right: -16.56974
-    LineIndex: 0
-    CharIndex: 14
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -15.24416
-      right: -10.56974
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -13.918579
-      right: -13.918579
-    LineIndex: 0
-    CharIndex: 15
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -10.56974
-      right: -5.197647
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -7.2209015
-      right: -7.2209015
-    LineIndex: 0
-    CharIndex: 16
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -5.197647
-      right: -1.4999733
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: -3.1743927
-      right: -3.1743927
-    LineIndex: 0
-    CharIndex: 17
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: -1.4999733
-      right: 3.174446
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 0.1744461
-      right: 0.1744461
-    LineIndex: 0
-    CharIndex: 18
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 3.174446
-      right: 7.5000267
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 6.174446
-      right: 6.174446
-    LineIndex: 0
-    CharIndex: 19
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 7.5000267
-      right: 10.500027
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 0
-    CharIndex: 20
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 10.500027
-      right: 13.8488655
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 12.174446
-      right: 12.174446
-    LineIndex: 0
-    CharIndex: 21
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 13.8488655
-      right: 18.872124
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 0
-    CharIndex: 22
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 18.872124
-      right: 27.38375
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 22.220963
-      right: 22.220963
-    LineIndex: 0
-    CharIndex: 23
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 27.38375
-      right: 35.89538
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 32.54654
-      right: 32.54654
-    LineIndex: 0
-    CharIndex: 24
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 35.89538
-      right: 40.918633
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 39.244217
-      right: 39.244217
-    LineIndex: 0
-    CharIndex: 25
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 40.918633
-      right: 44.267464
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 42.59305
-      right: 42.59305
-    LineIndex: 0
-    CharIndex: 26
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 44.267464
-      right: 47.71388
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 45.94188
-      right: 45.94188
-    LineIndex: 0
-    CharIndex: 27
-  - HitBox:
-      top: 225
-      bottom: 210.00117
-      left: 47.71388
-      right: 112.499985
-    Target:
-      top: 225
-      bottom: 210.00117
-      left: 49.485878
-      right: 49.485878
-    LineIndex: 0
-    CharIndex: 28
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -112.499985
-      right: -100.499985
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 1
-    CharIndex: 28
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -100.499985
-      right: -94.151146
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -97.499985
-      right: -97.499985
-    LineIndex: 1
-    CharIndex: 29
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -94.151146
-      right: -87.45347
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -90.80231
-      right: -90.80231
-    LineIndex: 1
-    CharIndex: 30
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -87.45347
-      right: -81.10463
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -84.10463
-      right: -84.10463
-    LineIndex: 1
-    CharIndex: 31
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -81.10463
-      right: -74.7558
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -78.10463
-      right: -78.10463
-    LineIndex: 1
-    CharIndex: 32
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -74.7558
-      right: -68.40696
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -71.40696
-      right: -71.40696
-    LineIndex: 1
-    CharIndex: 33
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -68.40696
-      right: -63.73254
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -65.40696
-      right: -65.40696
-    LineIndex: 1
-    CharIndex: 34
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -63.73254
-      right: -58.709282
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -62.05812
-      right: -62.05812
-    LineIndex: 1
-    CharIndex: 35
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -58.709282
-      right: -53.686028
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -55.360447
-      right: -55.360447
-    LineIndex: 1
-    CharIndex: 36
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -53.686028
-      right: -48.662773
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -52.01161
-      right: -52.01161
-    LineIndex: 1
-    CharIndex: 37
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -48.662773
-      right: -43.29068
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -45.313934
-      right: -45.313934
-    LineIndex: 1
-    CharIndex: 38
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -43.29068
-      right: -39.593002
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -41.26742
-      right: -41.26742
-    LineIndex: 1
-    CharIndex: 39
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -39.593002
-      right: -34.569748
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -37.918587
-      right: -37.918587
-    LineIndex: 1
-    CharIndex: 40
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -34.569748
-      right: -27.87207
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -31.22091
-      right: -31.22091
-    LineIndex: 1
-    CharIndex: 41
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -27.87207
-      right: -23.19765
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -24.523232
-      right: -24.523232
-    LineIndex: 1
-    CharIndex: 42
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -23.19765
-      right: -18.523232
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -21.87207
-      right: -21.87207
-    LineIndex: 1
-    CharIndex: 43
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -18.523232
-      right: -13.848812
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -15.174393
-      right: -15.174393
-    LineIndex: 1
-    CharIndex: 44
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -13.848812
-      right: -9.5232315
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -12.5232315
-      right: -12.5232315
-    LineIndex: 1
-    CharIndex: 45
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -9.5232315
-      right: -3.5232315
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -6.5232315
-      right: -6.5232315
-    LineIndex: 1
-    CharIndex: 46
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: -3.5232315
-      right: 0.8023491
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: -0.5232315
-      right: -0.5232315
-    LineIndex: 1
-    CharIndex: 47
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 0.8023491
-      right: 5.4767685
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 2.1279297
-      right: 2.1279297
-    LineIndex: 1
-    CharIndex: 48
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 5.4767685
-      right: 12.174446
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 1
-    CharIndex: 49
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 12.174446
-      right: 17.197704
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 1
-    CharIndex: 50
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 17.197704
-      right: 22.220959
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 18.872124
-      right: 18.872124
-    LineIndex: 1
-    CharIndex: 51
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 22.220959
-      right: 26.895378
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 25.569794
-      right: 25.569794
-    LineIndex: 1
-    CharIndex: 52
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 26.895378
-      right: 29.546547
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 28.220963
-      right: 28.220963
-    LineIndex: 1
-    CharIndex: 53
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 29.546547
-      right: 32.546547
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 30.872131
-      right: 30.872131
-    LineIndex: 1
-    CharIndex: 54
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 32.546547
-      right: 35.89538
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 34.220963
-      right: 34.220963
-    LineIndex: 1
-    CharIndex: 55
-  - HitBox:
-      top: 210.00117
-      bottom: 195.00235
-      left: 35.89538
-      right: 112.499985
-    Target:
-      top: 210.00117
-      bottom: 195.00235
-      left: 37.569794
-      right: 37.569794
-    LineIndex: 1
-    CharIndex: 56
-  - HitBox:
-      top: 195.00235
-      bottom: 180.00352
-      left: -112.499985
-      right: 112.499985
-    Target:
-      top: 195.00235
-      bottom: 180.00352
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 2
-    CharIndex: 57
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -112.499985
-      right: -100.151146
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 3
-    CharIndex: 58
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -100.151146
-      right: -93.453476
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -96.80231
-      right: -96.80231
-    LineIndex: 3
-    CharIndex: 59
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -93.453476
-      right: -88.081375
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -90.10464
-      right: -90.10464
-    LineIndex: 3
-    CharIndex: 60
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -88.081375
-      right: -82.70928
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -86.05812
-      right: -86.05812
-    LineIndex: 3
-    CharIndex: 61
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -82.70928
-      right: -74.197655
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -79.36044
-      right: -79.36044
-    LineIndex: 3
-    CharIndex: 62
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -74.197655
-      right: -67.36044
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -69.03487
-      right: -69.03487
-    LineIndex: 3
-    CharIndex: 63
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -67.36044
-      right: -64.36044
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -65.68603
-      right: -65.68603
-    LineIndex: 3
-    CharIndex: 64
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -64.36044
-      right: -59.686028
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -63.034866
-      right: -63.034866
-    LineIndex: 3
-    CharIndex: 65
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -59.686028
-      right: -53.337193
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -56.337193
-      right: -56.337193
-    LineIndex: 3
-    CharIndex: 66
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -53.337193
-      right: -46.988358
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -50.337193
-      right: -50.337193
-    LineIndex: 3
-    CharIndex: 67
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -46.988358
-      right: -38.476727
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -43.63952
-      right: -43.63952
-    LineIndex: 3
-    CharIndex: 68
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -38.476727
-      right: -31.639515
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -33.313934
-      right: -33.313934
-    LineIndex: 3
-    CharIndex: 69
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -31.639515
-      right: -26.616257
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -29.965096
-      right: -29.965096
-    LineIndex: 3
-    CharIndex: 70
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -26.616257
-      right: -19.91858
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -23.267418
-      right: -23.267418
-    LineIndex: 3
-    CharIndex: 71
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -19.91858
-      right: -15.24416
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -16.56974
-      right: -16.56974
-    LineIndex: 3
-    CharIndex: 72
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -15.24416
-      right: -10.56974
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -13.918579
-      right: -13.918579
-    LineIndex: 3
-    CharIndex: 73
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -10.56974
-      right: -5.197647
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -7.2209015
-      right: -7.2209015
-    LineIndex: 3
-    CharIndex: 74
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -5.197647
-      right: -1.4999733
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: -3.1743927
-      right: -3.1743927
-    LineIndex: 3
-    CharIndex: 75
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: -1.4999733
-      right: 3.174446
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 0.1744461
-      right: 0.1744461
-    LineIndex: 3
-    CharIndex: 76
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 3.174446
-      right: 7.5000267
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 6.174446
-      right: 6.174446
-    LineIndex: 3
-    CharIndex: 77
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 7.5000267
-      right: 10.500027
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 3
-    CharIndex: 78
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 10.500027
-      right: 13.8488655
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 12.174446
-      right: 12.174446
-    LineIndex: 3
-    CharIndex: 79
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 13.8488655
-      right: 18.872124
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 3
-    CharIndex: 80
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 18.872124
-      right: 27.38375
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 22.220963
-      right: 22.220963
-    LineIndex: 3
-    CharIndex: 81
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 27.38375
-      right: 35.89538
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 32.54654
-      right: 32.54654
-    LineIndex: 3
-    CharIndex: 82
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 35.89538
-      right: 40.918633
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 39.244217
-      right: 39.244217
-    LineIndex: 3
-    CharIndex: 83
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 40.918633
-      right: 44.267464
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 42.59305
-      right: 42.59305
-    LineIndex: 3
-    CharIndex: 84
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 44.267464
-      right: 47.71388
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 45.94188
-      right: 45.94188
-    LineIndex: 3
-    CharIndex: 85
-  - HitBox:
-      top: 180.00351
-      bottom: 165.00468
-      left: 47.71388
-      right: 112.499985
-    Target:
-      top: 180.00351
-      bottom: 165.00468
-      left: 49.485878
-      right: 49.485878
-    LineIndex: 3
-    CharIndex: 86
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -112.499985
-      right: -100.499985
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 4
-    CharIndex: 86
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -100.499985
-      right: -94.151146
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -97.499985
-      right: -97.499985
-    LineIndex: 4
-    CharIndex: 87
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -94.151146
-      right: -87.45347
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -90.80231
-      right: -90.80231
-    LineIndex: 4
-    CharIndex: 88
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -87.45347
-      right: -81.10463
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -84.10463
-      right: -84.10463
-    LineIndex: 4
-    CharIndex: 89
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -81.10463
-      right: -74.7558
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -78.10463
-      right: -78.10463
-    LineIndex: 4
-    CharIndex: 90
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -74.7558
-      right: -68.40696
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -71.40696
-      right: -71.40696
-    LineIndex: 4
-    CharIndex: 91
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -68.40696
-      right: -63.73254
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -65.40696
-      right: -65.40696
-    LineIndex: 4
-    CharIndex: 92
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -63.73254
-      right: -58.709282
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -62.05812
-      right: -62.05812
-    LineIndex: 4
-    CharIndex: 93
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -58.709282
-      right: -53.686028
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -55.360447
-      right: -55.360447
-    LineIndex: 4
-    CharIndex: 94
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -53.686028
-      right: -48.662773
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -52.01161
-      right: -52.01161
-    LineIndex: 4
-    CharIndex: 95
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -48.662773
-      right: -43.29068
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -45.313934
-      right: -45.313934
-    LineIndex: 4
-    CharIndex: 96
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -43.29068
-      right: -39.593002
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -41.26742
-      right: -41.26742
-    LineIndex: 4
-    CharIndex: 97
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -39.593002
-      right: -34.569748
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -37.918587
-      right: -37.918587
-    LineIndex: 4
-    CharIndex: 98
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -34.569748
-      right: -27.87207
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -31.22091
-      right: -31.22091
-    LineIndex: 4
-    CharIndex: 99
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -27.87207
-      right: -23.19765
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -24.523232
-      right: -24.523232
-    LineIndex: 4
-    CharIndex: 100
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -23.19765
-      right: -18.523232
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -21.87207
-      right: -21.87207
-    LineIndex: 4
-    CharIndex: 101
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -18.523232
-      right: -13.848812
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -15.174393
-      right: -15.174393
-    LineIndex: 4
-    CharIndex: 102
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -13.848812
-      right: -9.5232315
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -12.5232315
-      right: -12.5232315
-    LineIndex: 4
-    CharIndex: 103
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -9.5232315
-      right: -3.5232315
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -6.5232315
-      right: -6.5232315
-    LineIndex: 4
-    CharIndex: 104
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: -3.5232315
-      right: 0.8023491
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: -0.5232315
-      right: -0.5232315
-    LineIndex: 4
-    CharIndex: 105
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 0.8023491
-      right: 5.4767685
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 2.1279297
-      right: 2.1279297
-    LineIndex: 4
-    CharIndex: 106
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 5.4767685
-      right: 12.174446
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 4
-    CharIndex: 107
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 12.174446
-      right: 17.197704
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 4
-    CharIndex: 108
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 17.197704
-      right: 22.220959
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 18.872124
-      right: 18.872124
-    LineIndex: 4
-    CharIndex: 109
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 22.220959
-      right: 26.895378
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 25.569794
-      right: 25.569794
-    LineIndex: 4
-    CharIndex: 110
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 26.895378
-      right: 29.546547
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 28.220963
-      right: 28.220963
-    LineIndex: 4
-    CharIndex: 111
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 29.546547
-      right: 32.546547
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 30.872131
-      right: 30.872131
-    LineIndex: 4
-    CharIndex: 112
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 32.546547
-      right: 35.89538
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 34.220963
-      right: 34.220963
-    LineIndex: 4
-    CharIndex: 113
-  - HitBox:
-      top: 165.00468
-      bottom: 150.00586
-      left: 35.89538
-      right: 112.499985
-    Target:
-      top: 165.00468
-      bottom: 150.00586
-      left: 37.569794
-      right: 37.569794
-    LineIndex: 4
-    CharIndex: 114
-  - HitBox:
-      top: 150.00586
-      bottom: 135.00703
-      left: -112.499985
-      right: 112.499985
-    Target:
-      top: 150.00586
-      bottom: 135.00703
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 5
-    CharIndex: 115
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -112.499985
-      right: -100.151146
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 6
-    CharIndex: 116
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -100.151146
-      right: -93.453476
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -96.80231
-      right: -96.80231
-    LineIndex: 6
-    CharIndex: 117
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -93.453476
-      right: -88.081375
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -90.10464
-      right: -90.10464
-    LineIndex: 6
-    CharIndex: 118
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -88.081375
-      right: -82.70928
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -86.05812
-      right: -86.05812
-    LineIndex: 6
-    CharIndex: 119
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -82.70928
-      right: -74.197655
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -79.36044
-      right: -79.36044
-    LineIndex: 6
-    CharIndex: 120
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -74.197655
-      right: -67.36044
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -69.03487
-      right: -69.03487
-    LineIndex: 6
-    CharIndex: 121
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -67.36044
-      right: -64.36044
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -65.68603
-      right: -65.68603
-    LineIndex: 6
-    CharIndex: 122
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -64.36044
-      right: -59.686028
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -63.034866
-      right: -63.034866
-    LineIndex: 6
-    CharIndex: 123
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -59.686028
-      right: -53.337193
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -56.337193
-      right: -56.337193
-    LineIndex: 6
-    CharIndex: 124
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -53.337193
-      right: -46.988358
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -50.337193
-      right: -50.337193
-    LineIndex: 6
-    CharIndex: 125
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -46.988358
-      right: -38.476727
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -43.63952
-      right: -43.63952
-    LineIndex: 6
-    CharIndex: 126
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -38.476727
-      right: -31.639515
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -33.313934
-      right: -33.313934
-    LineIndex: 6
-    CharIndex: 127
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -31.639515
-      right: -26.616257
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -29.965096
-      right: -29.965096
-    LineIndex: 6
-    CharIndex: 128
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -26.616257
-      right: -19.91858
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -23.267418
-      right: -23.267418
-    LineIndex: 6
-    CharIndex: 129
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -19.91858
-      right: -15.24416
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -16.56974
-      right: -16.56974
-    LineIndex: 6
-    CharIndex: 130
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -15.24416
-      right: -10.56974
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -13.918579
-      right: -13.918579
-    LineIndex: 6
-    CharIndex: 131
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -10.56974
-      right: -5.197647
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -7.2209015
-      right: -7.2209015
-    LineIndex: 6
-    CharIndex: 132
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -5.197647
-      right: -1.4999733
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: -3.1743927
-      right: -3.1743927
-    LineIndex: 6
-    CharIndex: 133
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: -1.4999733
-      right: 3.174446
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 0.1744461
-      right: 0.1744461
-    LineIndex: 6
-    CharIndex: 134
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 3.174446
-      right: 7.5000267
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 6.174446
-      right: 6.174446
-    LineIndex: 6
-    CharIndex: 135
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 7.5000267
-      right: 10.500027
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 6
-    CharIndex: 136
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 10.500027
-      right: 13.8488655
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 12.174446
-      right: 12.174446
-    LineIndex: 6
-    CharIndex: 137
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 13.8488655
-      right: 18.872124
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 6
-    CharIndex: 138
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 18.872124
-      right: 27.38375
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 22.220963
-      right: 22.220963
-    LineIndex: 6
-    CharIndex: 139
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 27.38375
-      right: 35.89538
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 32.54654
-      right: 32.54654
-    LineIndex: 6
-    CharIndex: 140
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 35.89538
-      right: 40.918633
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 39.244217
-      right: 39.244217
-    LineIndex: 6
-    CharIndex: 141
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 40.918633
-      right: 44.267464
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 42.59305
-      right: 42.59305
-    LineIndex: 6
-    CharIndex: 142
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 44.267464
-      right: 47.71388
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 45.94188
-      right: 45.94188
-    LineIndex: 6
-    CharIndex: 143
-  - HitBox:
-      top: 135.00703
-      bottom: 120.00821
-      left: 47.71388
-      right: 112.499985
-    Target:
-      top: 135.00703
-      bottom: 120.00821
-      left: 49.485878
-      right: 49.485878
-    LineIndex: 6
-    CharIndex: 144
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -112.499985
-      right: -100.499985
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 7
-    CharIndex: 144
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -100.499985
-      right: -94.151146
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -97.499985
-      right: -97.499985
-    LineIndex: 7
-    CharIndex: 145
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -94.151146
-      right: -87.45347
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -90.80231
-      right: -90.80231
-    LineIndex: 7
-    CharIndex: 146
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -87.45347
-      right: -81.10463
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -84.10463
-      right: -84.10463
-    LineIndex: 7
-    CharIndex: 147
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -81.10463
-      right: -74.7558
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -78.10463
-      right: -78.10463
-    LineIndex: 7
-    CharIndex: 148
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -74.7558
-      right: -68.40696
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -71.40696
-      right: -71.40696
-    LineIndex: 7
-    CharIndex: 149
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -68.40696
-      right: -63.73254
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -65.40696
-      right: -65.40696
-    LineIndex: 7
-    CharIndex: 150
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -63.73254
-      right: -58.709282
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -62.05812
-      right: -62.05812
-    LineIndex: 7
-    CharIndex: 151
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -58.709282
-      right: -53.686028
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -55.360447
-      right: -55.360447
-    LineIndex: 7
-    CharIndex: 152
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -53.686028
-      right: -48.662773
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -52.01161
-      right: -52.01161
-    LineIndex: 7
-    CharIndex: 153
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -48.662773
-      right: -43.29068
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -45.313934
-      right: -45.313934
-    LineIndex: 7
-    CharIndex: 154
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -43.29068
-      right: -39.593002
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -41.26742
-      right: -41.26742
-    LineIndex: 7
-    CharIndex: 155
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -39.593002
-      right: -34.569748
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -37.918587
-      right: -37.918587
-    LineIndex: 7
-    CharIndex: 156
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -34.569748
-      right: -27.87207
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -31.22091
-      right: -31.22091
-    LineIndex: 7
-    CharIndex: 157
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -27.87207
-      right: -23.19765
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -24.523232
-      right: -24.523232
-    LineIndex: 7
-    CharIndex: 158
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -23.19765
-      right: -18.523232
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -21.87207
-      right: -21.87207
-    LineIndex: 7
-    CharIndex: 159
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -18.523232
-      right: -13.848812
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -15.174393
-      right: -15.174393
-    LineIndex: 7
-    CharIndex: 160
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -13.848812
-      right: -9.5232315
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -12.5232315
-      right: -12.5232315
-    LineIndex: 7
-    CharIndex: 161
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -9.5232315
-      right: -3.5232315
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -6.5232315
-      right: -6.5232315
-    LineIndex: 7
-    CharIndex: 162
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: -3.5232315
-      right: 0.8023491
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: -0.5232315
-      right: -0.5232315
-    LineIndex: 7
-    CharIndex: 163
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 0.8023491
-      right: 5.4767685
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 2.1279297
-      right: 2.1279297
-    LineIndex: 7
-    CharIndex: 164
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 5.4767685
-      right: 12.174446
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 7
-    CharIndex: 165
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 12.174446
-      right: 17.197704
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 7
-    CharIndex: 166
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 17.197704
-      right: 22.220959
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 18.872124
-      right: 18.872124
-    LineIndex: 7
-    CharIndex: 167
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 22.220959
-      right: 26.895378
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 25.569794
-      right: 25.569794
-    LineIndex: 7
-    CharIndex: 168
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 26.895378
-      right: 29.546547
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 28.220963
-      right: 28.220963
-    LineIndex: 7
-    CharIndex: 169
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 29.546547
-      right: 32.546547
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 30.872131
-      right: 30.872131
-    LineIndex: 7
-    CharIndex: 170
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 32.546547
-      right: 35.89538
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 34.220963
-      right: 34.220963
-    LineIndex: 7
-    CharIndex: 171
-  - HitBox:
-      top: 120.00821
-      bottom: 105.009384
-      left: 35.89538
-      right: 112.499985
-    Target:
-      top: 120.00821
-      bottom: 105.009384
-      left: 37.569794
-      right: 37.569794
-    LineIndex: 7
-    CharIndex: 172
-  - HitBox:
-      top: 105.009384
-      bottom: 90.01056
-      left: -112.499985
-      right: 112.499985
-    Target:
-      top: 105.009384
-      bottom: 90.01056
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 8
-    CharIndex: 173
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -112.499985
-      right: -100.151146
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 9
-    CharIndex: 174
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -100.151146
-      right: -93.453476
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -96.80231
-      right: -96.80231
-    LineIndex: 9
-    CharIndex: 175
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -93.453476
-      right: -88.081375
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -90.10464
-      right: -90.10464
-    LineIndex: 9
-    CharIndex: 176
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -88.081375
-      right: -82.70928
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -86.05812
-      right: -86.05812
-    LineIndex: 9
-    CharIndex: 177
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -82.70928
-      right: -74.197655
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -79.36044
-      right: -79.36044
-    LineIndex: 9
-    CharIndex: 178
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -74.197655
-      right: -67.36044
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -69.03487
-      right: -69.03487
-    LineIndex: 9
-    CharIndex: 179
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -67.36044
-      right: -64.36044
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -65.68603
-      right: -65.68603
-    LineIndex: 9
-    CharIndex: 180
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -64.36044
-      right: -59.686028
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -63.034866
-      right: -63.034866
-    LineIndex: 9
-    CharIndex: 181
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -59.686028
-      right: -53.337193
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -56.337193
-      right: -56.337193
-    LineIndex: 9
-    CharIndex: 182
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -53.337193
-      right: -46.988358
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -50.337193
-      right: -50.337193
-    LineIndex: 9
-    CharIndex: 183
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -46.988358
-      right: -38.476727
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -43.63952
-      right: -43.63952
-    LineIndex: 9
-    CharIndex: 184
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -38.476727
-      right: -31.639515
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -33.313934
-      right: -33.313934
-    LineIndex: 9
-    CharIndex: 185
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -31.639515
-      right: -26.616257
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -29.965096
-      right: -29.965096
-    LineIndex: 9
-    CharIndex: 186
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -26.616257
-      right: -19.91858
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -23.267418
-      right: -23.267418
-    LineIndex: 9
-    CharIndex: 187
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -19.91858
-      right: -15.24416
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -16.56974
-      right: -16.56974
-    LineIndex: 9
-    CharIndex: 188
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -15.24416
-      right: -10.56974
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -13.918579
-      right: -13.918579
-    LineIndex: 9
-    CharIndex: 189
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -10.56974
-      right: -5.197647
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -7.2209015
-      right: -7.2209015
-    LineIndex: 9
-    CharIndex: 190
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -5.197647
-      right: -1.4999733
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: -3.1743927
-      right: -3.1743927
-    LineIndex: 9
-    CharIndex: 191
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: -1.4999733
-      right: 3.174446
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 0.1744461
-      right: 0.1744461
-    LineIndex: 9
-    CharIndex: 192
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 3.174446
-      right: 7.5000267
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 6.174446
-      right: 6.174446
-    LineIndex: 9
-    CharIndex: 193
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 7.5000267
-      right: 10.500027
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 9
-    CharIndex: 194
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 10.500027
-      right: 13.8488655
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 12.174446
-      right: 12.174446
-    LineIndex: 9
-    CharIndex: 195
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 13.8488655
-      right: 18.872124
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 9
-    CharIndex: 196
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 18.872124
-      right: 27.38375
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 22.220963
-      right: 22.220963
-    LineIndex: 9
-    CharIndex: 197
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 27.38375
-      right: 35.89538
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 32.54654
-      right: 32.54654
-    LineIndex: 9
-    CharIndex: 198
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 35.89538
-      right: 40.918633
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 39.244217
-      right: 39.244217
-    LineIndex: 9
-    CharIndex: 199
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 40.918633
-      right: 44.267464
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 42.59305
-      right: 42.59305
-    LineIndex: 9
-    CharIndex: 200
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 44.267464
-      right: 47.71388
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 45.94188
-      right: 45.94188
-    LineIndex: 9
-    CharIndex: 201
-  - HitBox:
-      top: 90.01056
-      bottom: 75.011734
-      left: 47.71388
-      right: 112.499985
-    Target:
-      top: 90.01056
-      bottom: 75.011734
-      left: 49.485878
-      right: 49.485878
-    LineIndex: 9
-    CharIndex: 202
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -112.499985
-      right: -100.499985
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 10
-    CharIndex: 202
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -100.499985
-      right: -94.151146
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -97.499985
-      right: -97.499985
-    LineIndex: 10
-    CharIndex: 203
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -94.151146
-      right: -87.45347
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -90.80231
-      right: -90.80231
-    LineIndex: 10
-    CharIndex: 204
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -87.45347
-      right: -81.10463
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -84.10463
-      right: -84.10463
-    LineIndex: 10
-    CharIndex: 205
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -81.10463
-      right: -74.7558
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -78.10463
-      right: -78.10463
-    LineIndex: 10
-    CharIndex: 206
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -74.7558
-      right: -68.40696
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -71.40696
-      right: -71.40696
-    LineIndex: 10
-    CharIndex: 207
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -68.40696
-      right: -63.73254
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -65.40696
-      right: -65.40696
-    LineIndex: 10
-    CharIndex: 208
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -63.73254
-      right: -58.709282
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -62.05812
-      right: -62.05812
-    LineIndex: 10
-    CharIndex: 209
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -58.709282
-      right: -53.686028
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -55.360447
-      right: -55.360447
-    LineIndex: 10
-    CharIndex: 210
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -53.686028
-      right: -48.662773
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -52.01161
-      right: -52.01161
-    LineIndex: 10
-    CharIndex: 211
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -48.662773
-      right: -43.29068
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -45.313934
-      right: -45.313934
-    LineIndex: 10
-    CharIndex: 212
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -43.29068
-      right: -39.593002
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -41.26742
-      right: -41.26742
-    LineIndex: 10
-    CharIndex: 213
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -39.593002
-      right: -34.569748
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -37.918587
-      right: -37.918587
-    LineIndex: 10
-    CharIndex: 214
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -34.569748
-      right: -27.87207
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -31.22091
-      right: -31.22091
-    LineIndex: 10
-    CharIndex: 215
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -27.87207
-      right: -23.19765
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -24.523232
-      right: -24.523232
-    LineIndex: 10
-    CharIndex: 216
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -23.19765
-      right: -18.523232
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -21.87207
-      right: -21.87207
-    LineIndex: 10
-    CharIndex: 217
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -18.523232
-      right: -13.848812
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -15.174393
-      right: -15.174393
-    LineIndex: 10
-    CharIndex: 218
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -13.848812
-      right: -9.5232315
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -12.5232315
-      right: -12.5232315
-    LineIndex: 10
-    CharIndex: 219
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -9.5232315
-      right: -3.5232315
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -6.5232315
-      right: -6.5232315
-    LineIndex: 10
-    CharIndex: 220
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: -3.5232315
-      right: 0.8023491
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: -0.5232315
-      right: -0.5232315
-    LineIndex: 10
-    CharIndex: 221
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 0.8023491
-      right: 5.4767685
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 2.1279297
-      right: 2.1279297
-    LineIndex: 10
-    CharIndex: 222
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 5.4767685
-      right: 12.174446
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 8.825607
-      right: 8.825607
-    LineIndex: 10
-    CharIndex: 223
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 12.174446
-      right: 17.197704
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 15.523285
-      right: 15.523285
-    LineIndex: 10
-    CharIndex: 224
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 17.197704
-      right: 22.220959
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 18.872124
-      right: 18.872124
-    LineIndex: 10
-    CharIndex: 225
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 22.220959
-      right: 26.895378
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 25.569794
-      right: 25.569794
-    LineIndex: 10
-    CharIndex: 226
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 26.895378
-      right: 29.546547
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 28.220963
-      right: 28.220963
-    LineIndex: 10
-    CharIndex: 227
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 29.546547
-      right: 32.546547
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 30.872131
-      right: 30.872131
-    LineIndex: 10
-    CharIndex: 228
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 32.546547
-      right: 35.89538
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 34.220963
-      right: 34.220963
-    LineIndex: 10
-    CharIndex: 229
-  - HitBox:
-      top: 75.011734
-      bottom: 60.012905
-      left: 35.89538
-      right: 112.499985
-    Target:
-      top: 75.011734
-      bottom: 60.012905
-      left: 37.569794
-      right: 37.569794
-    LineIndex: 10
-    CharIndex: 230
-  - HitBox:
-      top: 60.012905
-      bottom: 45.014076
-      left: -112.499985
-      right: 112.499985
-    Target:
-      top: 60.012905
-      bottom: 45.014076
-      left: -103.499985
-      right: -103.499985
-    LineIndex: 11
-    CharIndex: 231
 --- !u!222 &886496599
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3476,8 +718,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Padding: {x: -100, y: -50, z: -100, w: -50}
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
   m_Softness: {x: 0, y: 0}
+--- !u!114 &886496602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886496595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a8d24aace0d44daba71c1ca96c112d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _scrollAnchor: 0
+  _scrollSpeed: 1
+  _viewportInset:
+    top: 75
+    bottom: 75
+    left: 100
+    right: 100
+  _focusInset:
+    top: 20
+    bottom: 40
+    left: 0
+    right: 0
+  _content: {fileID: 1808755825}
+  _debugVisualizer: 1
 --- !u!1 &1158270374
 GameObject:
   m_ObjectHideFlags: 0
@@ -3722,6 +990,347 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1449469655}
   m_CullTransparentMesh: 1
+--- !u!1 &1509353782
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1509353783}
+  - component: {fileID: 1509353786}
+  - component: {fileID: 1509353785}
+  - component: {fileID: 1509353784}
+  m_Layer: 5
+  m_Name: Text
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1509353783
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509353782}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1650075233}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 343.39}
+  m_Pivot: {x: 0.5, y: 1}
+--- !u!114 &1509353784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509353782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HorizontalFit: 0
+  m_VerticalFit: 2
+--- !u!114 &1509353785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509353782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+
+    Lorem ipsum
+    dolor sit amet, consectetur adipiscing elit.
+
+
+    Lorem ipsum dolor sit amet,
+    consectetur adipiscing elit.
+
+
+    Lorem ipsum dolor sit amet, consectetur adipiscing
+    elit.
+
+
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+
+    Lorem
+    ipsum dolor sit amet, consectetur adipiscing elit.
+
+
+    Lorem ipsum dolor sit
+    amet, consectetur adipiscing elit.
+
+
+    Lorem ipsum dolor sit amet, consectetur
+    adipiscing elit.
+
+'
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 777657131}
+  m_fontSharedMaterials:
+  - {fileID: 777657131}
+  m_fontMaterial: {fileID: 777657131}
+  m_fontMaterials:
+  - {fileID: 777657131}
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 12
+  m_fontSizeBase: 12
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 1
+  m_VerticalAlignment: 256
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 10
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_enableWordWrapping: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 1
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 1
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &1509353786
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509353782}
+  m_CullTransparentMesh: 1
+--- !u!1 &1650075232
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1650075233}
+  - component: {fileID: 1650075238}
+  - component: {fileID: 1650075237}
+  - component: {fileID: 1650075236}
+  - component: {fileID: 1650075235}
+  - component: {fileID: 1650075234}
+  m_Layer: 0
+  m_Name: Scroll Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1650075233
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1509353783}
+  - {fileID: 2041322435}
+  m_Father: {fileID: 269198518}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1650075234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a8d24aace0d44daba71c1ca96c112d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _scrollAnchor: 0
+  _scrollSpeed: 1
+  _viewportInset:
+    top: 100
+    bottom: 100
+    left: 75
+    right: 75
+  _focusInset:
+    top: 20
+    bottom: 20
+    left: 20
+    right: 20
+  _content: {fileID: 2041322435}
+  _debugVisualizer: 1
+--- !u!114 &1650075235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding: {x: 75, y: 100, z: 75, w: 100}
+  m_Softness: {x: 0, y: 0}
+--- !u!114 &1650075236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a98125502f715b4b83cfb77b434e436, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 0
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1650075237}
+--- !u!114 &1650075237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.4575472, g: 0.46723613, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1650075238
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650075232}
+  m_CullTransparentMesh: 0
 --- !u!1 &1670600960
 GameObject:
   m_ObjectHideFlags: 0
@@ -3890,8 +1499,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -75}
+  m_SizeDelta: {x: -200, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1808755827
 MonoBehaviour:
@@ -4020,6 +1629,137 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1808755824}
   m_CullTransparentMesh: 1
+--- !u!1 &1818916014
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1818916015}
+  - component: {fileID: 1818916018}
+  - component: {fileID: 1818916017}
+  - component: {fileID: 1818916016}
+  m_Layer: 0
+  m_Name: Canvas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1818916015
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1818916014}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
+  m_Children:
+  - {fileID: 269198518}
+  m_Father: {fileID: 1857967056}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 425, y: 550}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1818916016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1818916014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &1818916017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1818916014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_UiScaleMode: 0
+  m_ReferencePixelsPerUnit: 100
+  m_ScaleFactor: 1
+  m_ReferenceResolution: {x: 800, y: 600}
+  m_ScreenMatchMode: 0
+  m_MatchWidthOrHeight: 0
+  m_PhysicalUnit: 3
+  m_FallbackScreenDPI: 96
+  m_DefaultSpriteDPI: 96
+  m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 1
+--- !u!223 &1818916018
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1818916014}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_AdditionalShaderChannelsFlag: 25
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+  m_TargetDisplay: 0
+--- !u!1 &1857967055
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1857967056}
+  m_Layer: 0
+  m_Name: Document (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1857967056
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1857967055}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.82, y: 0, z: 4.93}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1818916015}
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1930399601
 GameObject:
   m_ObjectHideFlags: 0
@@ -4047,16 +1787,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 1930399601}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: 1054132383583890850, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: 0}
+  m_SubmitAction: {fileID: 2064916234097673511, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: -1967631576421560919, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 8056856818456041789, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: 3279352641294131588, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: 3837173908680883260, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 4502412055082496612, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 4754684134866288074, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 1025543830046995696, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
 --- !u!114 &1930399603
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4161,4 +1909,79 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1964338875}
+  m_CullTransparentMesh: 1
+--- !u!1 &2041322434
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2041322435}
+  - component: {fileID: 2041322437}
+  - component: {fileID: 2041322436}
+  m_Layer: 0
+  m_Name: Image
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2041322435
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041322434}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1650075233}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 500, y: 500}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &2041322436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041322434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 6816e62d6900a4c7a94f1f9f0feb6948, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &2041322437
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041322434}
   m_CullTransparentMesh: 1

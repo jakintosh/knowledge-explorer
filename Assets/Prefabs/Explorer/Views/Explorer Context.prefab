@@ -5151,7 +5151,7 @@ GameObject:
   - component: {fileID: 2256819580308523888}
   - component: {fileID: 2256819580308523855}
   m_Layer: 0
-  m_Name: Context
+  m_Name: Explorer Context
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

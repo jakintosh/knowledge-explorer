@@ -1,12 +1,13 @@
 namespace Explorer.Client.Subsystems {
 
-	public class State : ISubsystem {
+	public class State<TContext, TState> : ISubsystem
+		where TContext : IContext<TState> {
 
-		public Contexts Contexts => _contexts;
+		public IContexts<TContext, TState> Contexts => _contexts;
 
-		public State () {
+		public State ( IContexts<TContext, TState> contexts ) {
 
-			_contexts = new Contexts();
+			_contexts = contexts;
 		}
 		public void Initialize () {
 
@@ -16,6 +17,6 @@ namespace Explorer.Client.Subsystems {
 		public void Teardown () { }
 
 		// internal data
-		private Contexts _contexts;
+		private IContexts<TContext, TState> _contexts;
 	}
 }

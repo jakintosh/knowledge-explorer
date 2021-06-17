@@ -3,12 +3,16 @@ using UnityEngine;
 
 namespace Explorer.Client {
 
+	using Context = Client.ExplorerContext;
+	using ContextState = Client.ExplorerContextState;
+
 	public class Application : MonoBehaviour {
 
 		// ********** Public Interface **********
 
 		public static Subsystems.Resources Resources => Instance._resources;
-		public static Subsystems.State State => Instance._state;
+		public static Subsystems.State<Context, ContextState> State => Instance._state;
+		public static Colors Colors => Instance._colors;
 
 
 		// ********** Private Interface **********
@@ -16,13 +20,13 @@ namespace Explorer.Client {
 		// subsystems
 		private SubsystemStack _subsystems;
 		private Subsystems.Resources _resources;
-		private Subsystems.State _state;
+		private Subsystems.State<Context, ContextState> _state;
 
 		private void Initialize () {
 
 			_subsystems = new SubsystemStack();
 			_resources = new Subsystems.Resources();
-			_state = new Subsystems.State();
+			_state = new Subsystems.State<Context, ContextState>( new ExplorerContexts() );
 
 			_subsystems.Push( _resources );
 			_subsystems.Push( _state );
@@ -32,19 +36,19 @@ namespace Explorer.Client {
 			_subsystems.Teardown();
 		}
 
-		// ui setup
-		[Header( "Prefabs" )]
-		[SerializeField] private View.Context _contextPrefab;
+		[Header( "UI Resources" )]
+		[SerializeField] private Colors _colors;
+		[SerializeField] private View.BaseContext _contextPrefab;
 
-		private Dictionary<string, View.Context> _contextViewsByUID;
+		private Dictionary<string, View.BaseContext> _contextViewsByUID;
 
 		private void SetupUI () {
 
-			_contextViewsByUID = new Dictionary<string, View.Context>();
+			_contextViewsByUID = new Dictionary<string, View.BaseContext>();
 
 			// init all views
 			_state.Contexts.All.ForEach( ( uid, context ) => {
-				var view = Instantiate<View.Context>( _contextPrefab );
+				var view = Instantiate<View.BaseContext>( _contextPrefab );
 				view.InitWith( context );
 				view.gameObject.SetActive( uid == _state.Contexts.CurrentUID );
 				_contextViewsByUID.Add( uid, view );
@@ -58,7 +62,7 @@ namespace Explorer.Client {
 			};
 			_state.Contexts.OnContextCreated += context => {
 				var uid = context.UID;
-				var view = Instantiate<View.Context>( _contextPrefab );
+				var view = Instantiate<View.BaseContext>( _contextPrefab );
 				view.InitWith( context );
 				view.gameObject.SetActive( uid == _state.Contexts.CurrentUID );
 				_contextViewsByUID.Add( uid, view );
