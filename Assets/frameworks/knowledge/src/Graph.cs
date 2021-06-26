@@ -1,12 +1,12 @@
-using Graph;
+using Jakintosh.Graph;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using UnityEngine.Events;
 
-using GraphDatabase = Graph.Database;
+using GraphDatabase = Jakintosh.Graph.Database;
 
-namespace Knowledge {
+namespace Jakintosh.Knowledge {
 
 	public class Graph {
 

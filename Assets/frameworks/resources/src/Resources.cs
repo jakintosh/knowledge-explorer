@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using UnityEngine;
 
-namespace Framework.Data {
+namespace Jakintosh.Resources {
 
 	// ******** Exception Definitions ********
 
@@ -16,46 +16,43 @@ namespace Framework.Data {
 
 	// ******** Metadata Definitions ********
 
-	namespace Metadata {
+	[Serializable]
+	public class Metadata : IEquatable<Metadata> {
 
 		[Serializable]
-		public class Resource : IEquatable<Resource> {
-
-			[Serializable]
-			public struct Dependency {
-				[JsonProperty] public string Type;
-				[JsonProperty] public string UID;
-			}
-
-			[JsonIgnore] public string UID => uid;
-			[JsonIgnore] public string Name => name;
-			[JsonIgnore] public string Path => path;
-			[JsonIgnore] public Dependency[] Dependencies => dependencies;
-
-			public void SetResourceData ( string uid, string name, string path ) {
-
-				this.uid = uid;
-				this.name = name;
-				this.path = path;
-			}
-
-			[JsonProperty] private string uid;
-			[JsonProperty] private string name;
-			[JsonProperty] private string path;
-			[JsonProperty] private Dependency[] dependencies;
-
-
-			// ********** IEquatable Implementation **********
-
-			bool IEquatable<Resource>.Equals ( Resource other ) => other?.UID.Equals( this.UID ) ?? false;
+		public struct Dependency {
+			[JsonProperty] public string Type;
+			[JsonProperty] public string UID;
 		}
+
+		[JsonIgnore] public string UID => uid;
+		[JsonIgnore] public string Name => name;
+		[JsonIgnore] public string Path => path;
+		[JsonIgnore] public Dependency[] Dependencies => dependencies;
+
+		public void SetResourceData ( string uid, string name, string path ) {
+
+			this.uid = uid;
+			this.name = name;
+			this.path = path;
+		}
+
+		[JsonProperty] private string uid;
+		[JsonProperty] private string name;
+		[JsonProperty] private string path;
+		[JsonProperty] private Dependency[] dependencies;
+
+
+		// ********** IEquatable Implementation **********
+
+		bool IEquatable<Metadata>.Equals ( Metadata other ) => other?.UID.Equals( this.UID ) ?? false;
 	}
 
 	// TODO: Resources need dependencies
 
 	[Serializable]
 	public class Resources<TMetadata, TResource>
-		where TMetadata : Metadata.Resource, new()
+		where TMetadata : Metadata, new()
 		where TResource : class, new() {
 
 
@@ -87,9 +84,9 @@ namespace Framework.Data {
 
 		// data operations
 		public void LoadMetadataFromDisk ()
-			=> PersistentStore.LoadInto( path: MetadataPath, obj: this );
+			=> Framework.Data.PersistentStore.LoadInto( path: MetadataPath, obj: this );
 		public void SaveMetadataToDisk ()
-			=> PersistentStore.Save( path: MetadataPath, data: this );
+			=> Framework.Data.PersistentStore.Save( path: MetadataPath, data: this );
 
 		// resource creation
 		public (TMetadata metadata, TResource resource) New ( string name ) {
@@ -136,7 +133,7 @@ namespace Framework.Data {
 				UntrackMetadata( metadata );
 				UnloadResource( uid, save: false );
 
-				PersistentStore.Delete( metadata.Path );
+				Framework.Data.PersistentStore.Delete( metadata.Path );
 
 				return true;
 
@@ -156,7 +153,7 @@ namespace Framework.Data {
 			try {
 
 				var metadata = RequestMetadata( uid );
-				var resource = PersistentStore.Load<TResource>( metadata.Path );
+				var resource = Framework.Data.PersistentStore.Load<TResource>( metadata.Path );
 				_loadedResourcesByUID[uid] = resource;
 				return true;
 
@@ -185,7 +182,7 @@ namespace Framework.Data {
 
 				var metadata = RequestMetadata( uid );
 				var resource = RequestResource( uid, load: false );
-				PersistentStore.Save<TResource>( metadata.Path, resource );
+				Framework.Data.PersistentStore.Save<TResource>( metadata.Path, resource );
 				return true;
 
 			} catch ( ResourceNotLoadedException ) {

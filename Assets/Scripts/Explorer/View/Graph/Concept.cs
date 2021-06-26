@@ -1,4 +1,4 @@
-using Framework;
+using Jakintosh.Observable;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -71,7 +71,7 @@ namespace Explorer.View {
 		// model data
 		private Observable<string> _graphUID;
 		private Observable<string> _nodeUID;
-		private HashSetObservable<Graph.Link> _links;
+		private HashSetObservable<Jakintosh.Graph.Link> _links;
 		private Observable<Float3> _size;
 		private Observable<Float3> _position;
 		private Observable<Mode> _mode;
@@ -81,7 +81,7 @@ namespace Explorer.View {
 		private Observable<string> _title;
 
 		// internal data
-		private Knowledge.Graph _graph;
+		private Jakintosh.Knowledge.Graph _graph;
 
 		protected override void OnInitialize () {
 
@@ -107,11 +107,11 @@ namespace Explorer.View {
 					_draggableControl?.AddPayload( mode: Drag.Mode.Secondary, payload: nodeUID );
 					if ( _graph != null ) {
 						_title.Set( _graph.GetConceptTitle( nodeUID ) );
-						_links.Set( new HashSet<Graph.Link>( _graph.GetConceptLinks( nodeUID ) ) );
+						_links.Set( new HashSet<Jakintosh.Graph.Link>( _graph.GetConceptLinks( nodeUID ) ) );
 					}
 				}
 			);
-			_links = new HashSetObservable<Graph.Link>(
+			_links = new HashSetObservable<Jakintosh.Graph.Link>(
 				initialValue: null,
 				onChange: links => {
 					if ( links == null ) { return; }

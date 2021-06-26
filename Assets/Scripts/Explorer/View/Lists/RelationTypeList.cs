@@ -1,3 +1,3 @@
 namespace Explorer.View {
-	public class RelationTypeList : Framework.UI.List<RelationTypeCellData, RelationTypeCell> { }
+	public class RelationTypeList : Jakintosh.List.List<RelationTypeCellData, RelationTypeCell> { }
 }

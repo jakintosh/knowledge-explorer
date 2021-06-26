@@ -1,5 +1,5 @@
-using Framework;
-using Graph;
+using Jakintosh.Graph;
+using Jakintosh.Observable;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;

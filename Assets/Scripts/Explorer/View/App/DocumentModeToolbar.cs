@@ -1,11 +1,21 @@
-using Framework;
+using Jakintosh.Observable;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Explorer.View {
 
 
 	public class DocumentModeToolbar : View {
+
+
+		// *********** Public Interface ***********
+
+		public UnityEvent<DocumentModes> OnDocumentModeChanged = new UnityEvent<DocumentModes>();
+
+		public DocumentModes Mode => _mode.Get();
+
+		// *********** Private Interface ***********
 
 		[Header( "UI Control" )]
 		[SerializeField] private Button _editButton;
@@ -28,11 +38,12 @@ namespace Explorer.View {
 
 			// init observables
 			_mode = new Observable<DocumentModes>(
-				initialValue: DocumentModes.Edit,
+				initialValue: DocumentModes.Read,
 				onChange: mode => {
-					_editIcon.color = mode == DocumentModes.Edit ? Client.Application.Colors.Action : Client.Application.Colors.Foreground;
-					_reorderIcon.color = mode == DocumentModes.Reorder ? Client.Application.Colors.Action : Client.Application.Colors.Foreground;
-					_readIcon.color = mode == DocumentModes.Read ? Client.Application.Colors.Action : Client.Application.Colors.Foreground;
+					_editIcon.color = mode == DocumentModes.Edit ? Client.Colors.Action : Client.Colors.Foreground;
+					_reorderIcon.color = mode == DocumentModes.Reorder ? Client.Colors.Action : Client.Colors.Foreground;
+					_readIcon.color = mode == DocumentModes.Read ? Client.Colors.Action : Client.Colors.Foreground;
+					OnDocumentModeChanged?.Invoke( mode );
 				}
 			);
 

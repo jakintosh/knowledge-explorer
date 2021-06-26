@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Knowledge.Metadata {
+namespace Jakintosh.Knowledge.Metadata {
 
 	public class RelationType {
 

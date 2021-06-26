@@ -1,3 +1,3 @@
 namespace Explorer.View {
-	public class WorkspaceList : Framework.UI.List<WorkspaceCellData, WorkspaceCell> { }
+	public class WorkspaceList : Jakintosh.List.List<WorkspaceCellData, WorkspaceCell> { }
 }

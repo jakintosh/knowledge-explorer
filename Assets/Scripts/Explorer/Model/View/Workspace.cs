@@ -15,7 +15,7 @@ namespace Explorer.View.Model {
 		[JsonProperty( propertyName: "name" )] public string Name { get; set; }
 		[JsonProperty( propertyName: "graphViewport" )] public GraphViewport GraphViewport { get; set; }
 
-		public void Initialize ( string uid, string name, Knowledge.Graph graph ) {
+		public void Initialize ( string uid, string name, Jakintosh.Knowledge.Graph graph ) {
 
 			UID = uid;
 			Name = name;

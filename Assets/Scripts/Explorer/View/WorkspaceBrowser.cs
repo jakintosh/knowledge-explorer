@@ -1,10 +1,10 @@
-using Framework;
+using Jakintosh.Observable;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-using Metadata = Framework.Data.Metadata.Resource;
+using Metadata = Jakintosh.Resources.Metadata;
 using WorkspaceModel = Explorer.View.Model.Workspace;
 
 namespace Explorer.View {
@@ -68,7 +68,7 @@ namespace Explorer.View {
 			_allWorkspaces = new ListObservable<Metadata>(
 				initialValue: Client.Application.Resources.Workspaces.GetAll(),
 				onChange: allWorkspaces => {
-					var cells = allWorkspaces?.Convert( metadata => new WorkspaceCellData( title: metadata.Name, metadata: metadata ) );
+					var cells = allWorkspaces?.Convert( metadata => new WorkspaceCellData( title: metadata.Name, active: false, metadata: metadata ) );
 					_workspaceListLayout.SetData( cells );
 				}
 			);

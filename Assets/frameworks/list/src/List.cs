@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace Framework.UI {
+namespace Jakintosh.List {
 
 	public abstract class List<TData, TCell> : MonoBehaviour
 		where TCell : Cell<TData> {
@@ -63,31 +63,39 @@ namespace Framework.UI {
 		private void Awake () {
 
 			// vertical layout group
-			_verticalLayoutGroup = gameObject.AddComponent<VerticalLayoutGroup>();
+			_verticalLayoutGroup = GetComponent<VerticalLayoutGroup>();
+			if ( _verticalLayoutGroup == null ) {
+				_verticalLayoutGroup = gameObject.AddComponent<VerticalLayoutGroup>();
 
-			// child constraints
-			_verticalLayoutGroup.reverseArrangement = _flipped;
-			_verticalLayoutGroup.childAlignment = TextAnchor.UpperLeft;
-			_verticalLayoutGroup.childControlWidth = true;
-			_verticalLayoutGroup.childForceExpandWidth = true;
-			_verticalLayoutGroup.childControlHeight = false;
-			_verticalLayoutGroup.childForceExpandHeight = false;
+				// child constraints
+				_verticalLayoutGroup.reverseArrangement = _flipped;
+				_verticalLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+				_verticalLayoutGroup.childControlWidth = true;
+				_verticalLayoutGroup.childForceExpandWidth = true;
+				_verticalLayoutGroup.childControlHeight = false;
+				_verticalLayoutGroup.childForceExpandHeight = false;
 
-			// spacing
-			_verticalLayoutGroup.spacing = GetSpacing();
-			_verticalLayoutGroup.padding = GetPadding();
+				// spacing
+				_verticalLayoutGroup.spacing = GetSpacing();
+				_verticalLayoutGroup.padding = GetPadding();
+			}
+
 
 			// size fitter
-			_contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
-			_contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-			_contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+			_contentSizeFitter = GetComponent<ContentSizeFitter>();
+			if ( _contentSizeFitter = null ) {
+				_contentSizeFitter = gameObject.AddComponent<ContentSizeFitter>();
+
+				_contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+				_contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+			}
 		}
 
 
 		private TCell AddNewCell () {
 
 			var cell = Instantiate<TCell>( _cellPrefab, transform, false );
-			cell.OnClick += data => OnCellClicked.Invoke( data );
+			cell.OnClick.AddListener( data => OnCellClicked.Invoke( data ) );
 			_cells.Add( cell );
 			return cell;
 		}

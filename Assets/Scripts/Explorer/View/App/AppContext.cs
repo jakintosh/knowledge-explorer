@@ -1,4 +1,4 @@
-using Framework;
+using Jakintosh.Observable;
 using UnityEngine;
 
 namespace Explorer.View {
@@ -39,17 +39,15 @@ namespace Explorer.View {
 				throw new System.NullReferenceException( message: "View.AppContext.OnPopulate: Tried to populate with null context." );
 			}
 
-			Debug.Log( $"View.AppContext: OnPopulate(uid: {context.UID})" );
-
 			_context = context;
 
 			// context state
 			_contextState.Set( _context.State );
-			_context.OnContextStateModified += _contextState.Set;
+			_context.OnContextStateModified.AddListener( _contextState.Set );
 		}
 		protected override void OnRecycle () {
 
-			_context.OnContextStateModified -= _contextState.Set;
+			_context.OnContextStateModified.RemoveListener( _contextState.Set );
 		}
 	}
 

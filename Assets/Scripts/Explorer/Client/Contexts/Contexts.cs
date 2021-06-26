@@ -1,5 +1,6 @@
-using Framework;
+using Jakintosh.Observable;
 using System.Collections.Generic;
+using UnityEngine.Events;
 
 namespace Explorer.Client {
 
@@ -7,9 +8,9 @@ namespace Explorer.Client {
 	public interface IContexts<TContext, TState>
 		where TContext : IContext<TState> {
 
-		event Event<TContext>.Signature OnCurrentContextChanged;
-		event Event<TContext>.Signature OnContextCreated;
-		event Event<string>.Signature OnContextDeleted;
+		UnityEvent<TContext> OnCurrentContextChanged { get; }
+		UnityEvent<TContext> OnContextCreated { get; }
+		UnityEvent<string> OnContextDeleted { get; }
 
 		string CurrentUID { get; }
 		IReadOnlyDictionary<string, TContext> All { get; }
@@ -22,7 +23,7 @@ namespace Explorer.Client {
 
 	// an instance of the application state
 	public interface IContext<TState> {
-		event Event<TState>.Signature OnContextStateModified;
+		UnityEvent<TState> OnContextStateModified { get; }
 		TState State { get; }
 		string UID { get; }
 	}
@@ -35,9 +36,9 @@ namespace Explorer.Client {
 		// *********** Public Interface ***********
 
 		// events
-		public event Event<TContext>.Signature OnCurrentContextChanged;
-		public event Event<TContext>.Signature OnContextCreated;
-		public event Event<string>.Signature OnContextDeleted;
+		public UnityEvent<TContext> OnCurrentContextChanged => _onCurrentContextChanged;
+		public UnityEvent<TContext> OnContextCreated => _onContextCreated;
+		public UnityEvent<string> OnContextDeleted => _onContextDeleted;
 
 		// properties
 		public string CurrentUID => _current.Get()?.UID;
@@ -51,11 +52,12 @@ namespace Explorer.Client {
 			_current = new Observable<TContext>(
 				initialValue: null,
 				onChange: context => {
-					Event<TContext>.Fire(
-						@event: OnCurrentContextChanged,
-						value: context,
-						id: $"Explorer.Model.Contexts.OnCurrentContextChanged"
-					);
+					OnCurrentContextChanged?.Invoke( context );
+					// Event<TContext>.Fire(
+					// 	@event: OnCurrentContextChanged,
+					// 	value: context,
+					// 	id: $"Explorer.Model.Contexts.OnCurrentContextChanged"
+					// );
 				}
 			);
 		}
@@ -78,11 +80,7 @@ namespace Explorer.Client {
 			var context = NewContext();
 			_contexts.Add( context.UID, context );
 
-			Event<TContext>.Fire(
-				@event: OnContextCreated,
-				value: context,
-				id: $"Explorer.Model.Contexts.OnContextCreated"
-			);
+			OnContextCreated?.Invoke( context );
 
 			if ( setToCurrent ) { SetCurrentContext( context.UID ); }
 
@@ -101,17 +99,23 @@ namespace Explorer.Client {
 
 			_contexts.Remove( uid );
 
-			Event<string>.Fire(
-				@event: OnContextDeleted,
-				value: uid,
-				id: $"Explorer.Model.Contexts.OnContextDeleted"
-			);
+			OnContextDeleted?.Invoke( uid );
+			// Event<string>.Fire(
+			// 	@event: OnContextDeleted,
+			// 	value: uid,
+			// 	id: $"Explorer.Model.Contexts.OnContextDeleted"
+			// );
 
 		}
 
 		protected abstract TContext NewContext ();
 
 		// *********** Private Interface ***********
+
+		// internal events
+		private UnityEvent<TContext> _onCurrentContextChanged = new UnityEvent<TContext>();
+		private UnityEvent<TContext> _onContextCreated = new UnityEvent<TContext>();
+		private UnityEvent<string> _onContextDeleted = new UnityEvent<string>();
 
 		// internal data
 		private Dictionary<string, TContext> _contexts;

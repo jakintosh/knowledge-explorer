@@ -1,7 +1,6 @@
-using Framework.Data;
+using Jakintosh.Knowledge;
+using Jakintosh.Resources;
 using System.Collections.Generic;
-
-using Metadata = Framework.Data.Metadata.Resource;
 
 namespace Explorer.Model {
 
@@ -12,7 +11,7 @@ namespace Explorer.Model {
 		Metadata New ( string name );
 		bool Delete ( string uid );
 
-		Knowledge.Graph Get ( string uid );
+		Graph Get ( string uid );
 		IList<Metadata> GetAll ();
 
 		bool ValidateName ( string name );
@@ -25,7 +24,7 @@ namespace Explorer.Model {
 
 		public GraphResources ( string rootDataPath ) {
 
-			_graphs = new Resources<Metadata, Knowledge.Graph>(
+			_graphs = new Resources<Metadata, Graph>(
 				resourcePath: $"{rootDataPath}/graph",
 				resourceExtension: "graph",
 				uidLength: 6
@@ -46,7 +45,7 @@ namespace Explorer.Model {
 
 			// try create graph
 			Metadata graphMetadata;
-			Knowledge.Graph graphResource;
+			Graph graphResource;
 			try {
 
 				(graphMetadata, graphResource) = _graphs.New( name );
@@ -68,7 +67,7 @@ namespace Explorer.Model {
 
 			return _graphs.Delete( uid );
 		}
-		public Knowledge.Graph Get ( string uid ) {
+		public Graph Get ( string uid ) {
 
 			if ( uid == null ) {
 				return null;
@@ -97,6 +96,6 @@ namespace Explorer.Model {
 
 		// ********** Private Interface **********
 
-		private Resources<Metadata, Knowledge.Graph> _graphs;
+		private Resources<Metadata, Graph> _graphs;
 	}
 }

@@ -1,10 +1,10 @@
 {
-    "name": "framework-tests",
+    "name": "observable-tests",
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "framework"
+        "observable"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System;
 
-namespace Graph {
+namespace Jakintosh.Graph {
 
 	internal interface IEditableRelationType {
 		void SetName ( string name );

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Graph {
+namespace Jakintosh.Graph {
 
 	public enum NodeDataTypes {
 		Invalid = -1,

@@ -3,199 +3,223 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace TextEdit {
 
-	// types and static funcs
+	public enum Directions {
+		Up,
+		Down,
+		Left,
+		Right
+	}
+
+	public enum EnterBehaviors {
+		NewLine,
+		Submit
+	}
+
+	[Serializable]
+	public struct Span : IEquatable<Span> {
+
+		public int Min => min;
+		public int Max => max;
+		public int Length => max - min;
+
+		public bool Equals ( Span other ) => min.Equals( other.min ) && max.Equals( other.max );
+		public bool IsValid () => min >= 0 && max >= 0;
+		public bool Contains ( int i ) => i >= min && i <= max;
+
+		public static Span Invalid => new Span( -1, -1 );
+
+		public Span ( int a ) : this( a, a ) { }
+		public Span ( int a, int b ) {
+
+			min = a < b ? a : b;
+			max = a > b ? a : b;
+		}
+
+		// backing data
+		[SerializeField] private int min;
+		[SerializeField] private int max;
+	}
+
+	[Serializable]
+	public struct Bounds : IEquatable<Bounds> {
+
+		public float Top => top;
+		public float Bottom => bottom;
+		public float Middle => bottom + ( Height / 2f );
+		public float Height => top - bottom;
+
+		public float Left => left;
+		public float Right => right;
+		public float Center => left + ( Width / 2f );
+		public float Width => right - left;
+
+		public Vector2 TopLeft => new Vector2( left, top );
+		public Vector2 TopCenter => new Vector2( Center, top );
+		public Vector2 TopRight => new Vector2( right, top );
+		public Vector2 MiddleLeft => new Vector2( left, Middle );
+		public Vector2 MiddleCenter => new Vector2( Center, Middle );
+		public Vector2 MiddleRight => new Vector2( right, Middle );
+		public Vector2 BottomLeft => new Vector2( left, bottom );
+		public Vector2 BottomCenter => new Vector2( Center, bottom );
+		public Vector2 BottomRight => new Vector2( right, bottom );
+
+		public Vector2 PositionAtPivot ( Vector2 pivot ) {
+
+			var pivotOffset = new Vector2(
+				x: pivot.x * Width,
+				y: pivot.y * Height
+			);
+			return BottomLeft + pivotOffset;
+		}
+
+		public Vector2 Size => new Vector2( Width, Height );
+
+		// initializers
+		public Bounds ( float top = 0f, float bottom = 0f, float left = 0f, float right = 0f ) {
+
+			this.top = top;
+			this.bottom = bottom;
+			this.left = left;
+			this.right = right;
+		}
+		public Bounds ( Vector2 position, Vector2 size )
+			: this(
+				top: position.y + size.y,
+				bottom: position.y,
+				left: position.x,
+				right: position.x + size.x
+			) { }
+		public static Bounds FromRect ( Rect rect ) =>
+			new Bounds(
+				top: rect.yMax,
+				bottom: rect.yMin,
+				left: rect.xMin,
+				right: rect.xMax
+			);
+		public static Bounds FromRectTransform ( RectTransform rt ) =>
+			FromRect( rt.rect );
+		public static Bounds Zero => new Bounds( 0, 0, 0, 0 );
+
+		// operators
+		public static Bounds operator - ( Bounds bounds ) {
+			return new Bounds(
+				top: -bounds.top,
+				bottom: -bounds.bottom,
+				left: -bounds.left,
+				right: -bounds.right
+			);
+		}
+
+		public bool Equals ( Bounds other )
+			=> TopLeft.Equals( other.TopLeft ) && BottomRight.Equals( other.BottomRight );
+		public bool Contains ( Vector2 point )
+			=> point.x >= Left && point.x <= Right && point.y <= Top && point.y >= Bottom;
+		public bool Contains ( Bounds bounds )
+			=> bounds.Top <= Top && bounds.Bottom >= Bottom && bounds.Left >= Left && bounds.Right <= Right;
+		public override string ToString ()
+			=> $"Bounds( T: {top}, B: {bottom}, L: {left}, R: {right} )";
+
+		public Vector2 GetDeltaToContain ( Bounds other ) {
+
+			return new Vector2(
+				x: ( other.Left - Left ).WithCeiling( 0f ) + ( other.Right - Right ).WithFloor( 0f ),
+				y: ( other.Bottom - Bottom ).WithCeiling( 0f ) + ( other.Top - Top ).WithFloor( 0f )
+			);
+		}
+		public Bounds GetMarginTo ( Bounds to ) {
+
+			return new Bounds(
+				top: to.top - top,
+				bottom: bottom - to.bottom,
+				left: left - to.left,
+				right: to.right - right
+			);
+		}
+		public Bounds GetRelativeMarginTo ( Vector2 otherSize, Vector2? pivot = null ) {
+
+			var p = pivot.HasValue ? pivot.Value : new Vector2( 0.5f, 0.5f );
+			var sizeDifference = otherSize - Size;
+			return new Bounds(
+				top: sizeDifference.y * ( 1 - p.y ),
+				bottom: sizeDifference.y * p.y,
+				left: sizeDifference.x * p.x,
+				right: sizeDifference.x * ( 1 - p.x )
+			);
+		}
+
+		public void ResizeFromPivot ( Vector2 newSize, Vector2 pivot ) {
+
+			ExpandBy( GetRelativeMarginTo( newSize, pivot ) );
+		}
+		public Vector2 GetOffsetTo ( Bounds other, Vector2? pivot = null ) {
+			var p = pivot.HasValue ? pivot.Value : new Vector2( 0.5f, 0.5f );
+			return other.PositionAtPivot( p ) - PositionAtPivot( p );
+		}
+		public Vector2 GetOffsetFrom ( Bounds other, Vector2? pivot = null ) =>
+			other.GetOffsetTo( this, pivot );
+
+		public Bounds Duplicate ()
+			=> new Bounds( top, bottom, left, right );
+		public Bounds ExpandBy ( Bounds margin )
+			=> InsetBy( -margin );
+		public Bounds InsetBy ( Bounds padding ) {
+
+			top -= padding.top;
+			bottom += padding.bottom;
+			left += padding.left;
+			right -= padding.right;
+			return this;
+		}
+		public Bounds MoveBy ( Vector2 offset ) {
+
+			top += offset.y;
+			bottom += offset.y;
+			right += offset.x;
+			left += offset.x;
+			return this;
+		}
+		public Vector3 Clamp ( Vector3 vector )
+			=> new Vector3(
+				x: vector.x.ClampedBetween( Left, Right ),
+				y: vector.y.ClampedBetween( Bottom, Top ),
+				z: 0
+			);
+
+		public void DrawGizmos ( Transform container, Color color ) {
+
+			var bounds = this;
+
+			var topLeft = container.TransformPoint( bounds.TopLeft );
+			var topRight = container.TransformPoint( bounds.TopRight );
+			var bottomLeft = container.TransformPoint( bounds.BottomLeft );
+			var bottomRight = container.TransformPoint( bounds.BottomRight );
+
+			var oldColor = Gizmos.color;
+			Gizmos.color = color;
+			Gizmos.DrawLine( topLeft, topRight );
+			Gizmos.DrawLine( topLeft, bottomLeft );
+			Gizmos.DrawLine( topRight, bottomRight );
+			Gizmos.DrawLine( bottomLeft, bottomRight );
+			Gizmos.color = oldColor;
+		}
+
+		// backing data
+		[SerializeField] private float top;
+		[SerializeField] private float bottom;
+		[SerializeField] private float left;
+		[SerializeField] private float right;
+	}
+
+	// types
 	public partial class Text {
 
-		public enum Directions {
-			Up,
-			Down,
-			Left,
-			Right
-		}
-
 		private static int NULL_WIDTH_SPACE_ASCII_CODE = 8203;
-
-		[Serializable]
-		public struct Span : IEquatable<Span> {
-
-			public int Min => min;
-			public int Max => max;
-			public int Length => max - min;
-
-			public bool Equals ( Span other ) => min.Equals( other.min ) && max.Equals( other.max );
-			public bool IsValid () => min >= 0 && max >= 0;
-			public bool Contains ( int i ) => i >= min && i <= max;
-
-			public static Span Invalid => new Span( -1, -1 );
-
-			public Span ( int a ) : this( a, a ) { }
-			public Span ( int a, int b ) {
-
-				min = a < b ? a : b;
-				max = a > b ? a : b;
-			}
-
-			// backing data
-			[SerializeField] private int min;
-			[SerializeField] private int max;
-		}
-
-		[Serializable]
-		public struct Bounds : IEquatable<Bounds> {
-
-			public float Top => top;
-			public float Bottom => bottom;
-			public float Middle => bottom + ( Height / 2f );
-			public float Height => top - bottom;
-
-			public float Left => left;
-			public float Right => right;
-			public float Center => left + ( Width / 2f );
-			public float Width => right - left;
-
-			public Vector2 TopLeft => new Vector2( left, top );
-			public Vector2 TopCenter => new Vector2( Center, top );
-			public Vector2 TopRight => new Vector2( right, top );
-			public Vector2 MiddleLeft => new Vector2( left, Middle );
-			public Vector2 MiddleCenter => new Vector2( Center, Middle );
-			public Vector2 MiddleRight => new Vector2( right, Middle );
-			public Vector2 BottomLeft => new Vector2( left, bottom );
-			public Vector2 BottomCenter => new Vector2( Center, bottom );
-			public Vector2 BottomRight => new Vector2( right, bottom );
-
-			public Vector2 PositionFromPivot ( Vector2 pivot ) {
-
-				var pivotOffset = new Vector2(
-					x: pivot.x * Width,
-					y: pivot.y * Height
-				);
-				return BottomLeft + pivotOffset;
-			}
-
-			public Vector2 Size => new Vector2( Width, Height );
-
-			// initializers
-			public Bounds ( float top = 0f, float bottom = 0f, float left = 0f, float right = 0f ) {
-
-				this.top = top;
-				this.bottom = bottom;
-				this.left = left;
-				this.right = right;
-			}
-			public static Bounds FromRect ( Rect rect ) =>
-				new Bounds(
-					top: rect.yMax,
-					bottom: rect.yMin,
-					left: rect.xMin,
-					right: rect.xMax
-				);
-			public static Bounds FromRectTransform ( RectTransform rt ) =>
-				FromRect( rt.rect );
-			public static Bounds Zero => new Bounds( 0, 0, 0, 0 );
-
-			// operators
-			public static Bounds operator - ( Bounds bounds ) {
-				return new Bounds(
-					top: -bounds.top,
-					bottom: -bounds.bottom,
-					left: -bounds.left,
-					right: -bounds.right
-				);
-			}
-			public bool Equals ( Bounds other ) => TopLeft.Equals( other.TopLeft ) && BottomRight.Equals( other.BottomRight );
-			public bool Contains ( Vector2 point ) => point.x >= Left && point.x <= Right && point.y <= Top && point.y >= Bottom;
-			public bool Contains ( Bounds bounds ) => bounds.Top <= Top && bounds.Bottom >= Bottom && bounds.Left >= Left && bounds.Right <= Right;
-
-			public Vector2 GetDeltaToContain ( Bounds other ) {
-
-				return new Vector2(
-					x: ( other.Left - Left ).WithCeiling( 0f ) + ( other.Right - Right ).WithFloor( 0f ),
-					y: ( other.Bottom - Bottom ).WithCeiling( 0f ) + ( other.Top - Top ).WithFloor( 0f )
-				);
-			}
-			public Bounds GetMarginTo ( Bounds to ) {
-
-				return new Bounds(
-					top: to.top - top,
-					bottom: bottom - to.bottom,
-					left: left - to.left,
-					right: to.right - right
-				);
-			}
-			public Bounds GetRelativeMarginTo ( Vector2 otherSize, Vector2? pivot = null ) {
-
-				var p = pivot.HasValue ? pivot.Value : new Vector2( 0.5f, 0.5f );
-				var sizeDifference = otherSize - Size;
-				return new Bounds(
-					top: sizeDifference.y * ( 1 - p.y ),
-					bottom: sizeDifference.y * p.y,
-					left: sizeDifference.x * p.x,
-					right: sizeDifference.x * ( 1 - p.x )
-				);
-			}
-
-			public void ResizeFromPivot ( Vector2 newSize, Vector2 pivot ) {
-
-				ExpandBy( GetRelativeMarginTo( newSize, pivot ) );
-			}
-
-
-			public Bounds Duplicate ()
-				=> new Bounds( top, bottom, left, right );
-			public Bounds ExpandBy ( Bounds margin )
-				=> InsetBy( -margin );
-			public Bounds InsetBy ( Bounds padding ) {
-
-				top -= padding.top;
-				bottom += padding.bottom;
-				left += padding.left;
-				right -= padding.right;
-				return this;
-			}
-			public Bounds MoveBy ( Vector2 offset ) {
-
-				top += offset.y;
-				bottom += offset.y;
-				right += offset.x;
-				left += offset.x;
-				return this;
-			}
-			public Vector3 Clamp ( Vector3 vector )
-				=> new Vector3(
-					x: vector.x.ClampedBetween( Left, Right ),
-					y: vector.y.ClampedBetween( Bottom, Top ),
-					z: 0
-				);
-
-			public void DrawGizmos ( Transform container, Color color ) {
-
-				var bounds = this;
-
-				var topLeft = container.TransformPoint( bounds.TopLeft );
-				var topRight = container.TransformPoint( bounds.TopRight );
-				var bottomLeft = container.TransformPoint( bounds.BottomLeft );
-				var bottomRight = container.TransformPoint( bounds.BottomRight );
-
-				var oldColor = Gizmos.color;
-				Gizmos.color = color;
-				Gizmos.DrawLine( topLeft, topRight );
-				Gizmos.DrawLine( topLeft, bottomLeft );
-				Gizmos.DrawLine( topRight, bottomRight );
-				Gizmos.DrawLine( bottomLeft, bottomRight );
-				Gizmos.color = oldColor;
-			}
-
-			// backing data
-			[SerializeField] private float top;
-			[SerializeField] private float bottom;
-			[SerializeField] private float left;
-			[SerializeField] private float right;
-		}
 
 		[Serializable]
 		public struct LineInfo {
@@ -216,8 +240,8 @@ namespace TextEdit {
 			public LineInfo After ( int numChars, int numCarets ) {
 
 				var lineMargin = new Bounds(
-					top: Extents.Bottom,
-					bottom: Extents.Bottom - Margin.Height,
+					top: Extents.Bottom - ( Extents.Top - Margin.Top ),
+					bottom: Extents.Bottom - ( Extents.Top - Margin.Top ) - Margin.Height,
 					left: Margin.Left,
 					right: Margin.Right
 				);
@@ -452,7 +476,42 @@ namespace TextEdit {
 		IDeselectHandler,
 		ICancelHandler {
 
-		public string GetText () => _textMesh.text;
+		public UnityEvent OnSubmit = new UnityEvent();
+		public UnityEvent<string> OnTextChanged = new UnityEvent<string>();
+
+		public string GetText () {
+
+			// get rid of that null width space garbage
+			var text = _textMesh.text;
+			if ( text == Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString() ) {
+				return "";
+			} else {
+				return text;
+			}
+		}
+		public void SetText ( string text ) {
+
+			if ( text == _textMesh.text ) { return; }
+
+			_textMesh.text = text;
+			RenderTextMesh( _textMesh );
+		}
+
+		public void Init ()
+			=> Initialize();
+
+		public void SetEditable ( bool isEditable ) {
+
+			if ( _isEditable = isEditable ) { return; }
+
+			_isEditable = isEditable;
+
+			if ( _isEditable ) {
+				SetEditing( _isSelected );
+			} else {
+				SetEditing( false );
+			}
+		}
 
 		public void RefreshSize () {
 
@@ -460,6 +519,9 @@ namespace TextEdit {
 			RenderTextMesh( _textMesh );
 		}
 
+		[Header( "UI Config" )]
+		[SerializeField] private bool _isEditable;
+		[SerializeField] private EnterBehaviors _enterBehavior;
 
 		[Header( "UI Control" )]
 		[SerializeField] Scroll _scroll;
@@ -495,69 +557,75 @@ namespace TextEdit {
 		private CharacterInfo[] _charInfo;
 		private CaretInfo[] _caretInfo;
 		private SelectionInfo _selection;
+		private Bounds _textBounds;
 
 		// state data
+		private bool _isInitialized;
+		private bool _isAwake;
 		private bool _isInside;
 		private bool _isDown;
 		private bool _isSelected;
+		private bool _isEditing;
 		private Vector2 _intendedCaretPosition = Vector2.zero;
 
 		// frame flags
 		private bool _refreshSelection = false;
+		private bool _renderTextMesh = false;
 		private List<(int charIndex, string text)> _pendingTextTransformations = new List<(int charIndex, string text)>();
+		private List<Func<SelectionInfo, string, (SelectionInfo, string)>> _textTransformations = new List<Func<SelectionInfo, string, (SelectionInfo, string)>>();
 
 		// mono lifecycle
 		private void Awake () {
 
-			// init data
-			_lineInfo = new LineInfo[0];
-			_wordInfo = new WordInfo[0];
-			_charInfo = new CharacterInfo[0];
-			_caretInfo = new CaretInfo[0];
-			_selection = new SelectionInfo(
-				caretSpan: Span.Invalid,
-				caretInfo: _caretInfo
-			);
-
-			// set up carets
-			InitCaret( _leadingCaret );
-			InitCaret( _trailingCaret );
-
-			// set up selections
-			_primarySelection = CreateSelectionRect( "Primary Selection" );
-			_leftCapSelection = CreateSelectionRect( "Left-cap Selection" );
-			_rightCapSelection = CreateSelectionRect( "Right-cap Selection" );
-
-			// refresh everything
-			_scroll.RefreshFrame();
-			RenderTextMesh( _textMesh );
-			_selection.SetCaretInfo( _caretInfo );
-			RefreshSelection( _selection );
-
-			// listen to events
-			SubscribeToEvents();
-		}
-		private void OnDestroy () {
-
-			UnsubscribeFromEvents();
+			Initialize();
 		}
 		private void Update () {
 
 			// read user input
 			ReadInput();
+			// }
+			// private void LateUpdate () {
+
+			// TODO: This whole "pending transformations" doesn't actually work and needs to
+			//       be redesigned, esp once everything needs to be "agent event" driven for
+			//       undo/redo and change tracking.
+
+			// (SelectionInfo selection, string text) state = (_selection, _textMesh.text);
+			// if ( _textTransformations.Count > 0 ) {
+
+			// 	_textTransformations.ForEach( transformation => {
+			// 		state = transformation( state.selection, state.text );
+			// 	} );
+
+			// 	_selection = state.selection;
+			// 	_textMesh.text = state.text;
+
+			// 	_renderTextMesh = true;
+			// 	_refreshSelection = true;
+			// 	textChanged = true;
+
+			// 	_textTransformations.Clear();
+			// }
+
 
 			// process pending text transformations
+			bool textChanged = false;
+
 			if ( _pendingTextTransformations.Count > 0 ) {
+				if ( _pendingTextTransformations.Count > 1 ) {
+					Debug.Log( $"TextEdit.Text: More than one text transformation being processed, and that will break things." );
+				}
 				foreach ( var textTransformation in _pendingTextTransformations ) {
 
 					// update text mesh
 					_textMesh.text = textTransformation.text;
-					RenderTextMesh( _textMesh );
+					textChanged = true;
+					RenderTextMesh( _textMesh ); // TODO: remove once this is better
+												 // _renderTextMesh = true; // TODO: put this back in once fixed
 
 					// update selection
 					var caretIndex = GetCaretIndexFromCharIndex( textTransformation.charIndex );
 					_selection.SetAnchorCaretIndex( caretIndex );
-					_selection.SetCaretInfo( _caretInfo );
 					SetCaretIntentToFloatCaret( x: true, y: true );
 
 					_refreshSelection = true;
@@ -565,11 +633,23 @@ namespace TextEdit {
 				_pendingTextTransformations.Clear();
 			}
 
-			// process pending selection refresh
+			if ( _renderTextMesh ) {
+				RenderTextMesh( _textMesh );
+				_renderTextMesh = false;
+			}
+
 			if ( _refreshSelection ) {
 				RefreshSelection( _selection );
 				_refreshSelection = false;
 			}
+
+			if ( textChanged ) {
+				OnTextChanged?.Invoke( GetText() );
+			}
+		}
+		private void OnEnable () {
+
+			_renderTextMesh = true;
 		}
 		private void OnDrawGizmos () {
 
@@ -623,17 +703,33 @@ namespace TextEdit {
 			}
 		}
 
-		// things
-		private void SubscribeToEvents () {
+		// state
+		private void SetSelected ( bool isSelected ) {
 
-			// UnityEngine.InputSystem.Keyboard.current.onTextInput += Insert;
-			_scroll.OnScrollOffsetChanged += offset => {
-				_refreshSelection = true;
-			};
+			if ( _isSelected == isSelected ) { return; }
+
+			_isSelected = isSelected;
+
+			if ( _isSelected ) {
+				SetEditing( true );
+			} else {
+				SetEditing( false );
+			}
 		}
-		private void UnsubscribeFromEvents () {
+		private void SetEditing ( bool isEditing ) {
 
-			// UnityEngine.InputSystem.Keyboard.current.onTextInput -= Insert;
+			// AND request with permission
+			isEditing = isEditing && _isEditable;
+
+			if ( _isEditing == isEditing ) { return; }
+
+			_isEditing = isEditing;
+
+			if ( _isEditing ) {
+			} else {
+				_selection = new SelectionInfo( Span.Invalid, _caretInfo );
+				RefreshSelection( _selection );
+			}
 		}
 
 		// user manipulation functions
@@ -655,6 +751,22 @@ namespace TextEdit {
 			// add text transformation
 			_pendingTextTransformations.Add( (charIndex + text.Length, newText) );
 		}
+		// private (SelectionInfo selection, string text) Insert ( SelectionInfo selection, string text, string insertion ) {
+
+		// 	var state = (selection, text);
+
+		// 	// guards
+		// 	if ( !selection.CaretSpan.IsValid() ) { return state; }
+		// 	if ( insertion.IsNullOrEmpty() ) { return state; }
+
+		// 	// create transformation
+		// 	var charIndex = selection.CharacterSpan.Min;
+		// 	var range = selection.CharacterSpan.Length;
+		// 	if ( range > 0 ) { text = text.Remove( startIndex: charIndex, count: range ); }
+		// 	text = text.Insert( startIndex: charIndex, insertion );
+
+		// 	return ( new SelectionInfo())
+		// }
 		private void Delete () {
 
 			// guards
@@ -811,9 +923,51 @@ namespace TextEdit {
 		}
 
 		// processing
+		private void Initialize () {
+
+			if ( _isInitialized ) { return; }
+			_isInitialized = true;
+
+			// init data
+			_lineInfo = new LineInfo[0];
+			_wordInfo = new WordInfo[0];
+			_charInfo = new CharacterInfo[0];
+			_caretInfo = new CaretInfo[0];
+			_selection = new SelectionInfo(
+				caretSpan: Span.Invalid,
+				caretInfo: _caretInfo
+			);
+
+			// init scroll
+			_scroll.Init();
+
+			// set up carets
+			InitCaret( _leadingCaret );
+			InitCaret( _trailingCaret );
+
+			// set up selections
+			_primarySelection = CreateSelectionRect( "Primary Selection" );
+			_leftCapSelection = CreateSelectionRect( "Left-cap Selection" );
+			_rightCapSelection = CreateSelectionRect( "Right-cap Selection" );
+
+			// refresh everything
+			RenderTextMesh( _textMesh );
+			RefreshSelection( _selection );
+
+			// listen to events
+			_scroll.OnOffsetChanged.AddListener( _ => {
+				_refreshSelection = true;
+			} );
+			_scroll.OnViewportBoundsChanged.AddListener( _ => {
+				_renderTextMesh = true;
+			} );
+			_scroll.OnContentBoundsChanged.AddListener( _ => {
+				_renderTextMesh = true;
+			} );
+		}
 		private void ReadInput () {
 
-			if ( !_isSelected ) { return; }
+			if ( !_isEditing ) { return; }
 
 			// commands
 			bool executedCommand = false;
@@ -826,28 +980,36 @@ namespace TextEdit {
 
 			if ( !executedCommand ) { Insert( FilterValidCharacterInput( Input.inputString ) ); }
 			if ( Input.GetKeyDown( KeyCode.Delete ) || Input.GetKeyDown( KeyCode.Backspace ) ) { Delete(); }
-			if ( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) ) { Insert( Environment.NewLine ); }
 			if ( Input.GetKeyDown( KeyCode.UpArrow ) ) { MoveCaret( Directions.Up ); }
 			if ( Input.GetKeyDown( KeyCode.DownArrow ) ) { MoveCaret( Directions.Down ); }
 			if ( Input.GetKeyDown( KeyCode.LeftArrow ) ) { MoveCaret( Directions.Left ); }
 			if ( Input.GetKeyDown( KeyCode.RightArrow ) ) { MoveCaret( Directions.Right ); }
+			if ( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) ) {
+				switch ( _enterBehavior ) {
+					case EnterBehaviors.NewLine:
+						Insert( Environment.NewLine );
+						break;
+					case EnterBehaviors.Submit:
+						OnSubmit?.Invoke();
+						break;
+				};
+			}
 		}
 		private void RenderTextMesh ( TextMeshProUGUI textMesh ) {
 
-			//
-			// Step 1 ) Fit the TextMesh RectTransform to the scroll viewport
-
-			var scrollOffset = _scroll.Offset;
-			var viewportInset = _scroll.ViewportInset;
-			textMesh.rectTransform.offsetMax = new Vector2( x: -viewportInset.Right, y: -viewportInset.Top + scrollOffset.y );
-			textMesh.rectTransform.offsetMin = new Vector2( x: viewportInset.Left, y: -viewportInset.Top + scrollOffset.y );
-
+			// it would be nice to make this optional, but TMP
+			// shits the bed anyway if disabled
+			if ( !gameObject.activeInHierarchy ) {
+				return;
+			}
 
 			//
-			// Step 2 ) Re-render TextMesh and extract all metadata
+			// Step 1 ) Re-render TextMesh and extract all metadata
 
 			if ( textMesh.text.IsNullOrEmpty() ) { textMesh.text = Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString(); };
 			textMesh.ForceMeshUpdate();
+			LayoutRebuilder.ForceRebuildLayoutImmediate( textMesh.rectTransform );
+
 
 			var textInfo_tmp = textMesh.textInfo;
 			var lines_tmp = textInfo_tmp.lineInfo;
@@ -863,21 +1025,22 @@ namespace TextEdit {
 
 
 			//
-			// Step 3 ) Process all geometry data into buffers
+			// Step 2 ) Process all geometry data into buffers
 
 			var rt = ( transform as RectTransform );
 			var bounds = Bounds.FromRect( rt.rect );
 			var textMeshRt = textMesh.rectTransform;
-			var textBounds = Bounds.FromRect( textMeshRt.rect );
+			var textMeshBounds = Bounds.FromRect( textMeshRt.rect );
 			var pivotOffset = GetPivotOffsetBetween( from: textMeshRt, to: rt );
+			var viewportInset = _scroll.ViewportInset;
 			var lineMarginHeight = numLines_tmp switch {
 				0 => 0, // technically impossible
 				_ => lines_tmp[0].ascender - lines_tmp[0].descender
 			};
 			var lineExtentsHeight = numLines_tmp switch {
 				0 => 0, // technically impossible
-				1 => lines_tmp[0].ascender - lines_tmp[0].descender,
-				_ => lines_tmp[0].ascender - lines_tmp[1].ascender
+				_ => lines_tmp[0].lineExtents.max.y - lines_tmp[0].lineExtents.min.y
+				// _ => lines_tmp[0].ascender - lines_tmp[1].ascender
 			};
 
 			// TODO: how do we tell if the frame can't support a single character width?
@@ -888,17 +1051,16 @@ namespace TextEdit {
 				var line = lines_tmp[lineIndex];
 
 				// line dimensions
-				var viewportInsetTop = _scroll.ViewportInset.Top;
-				var lineTop = line.ascender - pivotOffset.y - viewportInsetTop;
-				var lineBottom = line.descender - pivotOffset.y - viewportInsetTop;
-				var lineExtentsTop = lineIndex == 0 ? bounds.Top - viewportInsetTop : lineTop;
+				var lineTop = line.ascender - pivotOffset.y - viewportInset.Top;
+				var lineBottom = line.descender - pivotOffset.y - viewportInset.Top;
+				var lineExtentsTop = lineIndex == 0 ? bounds.Top - viewportInset.Top : lineTop;
 				var lineExtentsBottom = lineTop - lineExtentsHeight;
 
 				var lineMargin = new Bounds(
 					top: lineTop,
 					bottom: lineBottom,
-					left: textBounds.Left,
-					right: textBounds.Right
+					left: bounds.Left + viewportInset.Left,
+					right: bounds.Right - viewportInset.Right
 				);
 				var lineExtents = new Bounds(
 					top: lineExtentsTop,
@@ -954,10 +1116,17 @@ namespace TextEdit {
 
 
 					// generate character position info
-					var charLeft = char_tmp.origin + pivotOffset.x;
+					// var horizontalOffset = ( ( viewportInset.Left - viewportInset.Right ) / 2f ) - pivotOffset.x;
+					var leftWeight = 1f - textMeshRt.anchorMin.x;
+					var rightWeight = textMeshRt.anchorMax.x;
+					var leftOffset = viewportInset.Left * leftWeight;
+					var rightOffset = viewportInset.Right * rightWeight;
+					var insetOffset = ( leftOffset - rightOffset ) / ( leftWeight + rightWeight );
+					var horizontalOffset = insetOffset - pivotOffset.x;
+					var charLeft = char_tmp.origin + horizontalOffset;
 					var charRight = isLastChar && char_tmp.character == ' ' ?
-						char_tmp.origin + 3.544f + pivotOffset.x : // manually move over for spaces
-						char_tmp.xAdvance + pivotOffset.x; // TODO: remove this once spaces are fixed
+						char_tmp.origin + 3.544f + horizontalOffset : // manually move over for spaces
+						char_tmp.xAdvance + horizontalOffset; // TODO: remove this once spaces are fixed
 					var charMargin = new Bounds(
 						top: lineTop,
 						bottom: lineBottom,
@@ -1026,11 +1195,24 @@ namespace TextEdit {
 			_charInfo = chars.ToArray();
 			_caretInfo = carets.ToArray();
 
+			// send updated caret info to selection
+			_selection?.SetCaretInfo( _caretInfo );
+
 
 			// 
-			// Step 4 ) Update scroll content size
+			// Step 3 ) Update scroll content size
 
-			_scroll.SetContentSize( new Vector2( x: textBounds.Width, y: GetTextBounds().Height ) );
+			var firstLine = _lineInfo.First();
+			var lastLine = _lineInfo.Last();
+			_textBounds = new Bounds(
+				top: firstLine.Extents.Top,
+				bottom: lastLine.Extents.Bottom,
+				left: firstLine.Margin.Left,
+				right: _lineInfo.Length > 1 ?
+					firstLine.Margin.Right :
+					_charInfo.Last().Margin.Right
+			);
+			_scroll.SetPreferredContentSize( _textBounds.Size );
 		}
 		private void RefreshSelection ( SelectionInfo selection ) {
 
@@ -1081,7 +1263,7 @@ namespace TextEdit {
 					left = right;
 					right = temp;
 				}
-				SetSelectionRect(
+				SetContentRect(
 					rt: _primarySelection.rectTransform,
 					top: blockTop,
 					bottom: blockBottom,
@@ -1090,14 +1272,14 @@ namespace TextEdit {
 				);
 			}
 			if ( showCapSelections ) {
-				SetSelectionRect(
+				SetContentRect(
 					rt: _leftCapSelection.rectTransform,
 					top: startingLine.Extents.Bottom,
 					bottom: bottom,
 					left: startingLine.Extents.Left,
 					right: left < right ? left : right
 				);
-				SetSelectionRect(
+				SetContentRect(
 					rt: _rightCapSelection.rectTransform,
 					top: top,
 					bottom: endingLine.Extents.Top,
@@ -1108,30 +1290,7 @@ namespace TextEdit {
 		}
 
 
-		// bounds
-		private Bounds GetTextBounds () {
-
-			if ( ( _lineInfo?.Length ?? 0 ) == 0 ) {
-				return Bounds.Zero;
-			}
-
-			var firstLine = _lineInfo.First();
-			var lastLine = _lineInfo.Last();
-			return new Bounds(
-				top: firstLine.Extents.Top,
-				bottom: lastLine.Extents.Bottom,
-				left: firstLine.Extents.Left,
-				right: firstLine.Extents.Right
-			);
-		}
-
 		// getters and setters
-		private string GetSelectionString () {
-
-			return _selection.CaretSpan.IsValid() ?
-				_textMesh.text.Substring( startIndex: _selection.CharacterSpan.Min, length: _selection.CharacterSpan.Length ) :
-				"";
-		}
 		private int GetCaretIndexFromCharIndex ( int charIndex ) {
 
 			// if past last char, return last caret index
@@ -1213,25 +1372,13 @@ namespace TextEdit {
 				return _wordInfo[wordIndex].CaretIndexBefore;
 			}
 		}
+		private string GetSelectionString () {
 
-		private Vector3 GetLocalPositionFromScreenPoint ( Vector2 screenPosition ) {
-
-			var ray = Camera.main.ScreenPointToRay( screenPosition );
-			var plane = new Plane( inNormal: -transform.forward, inPoint: transform.position );
-			plane.Raycast( ray, out float distance );
-			var contactPoint = ray.origin + ( ray.direction * distance );
-			return transform.InverseTransformPoint( contactPoint );
+			return _selection.CaretSpan.IsValid() ?
+				_textMesh.text.Substring( startIndex: _selection.CharacterSpan.Min, length: _selection.CharacterSpan.Length ) :
+				"";
 		}
-		private Vector3 ClampLocalPositionToFrame ( Vector3 localPosition ) {
 
-			var frame = ( transform as RectTransform ).rect;
-			var x = Mathf.Clamp( localPosition.x, frame.xMin, frame.xMax );
-			var y = Mathf.Clamp( localPosition.y, frame.yMin, frame.yMax );
-			var z = 0f;
-			return new Vector3( x, y, z );
-		}
-		private Vector3 ClampTextPositionToTextBounds ( Vector3 textPosition )
-			=> GetTextBounds().Clamp( textPosition );
 		private Vector2 GetPivotOffsetBetween ( RectTransform from, RectTransform to ) {
 
 			var pivotDifference = ( to.pivot - from.pivot );
@@ -1240,6 +1387,23 @@ namespace TextEdit {
 				y: to.rect.height * pivotDifference.y
 			);
 		}
+		private Vector2 GetLocal2DPositionFromScreenPoint ( Vector2 screenPosition ) {
+
+			var ray = Camera.main.ScreenPointToRay( screenPosition );
+			var plane = new Plane( inNormal: -transform.forward, inPoint: transform.position );
+			plane.Raycast( ray, out float distance );
+			var contactPoint = ray.origin + ( ray.direction * distance );
+			return transform.InverseTransformPoint( contactPoint );
+		}
+		private Vector2 ClampLocalPositionToFrame ( Vector2 localPosition ) {
+
+			var frame = ( transform as RectTransform ).rect;
+			var x = Mathf.Clamp( localPosition.x, frame.xMin, frame.xMax );
+			var y = Mathf.Clamp( localPosition.y, frame.yMin, frame.yMax );
+			return new Vector2( x, y );
+		}
+		private Vector2 ClampTextPositionToTextBounds ( Vector2 textPosition )
+			=> _textBounds.Clamp( textPosition );
 
 		private void SetCaretBounds ( RectTransform rt, Bounds bounds ) {
 
@@ -1249,22 +1413,10 @@ namespace TextEdit {
 			sizeDelta.y = bounds.Height;
 			rt.sizeDelta = sizeDelta;
 		}
-		private void SetSelectionRect ( RectTransform rt, float top, float bottom, float left, float right ) {
+		private void SetContentRect ( RectTransform rt, float top, float bottom, float left, float right ) {
 
 			rt.offsetMax = new Vector2( right, top ) + _scroll.Offset;
 			rt.offsetMin = new Vector2( left, bottom ) + _scroll.Offset;
-		}
-		private void SetCaretIntentToFloatCaret ( bool x, bool y ) {
-
-			if ( !_selection.CaretSpan.IsValid() ) {
-				_intendedCaretPosition = Vector2.zero;
-				return;
-			}
-
-			var position = _selection.FloatCaret.Target.MiddleCenter;
-			if ( x ) { _intendedCaretPosition.x = position.x; }
-			if ( y ) { _intendedCaretPosition.y = position.y; }
-			if ( y ) { _scroll.ScrollToContentRect( _selection.FloatCaret.Target ); }
 		}
 		private void SetCaretIndexFromLocalPosition ( Vector2 localPosition, bool setAnchor ) {
 
@@ -1277,6 +1429,18 @@ namespace TextEdit {
 			}
 			SetCaretIntentToFloatCaret( x: true, y: true );
 			RefreshSelection( _selection );
+		}
+		private void SetCaretIntentToFloatCaret ( bool x, bool y ) {
+
+			if ( !_selection.CaretSpan.IsValid() ) {
+				_intendedCaretPosition = Vector2.zero;
+				return;
+			}
+
+			var position = _selection.FloatCaret.Target.MiddleCenter;
+			if ( x ) { _intendedCaretPosition.x = position.x; }
+			if ( y ) { _intendedCaretPosition.y = position.y; }
+			if ( y ) { _scroll.ScrollToContentRect( _selection.FloatCaret.Target ); }
 		}
 
 
@@ -1322,12 +1486,17 @@ namespace TextEdit {
 		void IPointerDownHandler.OnPointerDown ( PointerEventData eventData ) {
 
 			_isDown = true;
-			var localPosition = GetLocalPositionFromScreenPoint( eventData.position );
+
+			if ( !_isEditable ) { return; }
+
+			var localPosition = GetLocal2DPositionFromScreenPoint( eventData.position );
 			SetCaretIndexFromLocalPosition( localPosition, setAnchor: true );
 		}
 		void IDragHandler.OnDrag ( PointerEventData eventData ) {
 
-			var localPosition = GetLocalPositionFromScreenPoint( eventData.position );
+			if ( !_isEditable ) { return; }
+
+			var localPosition = GetLocal2DPositionFromScreenPoint( eventData.position );
 			SetCaretIndexFromLocalPosition( localPosition, setAnchor: false );
 		}
 		void IPointerUpHandler.OnPointerUp ( PointerEventData eventData ) {
@@ -1340,19 +1509,15 @@ namespace TextEdit {
 		}
 		void ISelectHandler.OnSelect ( BaseEventData eventData ) {
 
-			_isSelected = true;
+			SetSelected( true );
 		}
 		void IDeselectHandler.OnDeselect ( BaseEventData eventData ) {
 
-			_isSelected = false;
-			_selection = new SelectionInfo( Span.Invalid, _caretInfo );
-			RefreshSelection( _selection );
+			SetSelected( false );
 		}
 		void ICancelHandler.OnCancel ( BaseEventData eventData ) {
 
-			_isSelected = false;
-			_selection = new SelectionInfo( Span.Invalid, _caretInfo );
-			RefreshSelection( _selection );
+			SetSelected( false );
 		}
 	}
 

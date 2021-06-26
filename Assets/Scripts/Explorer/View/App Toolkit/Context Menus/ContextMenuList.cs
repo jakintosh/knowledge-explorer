@@ -1,8 +1,9 @@
+using Jakintosh.List;
 using UnityEngine;
 
 namespace Explorer.View {
 
-	public class ContextMenuList : Framework.UI.List<Model.ContextAction, ContextMenuCell> {
+	public class ContextMenuList : List<Model.ContextAction, ContextMenuCell> {
 
 		protected override float GetSpacing () => 2f;
 		protected override RectOffset GetPadding ()

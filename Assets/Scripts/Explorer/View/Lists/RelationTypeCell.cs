@@ -1,5 +1,6 @@
-using Framework;
-using Graph;
+using Jakintosh.Graph;
+using Jakintosh.List;
+using Jakintosh.Observable;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,7 +29,7 @@ namespace Explorer.View {
 			EqualityComparer<string>.Default.Equals( Color, other.Color );
 	}
 
-	public class RelationTypeCell : Framework.UI.Cell<RelationTypeCellData> {
+	public class RelationTypeCell : Cell<RelationTypeCellData> {
 
 		[Header( "UI Display" )]
 		[SerializeField] private TextMeshProUGUI _nameText;

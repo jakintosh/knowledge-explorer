@@ -55,23 +55,23 @@ namespace Explorer.Client {
 			} );
 
 			// listen for context changes
-			_state.Contexts.OnCurrentContextChanged += current => {
+			_state.Contexts.OnCurrentContextChanged.AddListener( current => {
 				_contextViewsByUID.ForEach( ( uid, view ) => {
 					view.gameObject.SetActive( uid == current.UID );
 				} );
-			};
-			_state.Contexts.OnContextCreated += context => {
+			} );
+			_state.Contexts.OnContextCreated.AddListener( context => {
 				var uid = context.UID;
 				var view = Instantiate<View.BaseContext>( _contextPrefab );
 				view.InitWith( context );
 				view.gameObject.SetActive( uid == _state.Contexts.CurrentUID );
 				_contextViewsByUID.Add( uid, view );
-			};
-			_state.Contexts.OnContextDeleted += uid => {
+			} );
+			_state.Contexts.OnContextDeleted.AddListener( uid => {
 				var view = _contextViewsByUID[uid];
 				Destroy( view.gameObject );
 				_contextViewsByUID.Remove( uid );
-			};
+			} );
 		}
 		private void TeardownUI () {
 

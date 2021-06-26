@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Framework {
+namespace Jakintosh.Observable {
 
 	[Serializable]
 	public class Observable<T> {
 
-		public Observable ( T initialValue, Action<T> onChange ) {
+		public Observable ( T initialValue, Action<T> onChange, Func<T, T> onSet = null ) {
 
+			_onSet = onSet;
 			SetValue( _value, getter: () => _lastValue, setter: v => _lastValue = v );
 			SetValue( initialValue, getter: () => _value, setter: v => _value = v );
 			_onChange = onChange;
@@ -19,20 +20,25 @@ namespace Framework {
 		public T Get () => _value;
 		public virtual void Set ( T value ) {
 
-			if ( CheckEquality( value, _value ) ) {
-				return;
-			}
+			// run onSet if available
+			if ( _onSet != null ) { value = _onSet( value ); }
+
+			// abort if same
+			if ( CheckEquality( value, _value ) ) { return; }
 
 			SetValue( _value, getter: () => _lastValue, setter: v => _lastValue = v );
 			SetValue( value, getter: () => _value, setter: v => _value = v );
+
 			_onChange?.Invoke( _value );
 		}
 
 		protected T _lastValue;
 		protected T _value;
 		protected Action<T> _onChange;
+		protected Func<T, T> _onSet;
 
 		protected virtual void SetValue ( T value, Func<T> getter, Action<T> setter ) {
+
 			setter( value );
 		}
 		protected virtual bool CheckEquality ( T a, T b ) {
@@ -148,9 +154,10 @@ namespace Framework {
 	[Serializable]
 	public class ValidatedObservable<T> : Observable<T> {
 
-		public ValidatedObservable ( T initialValue, Action<T> onChange, Action<bool> onValid ) : base( initialValue, onChange ) {
+		public ValidatedObservable ( T initialValue, Action<T> onChange, Action<bool> onValid, params Func<T, bool>[] validators ) : base( initialValue, onChange ) {
 
 			_onValid = onValid;
+			_validators = new List<Func<T, bool>>( validators );
 			Validate( sendsNotification: false );
 		}
 
@@ -162,6 +169,7 @@ namespace Framework {
 		}
 
 		// validation modifiers
+		public bool IsValid => _isValid;
 		public void SetValidators ( Func<T, bool> validator )
 			=> SetValidators( new List<Func<T, bool>> { validator } );
 		public void SetValidators ( Func<T, bool>[] validators )

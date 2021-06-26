@@ -34,27 +34,46 @@ namespace Explorer.Client {
 		Background,
 		Background2,
 		Link,
-		Action
+		Action,
+		Error
 	}
 
 	public class Colors : MonoBehaviour {
+
+		private static Colors _instance;
+		public static Colors Instance {
+			get {
+				if ( _instance == null ) {
+					_instance = GameObject.FindObjectOfType<Colors>();
+				}
+				return _instance;
+			}
+		}
+		private void Awake () {
+			if ( _instance != null && _instance != this ) {
+				Destroy( this.gameObject );
+			} else {
+				_instance = this;
+			}
+		}
 
 		// events
 		public UnityEvent<ColorMode> OnColorModeChanged = new UnityEvent<ColorMode>();
 
 		// properties
-		public UnityColor Foreground => _foreground.ColorForMode( _colorMode );
-		public UnityColor Secondary => _secondary.ColorForMode( _colorMode );
-		public UnityColor Tertiaty => _tertiaty.ColorForMode( _colorMode );
-		public UnityColor Quaternary => _quaternary.ColorForMode( _colorMode );
-		public UnityColor Background => _background.ColorForMode( _colorMode );
-		public UnityColor Background2 => _background2.ColorForMode( _colorMode );
-		public UnityColor Link => _link.ColorForMode( _colorMode );
-		public UnityColor Action => _action.ColorForMode( _colorMode );
+		public static UnityColor Foreground => Instance._foreground.ColorForMode( Instance._colorMode );
+		public static UnityColor Secondary => Instance._secondary.ColorForMode( Instance._colorMode );
+		public static UnityColor Tertiaty => Instance._tertiaty.ColorForMode( Instance._colorMode );
+		public static UnityColor Quaternary => Instance._quaternary.ColorForMode( Instance._colorMode );
+		public static UnityColor Background => Instance._background.ColorForMode( Instance._colorMode );
+		public static UnityColor Background2 => Instance._background2.ColorForMode( Instance._colorMode );
+		public static UnityColor Link => Instance._link.ColorForMode( Instance._colorMode );
+		public static UnityColor Action => Instance._action.ColorForMode( Instance._colorMode );
+		public static UnityColor Error => Instance._error.ColorForMode( Instance._colorMode );
 
 
 		// methods
-		public UnityColor GetDefinedColor ( DefinedColors color )
+		public static UnityColor GetDefinedColor ( DefinedColors color )
 			=> color switch {
 				DefinedColors.Foreground => Foreground,
 				DefinedColors.Secondary => Secondary,
@@ -67,10 +86,10 @@ namespace Explorer.Client {
 				_ => throw new IndexOutOfRangeException()
 			};
 
-		public void SetColorMode ( ColorMode colorMode ) {
+		public static void SetColorMode ( ColorMode colorMode ) {
 
-			_colorMode = colorMode;
-			OnColorModeChanged?.Invoke( _colorMode );
+			Instance._colorMode = colorMode;
+			Instance.OnColorModeChanged?.Invoke( Instance._colorMode );
 		}
 
 		// data
@@ -86,5 +105,6 @@ namespace Explorer.Client {
 
 		[SerializeField] private Color _link;
 		[SerializeField] private Color _action;
+		[SerializeField] private Color _error;
 	}
 }

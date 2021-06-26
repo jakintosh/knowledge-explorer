@@ -1,5 +1,6 @@
-using Framework;
+using Jakintosh.Observable;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Explorer.View {
 
@@ -21,10 +22,13 @@ namespace Explorer.View {
 
 		[Header( "UI Display" )]
 		[SerializeField] private Canvas _canvas;
+		[SerializeField] private Image _background;
 		[SerializeField] private TextEdit.Text _textEdit;
+		[SerializeField] private BlockEdit _blockEdit;
 
 		// observables
 		private Observable<Vector2> _documentSize;
+		private Observable<DocumentModes> _documentMode;
 
 		private Vector3 _dragPosition;
 
@@ -32,6 +36,8 @@ namespace Explorer.View {
 
 			// init subviews
 			_documentToolbar.Init();
+			_blockEdit.Init();
+			_textEdit.Init();
 
 			// init observables
 			_documentSize = new Observable<Vector2>(
@@ -41,21 +47,34 @@ namespace Explorer.View {
 					_textEdit.RefreshSize();
 				}
 			);
+			_documentMode = new Observable<DocumentModes>(
+				initialValue: _documentToolbar.Mode,
+				onChange: mode => {
+					_textEdit.SetEditable( mode == DocumentModes.Edit );
+					if ( mode == DocumentModes.Reorder ) {
+
+					}
+				}
+			);
 
 			// subscribe to controls
+			_documentToolbar.OnDocumentModeChanged.AddListener( mode => {
+				_documentMode.Set( mode );
+			} );
 			_corner.OnDragBegin.AddListener( () => {
 				_dragPosition = GetBottomRightWorldPosition();
 			} );
 			_corner.OnDragDelta.AddListener( delta => {
 				_dragPosition += delta;
 				var size = GetSize( GetTopLeftWorldPosition(), _dragPosition ).Clamp( _minDocumentSize, _maxDocumentSize );
-				Debug.Log( $"Size:{size}" );
 				_documentSize.Set( size );
 			} );
 		}
 		protected override void OnCleanup () {
 
 		}
+
+
 
 
 		private Vector3 GetTopLeftWorldPosition () {
@@ -74,9 +93,6 @@ namespace Explorer.View {
 
 			var tlLocal = _canvas.transform.InverseTransformPoint( topLeftWorld );
 			var brLocal = _canvas.transform.InverseTransformPoint( bottomRightWorld );
-
-			Debug.Log( $"TL local: {tlLocal}" );
-			Debug.Log( $"BR local: {brLocal}" );
 
 			var size = new Vector2( brLocal.x - tlLocal.x, tlLocal.y - brLocal.y );
 			return size;

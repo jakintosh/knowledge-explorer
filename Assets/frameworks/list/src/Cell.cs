@@ -1,13 +1,13 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace Framework.UI {
+namespace Jakintosh.List {
 
 	public abstract class Cell<TData> : MonoBehaviour {
 
 		// events
-		[Header( "Cell - UI Control" )]
-		public Event<TData>.Signature OnClick;
+		[HideInInspector] public UnityEvent<TData> OnClick = new UnityEvent<TData>();
 
 		// methods
 		public void SetData ( TData data ) {
@@ -19,11 +19,7 @@ namespace Framework.UI {
 		protected virtual void Awake () {
 
 			_button?.onClick.AddListener( () => {
-				Event<TData>.Fire(
-					@event: OnClick,
-					value: _data,
-					id: "Framework.UI.Cell.OnClick"
-				);
+				OnClick?.Invoke( _data );
 			} );
 		}
 		protected abstract void ReceiveData ( TData data );

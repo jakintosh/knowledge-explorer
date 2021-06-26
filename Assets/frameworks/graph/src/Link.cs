@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
-using System;
 
-namespace Graph {
+namespace Jakintosh.Graph {
 
 	internal interface IEditableLink {
 		void SetTypeUID ( string typeUID );

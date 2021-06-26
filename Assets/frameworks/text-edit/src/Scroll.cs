@@ -1,8 +1,7 @@
-using System;
+using Jakintosh.Observable;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
-
-using Bounds = TextEdit.Text.Bounds;
 
 namespace TextEdit {
 
@@ -13,93 +12,10 @@ namespace TextEdit {
 		BottomRight
 	}
 
-	/*
-		Tracks viewport and content bounds for a scroll view.
-
-		All bounds and calculations are within a "container" coordinate space.
-	*/
-	[Serializable]
-	public class ScrollState {
-
-		// events
-		public delegate void ContentBoundsChangedEvent ( Bounds contentBounds );
-		public event ContentBoundsChangedEvent OnContentBoundsChanged;
-
-		// properties
-		public Vector2 Offset => _contentBounds.PositionFromPivot( _pivot ) - _viewportBounds.PositionFromPivot( _pivot );
-
-		// methods
-		public void Initialize ( Vector2 pivot, Bounds viewportBounds, Bounds contentBounds, Bounds focusInset ) {
-
-			_pivot = pivot;
-			SetViewportBounds( viewportBounds );
-			_contentBounds = contentBounds;
-			_focusInset = focusInset;
-
-			// align pivots on start
-			_contentBounds.MoveBy( -Offset );
-		}
-		public void SetViewportBounds ( Bounds bounds ) {
-
-			_viewportBounds = bounds;
-		}
-		public void SetContentSize ( Vector2 size ) {
-
-			// resize content bounds from top left
-			_contentBounds.ResizeFromPivot( size, pivot: _pivot );
-			ScrollBy( Vector2.zero ); // i dont like this
-		}
-		public void ScrollBy ( Vector2 delta ) {
-
-			// we use bottom left because it is Pivot(0,0)
-			var newBottomLeft = _contentBounds.BottomLeft + delta;
-
-			// this is a clipping situation?
-			newBottomLeft = newBottomLeft.Clamp( _minBottomLeft, _maxBottomLeft );
-			var movement = newBottomLeft - _contentBounds.BottomLeft;
-
-			if ( movement.magnitude > 0.0001f ) {
-				_contentBounds.MoveBy( movement );
-				OnContentBoundsChanged?.Invoke( _contentBounds.Duplicate() );
-			}
-		}
-		public void ScrollToContentRect ( Bounds contentRect ) {
-
-			var targetBounds = contentRect.Duplicate().MoveBy( Offset ); // content -> viewport coords
-			var delta = FocusBounds.GetDeltaToContain( targetBounds );
-			ScrollBy( -delta ); // inverted because we're moving content -> viewport, not viewport -> content
-		}
-
-		public void DrawGizmos ( Transform container ) {
-
-			// viewport
-			_viewportBounds.DrawGizmos( container: container, color: Color.black );
-
-			// focus inset
-			FocusBounds.DrawGizmos( container: container, color: Color.green );
-
-			// content
-			_contentBounds.DrawGizmos( container: container, color: Color.blue );
-
-			// anchors
-			var color = Gizmos.color;
-			Gizmos.color = Color.blue;
-			Gizmos.DrawSphere( container.TransformPoint( _contentBounds.PositionFromPivot( _pivot ) ), 0.05f );
-			Gizmos.color = Color.black;
-			Gizmos.DrawSphere( container.TransformPoint( _viewportBounds.PositionFromPivot( _pivot ) ), 0.05f );
-			Gizmos.color = color;
-		}
-
-		private Bounds FocusBounds => _viewportBounds.Duplicate().InsetBy( _focusInset );
-
-		private Bounds _viewportBounds; // in container space
-		private Bounds _contentBounds; // in container space
-		private Bounds _focusInset; // relative to viewport bounds
-
-		private Vector2 _pivot;
-
-		private Vector2 _minBottomLeft => _viewportBounds.BottomLeft - ( _contentBounds.Size - _viewportBounds.Size );
-		private Vector2 _maxBottomLeft => _viewportBounds.BottomLeft;
+	public enum ContentFit {
+		None,
+		Width,
+		Height
 	}
 
 	public class Scroll : MonoBehaviour,
@@ -108,25 +24,133 @@ namespace TextEdit {
 		// *********** Public Interface ***********
 
 		// events
-		public delegate void ScrollOffsetChangedEvent ( Vector2 contentBounds );
-		public event ScrollOffsetChangedEvent OnScrollOffsetChanged;
+		public UnityEvent<Vector2> OnOffsetChanged = new UnityEvent<Vector2>();
+		public UnityEvent<Bounds> OnViewportBoundsChanged = new UnityEvent<Bounds>();
+		public UnityEvent<Bounds> OnContentBoundsChanged = new UnityEvent<Bounds>();
 
-		public Vector2 Offset => _scrollInfo.Offset;
+		// properties
+		public Vector2 Offset => _offset?.Get() ?? Vector2.zero;
 		public Bounds ViewportInset => _viewportInset;
 
+		// methods
+		public void Init () {
 
-		public void RefreshFrame () {
+			if ( _isInitialized ) { return; }
+			_isInitialized = true;
 
-			_scrollInfo.SetViewportBounds( GetViewportBounds() );
+			// init vars
+			_pivot = GetPivot( _scrollAnchor );
+
+			// init observables
+			_offsetBounds = new Observable<Bounds>(
+				initialValue: Bounds.Zero,
+				onChange: bounds => {
+
+					// clamp offset for new bounds
+					_offset?.Set( bounds.Clamp( _offset.Get() ) );
+				}
+			);
+			_containerBounds = new Observable<Bounds>(
+				initialValue: GenerateContainerBounds(),
+				onChange: bounds => {
+
+					// update viewport bounds
+					_viewportBounds?.Set( bounds.InsetBy( _viewportInset ) );
+				}
+			);
+			_viewportBounds = new Observable<Bounds>(
+				initialValue: GenerateContainerBounds().InsetBy( _viewportInset ),
+				onChange: bounds => {
+
+					if ( _contentSize != null ) {
+
+						// update valid scroll range
+						var newOffsetBounds = GenerateOffsetBounds(
+							viewportSize: bounds.Size,
+							contentSize: _contentSize.Get()
+						);
+						_offsetBounds.Set( newOffsetBounds );
+
+						// refresh content size
+						var newContentSize = GetValidContentSize(
+							contentFit: _contentFitToViewport,
+							viewportSize: bounds.Size,
+							contentSize: _contentSize.Get()
+						);
+						_contentSize.Set( newContentSize );
+					}
+
+					// update content bounds
+					_contentBounds?.Set( GenerateContentBounds( bounds, _contentSize.Get(), _offset.Get() ) );
+
+					// fire event
+					OnViewportBoundsChanged?.Invoke( bounds );
+				}
+			);
+			_contentSize = new Observable<Vector2>(
+				initialValue: _content.rect.size,
+				onChange: size => {
+
+					// update valid scroll range
+					var newOffsetBounds = GenerateOffsetBounds(
+						viewportSize: _viewportBounds.Get().Size,
+						contentSize: size
+					);
+					_offsetBounds.Set( newOffsetBounds );
+
+					// update content bounds
+					_contentBounds?.Set( GenerateContentBounds( _viewportBounds.Get(), size, _offset.Get() ) );
+				},
+				onSet: size => {
+					return GetValidContentSize(
+						contentFit: _contentFitToViewport,
+						viewportSize: _viewportBounds.Get().Size,
+						contentSize: size
+					);
+				}
+			);
+			_offset = new Observable<Vector2>(
+				initialValue: Vector2.zero,
+				onChange: offset => {
+
+					// update content bounds
+					_contentBounds?.Set( GenerateContentBounds( _viewportBounds.Get(), _contentSize.Get(), offset ) );
+
+					// fire event
+					OnOffsetChanged?.Invoke( offset );
+				},
+				onSet: offset => {
+					return _offsetBounds.Get().Clamp( offset );
+				}
+			);
+			_contentBounds = new Observable<Bounds>(
+				initialValue: GenerateContentBounds( _viewportBounds.Get(), _contentSize.Get(), _offset.Get() ),
+				onChange: bounds => {
+
+					// layout the content RectTransform
+					LayoutContent( content: _content, bounds: bounds, fit: _contentFitToViewport );
+
+					// fire event
+					OnContentBoundsChanged?.Invoke( bounds );
+				}
+			);
 		}
-		public void SetContentSize ( Vector2 size ) {
-
-			_scrollInfo.SetContentSize( size );
-		}
+		public void RefreshFrame ()
+			=> _containerBounds?.Set( GenerateContainerBounds() );
+		public void RefreshContentSize ()
+			=> _contentSize?.Set( _content.rect.size );
+		public void ResetScrollOffset ()
+			=> _offset?.Set( Vector2.zero );
 		public void ScrollToContentRect ( Bounds contentRect ) {
 
-			_scrollInfo.ScrollToContentRect( contentRect );
+			var viewport = _viewportBounds.Get();
+			var target = contentRect.Duplicate().MoveBy( Offset ); // content -> viewport coords
+			var delta = viewport.GetDeltaToContain( target );
+			_offset.Set( _offset.Get() - delta );
 		}
+		public void SetPreferredContentSize ( Vector2 size )
+			=> _contentSize?.Set( size );
+
 
 		// *********** Private Interface ***********
 
@@ -134,7 +158,7 @@ namespace TextEdit {
 		[SerializeField] private ScrollAnchors _scrollAnchor;
 		[SerializeField] private float _scrollSpeed = 1f;
 		[SerializeField] private Bounds _viewportInset;
-		[SerializeField] private Bounds _focusInset;
+		[SerializeField] private ContentFit _contentFitToViewport;
 
 		[Header( "UI Display" )]
 		[SerializeField] private RectTransform _content;
@@ -142,82 +166,174 @@ namespace TextEdit {
 		[Header( "UI Debug" )]
 		[SerializeField] private bool _debugVisualizer;
 
-		// private data
-		private ScrollState _scrollInfo = new ScrollState();
+		// view model
+		private bool _isInitialized;
+		private bool _containerNeedsLayout;
+		private Vector2 _pivot;
+		private Observable<Vector2> _offset;
+		private Observable<Bounds> _offsetBounds;
+		private Observable<Vector2> _contentSize;
+		private Observable<Bounds> _containerBounds;
+		private Observable<Bounds> _viewportBounds; // in container space
+		private Observable<Bounds> _contentBounds; // in container space
 
 		// mono lifecycle
 		private void Awake () {
 
-			// 
-			InitializeScrollInfo();
+			if ( !_isInitialized ) {
+				Init();
+			}
+		}
+		private void OnEnable () {
 
-			// event handler
-			_scrollInfo.OnContentBoundsChanged += contentBounds => {
-				_content.localPosition = contentBounds.PositionFromPivot( _content.pivot );
-				OnScrollOffsetChanged?.Invoke( Offset );
-			};
+			_containerNeedsLayout = true;
+		}
+		private void LateUpdate () {
+
+			if ( _containerNeedsLayout ) {
+				_containerBounds.Set( GenerateContainerBounds() );
+				_containerNeedsLayout = false;
+			}
 		}
 		private void OnDrawGizmos () {
 
 			if ( _debugVisualizer ) {
+
+				Bounds viewport, content, offset;
+
 				if ( !Application.isPlaying ) {
-					InitializeScrollInfo();
+					_pivot = GetPivot( _scrollAnchor );
+					viewport = GenerateContainerBounds().InsetBy( _viewportInset );
+					var contentSize = GetValidContentSize( _contentFitToViewport, viewport.Size, _content.rect.size );
+					content = GenerateContentBounds( viewport, contentSize, Vector2.zero );
+					offset = GenerateOffsetBounds( viewport.Size, content.Size );
+
+					// position the content
+					LayoutContent( content: _content, bounds: content, fit: _contentFitToViewport );
+
+				} else {
+					viewport = _viewportBounds.Get();
+					content = _contentBounds.Get();
+					offset = _offsetBounds.Get();
 				}
-				_scrollInfo.DrawGizmos( container: transform );
+
+				var color = Gizmos.color;
+
+				viewport.DrawGizmos( container: transform, color: Color.black );
+				Gizmos.color = Color.black;
+				Gizmos.DrawSphere( transform.TransformPoint( viewport.PositionAtPivot( _pivot ) ), 0.05f );
+
+				content.DrawGizmos( container: transform, color: Color.blue );
+				Gizmos.color = Color.blue;
+				Gizmos.DrawSphere( transform.TransformPoint( content.PositionAtPivot( _pivot ) ), 0.05f );
+
+				offset.Duplicate().MoveBy( viewport.PositionAtPivot( _pivot ) ).DrawGizmos( container: transform, color: Color.red );
+
+				Gizmos.color = color;
 			}
 		}
 
-
-		private void InitializeScrollInfo () {
-
-			_scrollInfo.Initialize(
-				pivot: GetPivot( _scrollAnchor ),
-				viewportBounds: GetViewportBounds(),
-				contentBounds: GetContentBounds(),
-				focusInset: _focusInset
-			);
-		}
-		private Vector2 GetPivot ( ScrollAnchors scrollAnchor ) {
-
-			return scrollAnchor switch {
+		// helpers
+		private Vector2 GetPivot ( ScrollAnchors scrollAnchor )
+			=> scrollAnchor switch {
 				ScrollAnchors.TopLeft => new Vector2( 0.0f, 1.0f ),
 				ScrollAnchors.TopRight => new Vector2( 1.0f, 1.0f ),
 				ScrollAnchors.BottomLeft => new Vector2( 0.0f, 0.0f ),
 				ScrollAnchors.BottomRight => new Vector2( 1.0f, 0.0f ),
 				_ => Vector2.zero
 			};
-		}
-		private Bounds GetBounds () {
+		private Vector2 GetScrollDirections ( ScrollAnchors scrollAnchor )
+			=> scrollAnchor switch {
+				ScrollAnchors.TopLeft => new Vector2( x: 1, y: -1 ),
+				ScrollAnchors.TopRight => new Vector2( x: -1, y: -1 ),
+				ScrollAnchors.BottomLeft => new Vector2( x: 1, y: 1 ),
+				ScrollAnchors.BottomRight => new Vector2( x: -1, y: 1 ),
+				_ => new Vector2( x: 0, y: 0 )
+			};
+		private Vector2 GetValidContentSize ( ContentFit contentFit, Vector2 viewportSize, Vector2 contentSize ) {
 
-			return Bounds.FromRectTransform( ( transform as RectTransform ) );
+			var newContentSize = new Vector2(
+				x: contentFit switch {
+					ContentFit.Width => viewportSize.x,
+					_ => contentSize.x
+				},
+				y: contentFit switch {
+					ContentFit.Height => viewportSize.y,
+					_ => contentSize.y
+				}
+			);
+			return newContentSize;
 		}
-		public Bounds GetViewportBounds () {
+		private Bounds GenerateContainerBounds ()
+			=> Bounds.FromRectTransform( ( (RectTransform)transform ) );
+		private Bounds GenerateContentBounds ( Bounds viewport, Vector2 size, Vector2 offset ) {
 
-			return GetBounds().InsetBy( _viewportInset );
+			// create bounds
+			var contentBounds = new Bounds(
+				position: Vector2.zero,
+				size: size
+			);
+
+			// align pivot to viewport
+			var pivotOffset = contentBounds.PositionAtPivot( _pivot ) - viewport.PositionAtPivot( _pivot );
+			contentBounds.MoveBy( -pivotOffset );
+
+			// move into actual offset
+			contentBounds.MoveBy( offset );
+
+			return contentBounds;
 		}
-		private Bounds GetContentBounds () {
+		private Bounds GenerateOffsetBounds ( Vector2 viewportSize, Vector2 contentSize ) {
 
-			var worldCorners = new Vector3[4];
-			_content.GetWorldCorners( worldCorners );
-			for ( int i = 0; i < 4; i++ ) {
-				worldCorners[i] = transform.InverseTransformPoint( worldCorners[i] );
-			}
+			// get size delta, but negative means no scroll room, so clamp those
+			var sizeDelta = new Vector2(
+				x: ( contentSize.x - viewportSize.x ).WithFloor( 0f ),
+				y: ( contentSize.y - viewportSize.y ).WithFloor( 0f )
+			);
+
+			// get valid scrolling directions
+			var scrollDirection = GetScrollDirections( _scrollAnchor );
+
+			// create arrays of corner values
+			var xVals = new[] { 0f, sizeDelta.x * -scrollDirection.x }; // direction is neg because its the inverse
+			var yVals = new[] { 0f, sizeDelta.y * -scrollDirection.y }; // space for the scrolling bounds
 
 			return new Bounds(
-				bottom: worldCorners[0].y,
-				top: worldCorners[1].y,
-				left: worldCorners[0].x,
-				right: worldCorners[2].x
+				top: Mathf.Max( yVals ),
+				bottom: Mathf.Min( yVals ),
+				left: Mathf.Min( xVals ),
+				right: Mathf.Max( xVals )
 			);
+		}
+
+		private void LayoutContent ( RectTransform content, Bounds bounds, ContentFit fit ) {
+
+			// set anchors
+			switch ( fit ) {
+				case ContentFit.Width:
+					content.anchorMin = new Vector2( x: 0f, y: content.anchorMin.y );
+					content.anchorMax = new Vector2( x: 1f, y: content.anchorMax.y );
+					break;
+				case ContentFit.Height:
+					content.anchorMin = new Vector2( x: content.anchorMin.x, y: 0f );
+					content.anchorMax = new Vector2( x: content.anchorMax.x, y: 1f );
+					break;
+			}
+
+			// update size
+			content.SetSizeWithCurrentAnchors( RectTransform.Axis.Horizontal, bounds.Width );
+			content.SetSizeWithCurrentAnchors( RectTransform.Axis.Vertical, bounds.Height );
+
+			// update position
+			content.localPosition = bounds.PositionAtPivot( content.pivot );
 		}
 
 		// ********** IScrollHandler Implementation **********
 
 		void IScrollHandler.OnScroll ( PointerEventData eventData ) {
 
-			var scrollDelta = eventData.scrollDelta;
-			scrollDelta.y *= -1; // invert y, so that positive is up and to the right
-			_scrollInfo.ScrollBy( _scrollSpeed * scrollDelta );
+			var offsetDelta = _scrollSpeed * -eventData.scrollDelta; // scroll delta goes the opposite way i need
+			_offset.Set( _offset.Get() + offsetDelta );
 		}
 	}
 

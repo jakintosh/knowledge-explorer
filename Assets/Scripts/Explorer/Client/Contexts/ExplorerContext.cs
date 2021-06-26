@@ -1,5 +1,6 @@
-using Framework;
+using Jakintosh.Observable;
 using System;
+using UnityEngine.Events;
 
 namespace Explorer.Client {
 
@@ -22,7 +23,8 @@ namespace Explorer.Client {
 		// *********** Public Interface ***********
 
 		// events
-		public event Event<ExplorerContextState>.Signature OnContextStateModified;
+		public UnityEvent<ExplorerContextState> OnContextStateModified => _onContextStateModified;
+
 
 		// properties
 		public ExplorerContextState State => _state.Get();
@@ -32,13 +34,7 @@ namespace Explorer.Client {
 			_state = new Observable<ExplorerContextState>(
 				initialValue: ExplorerContextState.Null,
 				onChange: state => {
-
-					// fire event
-					Event<ExplorerContextState>.Fire(
-					@event: OnContextStateModified,
-					value: state,
-					id: $"Explorer.Model.Context.OnContextStateModified"
-				);
+					OnContextStateModified?.Invoke( state );
 				}
 			);
 		}
@@ -50,14 +46,14 @@ namespace Explorer.Client {
 				return;
 			}
 
-			var workspace = Client.Application.Resources.Workspaces.Get( uid );
+			var workspace = Client.Resources.Workspaces.Get( uid );
 			if ( workspace == null ) {
 				UnityEngine.Debug.LogError( $"Context.SetWorkspace: Couldn't find workspace for UID-{uid}" );
 				return;
 			}
 
 			// ensure this is a valid graph, and pre-load it
-			var graph = Client.Application.Resources.Graphs.Get( workspace.GraphUID );
+			var graph = Client.Resources.Graphs.Get( workspace.GraphUID );
 			if ( graph == null ) {
 				UnityEngine.Debug.LogError( $"Context.SetWorkspace: Couldn't find graph for UID-{workspace.GraphUID}" );
 				return;
@@ -67,6 +63,9 @@ namespace Explorer.Client {
 		}
 
 		// *********** Private Interface ***********
+
+		// events
+		private UnityEvent<ExplorerContextState> _onContextStateModified = new UnityEvent<ExplorerContextState>();
 
 		// internal data
 		private Observable<ExplorerContextState> _state;

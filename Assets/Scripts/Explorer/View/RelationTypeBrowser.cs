@@ -1,4 +1,4 @@
-using Framework;
+using Jakintosh.Observable;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,7 +29,7 @@ namespace Explorer.View {
 		private ListObservable<RelationTypeCellData> _cellData;
 
 		// internal data
-		private Knowledge.Graph _graph;
+		private Jakintosh.Knowledge.Graph _graph;
 		private Model.Workspace _workspace;
 
 		// view lifecycle
@@ -101,7 +101,7 @@ namespace Explorer.View {
 				_graph?.UpdateRelationTypeName( uid, name );
 			} );
 			_relationTypeEditor.OnColorStringChanged.AddListener( ( uid, colorString ) => {
-				var metadata = _graph?.GetMetadataForRelationType( uid ) ?? new Knowledge.Metadata.RelationType();
+				var metadata = _graph?.GetMetadataForRelationType( uid ) ?? new Jakintosh.Knowledge.Metadata.RelationType();
 				metadata.Display.HexColor = colorString;
 				_graph?.SetMetadataForRelationType( uid, metadata );
 
@@ -130,14 +130,14 @@ namespace Explorer.View {
 		}
 
 		// event handlers
-		private void HandleRelationTypeEvent ( Knowledge.Graph.ResourceEventData eventData ) {
+		private void HandleRelationTypeEvent ( Jakintosh.Knowledge.Graph.ResourceEventData eventData ) {
 
 			// update cell data
 			_cellData.Set( GetCellData( _graph, _workspace ) );
 		}
 
 		// helpers
-		private List<RelationTypeCellData> GetCellData ( Knowledge.Graph graph, Model.Workspace workspace ) {
+		private List<RelationTypeCellData> GetCellData ( Jakintosh.Knowledge.Graph graph, Model.Workspace workspace ) {
 
 			if ( graph == null ) {
 				Debug.Log( $"RelationTypeBrowser: Can't get cell data, missing graph." );

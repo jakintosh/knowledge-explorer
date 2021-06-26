@@ -1,4 +1,4 @@
-using Framework;
+using Jakintosh.Observable;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;

@@ -1,7 +1,7 @@
-using Framework.Data;
+using Jakintosh.Knowledge;
+using Jakintosh.Resources;
 using System.Collections.Generic;
 
-using Metadata = Framework.Data.Metadata.Resource;
 using Workspace = Explorer.View.Model.Workspace;
 
 namespace Explorer.Model {
@@ -48,7 +48,7 @@ namespace Explorer.Model {
 		public Metadata New ( string name, string graphUid ) {
 
 			// try get graph
-			Knowledge.Graph graphResource;
+			Graph graphResource;
 			try {
 
 				if ( graphUid == null ) { graphUid = _graphs.New( name )?.UID; }

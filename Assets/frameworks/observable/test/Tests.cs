@@ -1,4 +1,4 @@
-using Framework;
+using Jakintosh.Observable;
 using NUnit.Framework;
 using System.Collections.Generic;
 
@@ -14,6 +14,17 @@ public class Observable_Tests {
 			initialValue: initialValue,
 			onChange: newValue => {
 				intFlag = true;
+			}
+		);
+	private Observable<int> GetNewClampedIntObservable ( int initialValue, int min, int max ) =>
+		new Observable<int>(
+			initialValue: initialValue,
+			onChange: newValue => {
+				intFlag = true;
+			},
+			onSet: value => {
+				var low = value >= min ? value : min;
+				return low <= max ? low : max;
 			}
 		);
 
@@ -46,6 +57,22 @@ public class Observable_Tests {
 		ResetIntFlags();
 		o.Set( 0 );
 		Assert.That( intFlag == false );
+	}
+
+	[Test]
+	public void Observable_Int_Clamps () {
+
+		var min = 0;
+		var max = 1;
+		var o = GetNewClampedIntObservable( 0, min, max );
+
+		ResetIntFlags();
+		o.Set( max + 5 );
+		Assert.AreEqual( o.Get(), max );
+
+		ResetIntFlags();
+		o.Set( min - 5 );
+		Assert.AreEqual( o.Get(), min );
 	}
 
 	// ****************************************

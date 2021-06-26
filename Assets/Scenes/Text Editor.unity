@@ -642,6 +642,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ecb3788419d54df0a40522a640fd7d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OnTextChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  _isEditable: 1
   _scroll: {fileID: 886496602}
   _textMesh: {fileID: 1808755828}
   _leadingCaret: {fileID: 1449469658}
@@ -732,6 +736,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98a8d24aace0d44daba71c1ca96c112d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OnOffsetChanged:
+    m_PersistentCalls:
+      m_Calls: []
   _scrollAnchor: 0
   _scrollSpeed: 1
   _viewportInset:
@@ -739,11 +746,7 @@ MonoBehaviour:
     bottom: 75
     left: 100
     right: 100
-  _focusInset:
-    top: 20
-    bottom: 40
-    left: 0
-    right: 0
+  _contentFitToViewport: 1
   _content: {fileID: 1808755825}
   _debugVisualizer: 1
 --- !u!1 &1158270374
@@ -1179,11 +1182,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1650075233}
+  - component: {fileID: 1650075234}
   - component: {fileID: 1650075238}
   - component: {fileID: 1650075237}
   - component: {fileID: 1650075236}
   - component: {fileID: 1650075235}
-  - component: {fileID: 1650075234}
   m_Layer: 0
   m_Name: Scroll Test
   m_TagString: Untagged
@@ -1224,6 +1227,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98a8d24aace0d44daba71c1ca96c112d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OnOffsetChanged:
+    m_PersistentCalls:
+      m_Calls: []
   _scrollAnchor: 0
   _scrollSpeed: 1
   _viewportInset:
@@ -1231,11 +1237,7 @@ MonoBehaviour:
     bottom: 100
     left: 75
     right: 75
-  _focusInset:
-    top: 20
-    bottom: 20
-    left: 20
-    right: 20
+  _contentFitToViewport: 0
   _content: {fileID: 2041322435}
   _debugVisualizer: 1
 --- !u!114 &1650075235
@@ -1499,7 +1501,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -75}
+  m_AnchoredPosition: {x: -0, y: -75}
   m_SizeDelta: {x: -200, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1808755827
