@@ -34,6 +34,12 @@ public static class Int_Extensions {
 		return from;
 	}
 
+	public static bool IsEven ( this int num )
+		=> num % 2 == 0;
+
+	public static bool IsOdd ( this int num )
+		=> !IsEven( num );
+
 	public static int WithCeiling ( this int value, int other )
 		=> value <= other ? value : other;
 
@@ -42,6 +48,9 @@ public static class Int_Extensions {
 
 	public static int WithSign ( this int value, Sign sign )
 		=> value * (int)sign;
+
+	public static int ClampedBetween ( this int value, int min, int max )
+		=> value.WithCeiling( max ).WithFloor( min );
 
 }
 
