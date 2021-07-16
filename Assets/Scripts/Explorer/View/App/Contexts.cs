@@ -17,18 +17,27 @@ namespace Explorer.Client {
 
 		private ExplorerContexts _contexts = new ExplorerContexts();
 
+		private static bool _isQuitting = false;
+
 		private static Contexts _instance;
 		private static Contexts Instance {
 			get {
 				if ( _instance == null ) {
-					_instance = GameObject.FindObjectOfType<Contexts>();
-					if ( _instance == null ) {
-						_instance = new GameObject( "Contexts" ).AddComponent<Contexts>();
-					}
+					GetNewInstance();
 				}
 				return _instance;
 			}
 		}
+		private static void GetNewInstance () {
+
+			if ( _isQuitting ) { return; }
+
+			_instance = GameObject.FindObjectOfType<Contexts>();
+			if ( _instance == null ) {
+				_instance = new GameObject( "Contexts" ).AddComponent<Contexts>();
+			}
+		}
+
 		private void Awake () {
 
 			if ( _instance != null && _instance != this ) {
@@ -36,6 +45,10 @@ namespace Explorer.Client {
 			} else {
 				_instance = this;
 			}
+		}
+		private void OnApplicationQuit () {
+
+			_isQuitting = true;
 		}
 	}
 }

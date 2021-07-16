@@ -23,9 +23,14 @@ namespace Explorer.View {
 
 		// view model
 		private Observable<string> _activeWorkspaceUID;
-		private ListObservable<Jakintosh.Resources.Metadata> _workspaces;
+
+		// private data
+		private IList<Jakintosh.Resources.Metadata> _workspaces = null;
 
 		protected override void OnInitialize () {
+
+			// init vars
+			_workspaces = Client.Resources.Workspaces.GetAll();
 
 			// init subviews
 			_scroll.Init();
@@ -34,36 +39,46 @@ namespace Explorer.View {
 			_activeWorkspaceUID = new Observable<string>(
 				initialValue: Client.Contexts.Current.State.Workspace?.UID,
 				onChange: uid => {
-					PopulateList( uid, _workspaces?.Get() );
-				}
-			);
-			_workspaces = new ListObservable<Jakintosh.Resources.Metadata>(
-				initialValue: Client.Resources.Workspaces.GetAll(),
-				onChange: workspaces => {
-					PopulateList( _activeWorkspaceUID.Get(), workspaces );
+					PopulateList( uid, _workspaces );
 				}
 			);
 
 			// subscribe to controls
-			Client.Resources.Workspaces.OnMetadataChanged += _workspaces.Set;
-			Client.Contexts.Current.OnContextStateModified.AddListener( state => {
-				_activeWorkspaceUID.Set( state.Workspace.UID );
-			} );
 			_workspaceList.OnCellClicked.AddListener( cellData => {
 				Client.Contexts.Current.SetWorkspace( cellData.WorkspaceMetadata.UID );
 				OnDismiss?.Invoke();
 			} );
+
+			// sub to app
+			Client.Resources.Workspaces.OnAnyMetadataChanged += HandleNewMetadataList;
+			Client.Contexts.Current.OnContextStateModified.AddListener( HandleNewContextState );
 		}
 		protected override void OnCleanup () {
 
-			Client.Resources.Workspaces.OnMetadataChanged -= _workspaces.Set;
+			Client.Resources.Workspaces.OnAnyMetadataChanged -= HandleNewMetadataList;
+			Client.Contexts.Current.OnContextStateModified.RemoveListener( HandleNewContextState );
 		}
 
+		// mono stuff
 		private void OnEnable () {
+
 
 			_scroll.ResetScrollOffset();
 			StartCoroutine( LayoutListContent() );
 		}
+
+		// event handlers
+		private void HandleNewMetadataList ( IList<Jakintosh.Resources.Metadata> workspaces ) {
+
+			_workspaces = workspaces;
+			PopulateList( _activeWorkspaceUID.Get(), _workspaces );
+		}
+		private void HandleNewContextState ( Client.ExplorerContextState state ) {
+
+			_activeWorkspaceUID.Set( state.Workspace?.UID );
+		}
+
+		// list handling
 
 		private void PopulateList ( string activeWorkspaceUID, IList<Jakintosh.Resources.Metadata> workspaces ) {
 

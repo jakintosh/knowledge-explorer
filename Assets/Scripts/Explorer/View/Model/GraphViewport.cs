@@ -15,8 +15,11 @@ namespace Explorer.View.Model {
 		// constructor
 		public GraphViewport ( List<Concept> concepts, List<Link> links ) {
 
-			Concepts = new List<Concept>( concepts );
-			Links = new List<Link>( links );
+			Concepts = new List<Concept>();
+			Links = new List<Link>();
+
+			if ( concepts != null ) { Concepts.AddRange( concepts ); }
+			if ( links != null ) { Links.AddRange( links ); }
 		}
 	}
 }

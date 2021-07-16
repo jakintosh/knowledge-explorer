@@ -129,6 +129,7 @@ namespace Explorer.View {
 
 			Clear();
 		}
+		protected override void OnCleanup () { }
 
 
 

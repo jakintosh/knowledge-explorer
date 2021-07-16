@@ -211,6 +211,7 @@ namespace Explorer.View {
 
 		}
 		protected override void OnRecycle () { }
+		protected override void OnCleanup () { }
 
 		private void Update () {
 

@@ -7,8 +7,12 @@ namespace Explorer.Model {
 	public interface IGraphCRUD {
 
 		event Framework.Event<IList<Metadata>>.Signature OnMetadataChanged;
+		event Framework.Event<Metadata>.Signature OnMetadataAdded;
+		event Framework.Event<Metadata>.Signature OnMetadataUpdated;
+		event Framework.Event<Metadata>.Signature OnMetadataDeleted;
 
 		Metadata New ( string name );
+		bool Rename ( string uid, string name );
 		bool Delete ( string uid );
 
 		Graph Get ( string uid );
@@ -21,6 +25,9 @@ namespace Explorer.Model {
 		// ********** Public Interface **********
 
 		public event Framework.Event<IList<Metadata>>.Signature OnMetadataChanged;
+		public event Framework.Event<Metadata>.Signature OnMetadataAdded;
+		public event Framework.Event<Metadata>.Signature OnMetadataUpdated;
+		public event Framework.Event<Metadata>.Signature OnMetadataDeleted;
 
 		public GraphResources ( string rootDataPath ) {
 
@@ -31,7 +38,10 @@ namespace Explorer.Model {
 			);
 
 			// pass through event
-			_graphs.OnMetadataChanged += metadata => OnMetadataChanged?.Invoke( metadata );
+			_graphs.OnAnyMetadataChanged += metadata => OnMetadataChanged?.Invoke( metadata );
+			_graphs.OnMetadataAdded += metadata => OnMetadataAdded?.Invoke( metadata );
+			_graphs.OnMetadataUpdated += metadata => OnMetadataUpdated?.Invoke( metadata );
+			_graphs.OnMetadataDeleted += metadata => OnMetadataDeleted?.Invoke( metadata );
 		}
 
 		public void LoadMetadata () {
@@ -51,17 +61,32 @@ namespace Explorer.Model {
 				(graphMetadata, graphResource) = _graphs.New( name );
 
 			} catch ( ResourceNameEmptyException ) {
-				UnityEngine.Debug.LogError( "Model.Application.IGraphAPI.Create: Failed due to Resource Name Empty" );
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Create: Failed due to Resource Name Empty" );
 				return null;
 
 			} catch ( ResourceNameConflictException ) {
-				UnityEngine.Debug.LogError( "Model.Application.IGraphAPI.Create: Failed due to Resource Name Conflict" );
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Create: Failed due to Resource Name Conflict" );
 				return null;
 			}
 
 			graphResource.Initialize( graphMetadata.UID );
 
 			return graphMetadata;
+		}
+		public bool Rename ( string uid, string name ) {
+
+			try {
+
+				return _graphs.Rename( uid, name );
+
+			} catch ( ResourceNameEmptyException ) {
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Rename: Failed due to Resource Name Empty" );
+			} catch ( ResourceNameConflictException ) {
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Rename: Failed due to Resource Name Conflict" );
+			} catch ( ResourceFileNameConflictException ) {
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Rename: Failed due to Resource File Name Conflict, but not Metadata name conflict. Data may be corrupted." );
+			}
+			return false;
 		}
 		public bool Delete ( string uid ) {
 
@@ -78,7 +103,7 @@ namespace Explorer.Model {
 				return _graphs.RequestResource( uid, load: true );
 
 			} catch ( ResourceMetadataNotFoundException ) {
-				UnityEngine.Debug.LogError( "Model.Application.IGraphAPI.Read: Failed due to missing graph." );
+				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Read: Failed due to missing graph." );
 				return null;
 			}
 		}

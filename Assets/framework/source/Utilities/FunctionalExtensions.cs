@@ -10,6 +10,10 @@ public static class List_T_FunctionalExtensions {
 		}
 	}
 
+	public static bool IsEmpty<T> ( this IList<T> collection ) {
+
+		return ( collection.Count == 0 );
+	}
 	public static int LastIndex<T> ( this IList<T> collection ) {
 
 		return ( collection.Count == 0 ) ? throw new IndexOutOfRangeException() : collection.Count - 1;

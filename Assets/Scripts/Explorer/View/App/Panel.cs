@@ -16,6 +16,20 @@ namespace Explorer.View {
 	[RequireComponent( typeof( MeshRenderer ) )]
 	public class Panel : MonoBehaviour {
 
+		public void Init () {
+
+			_mesh ??= new Mesh();
+			_filter ??= GetComponent<MeshFilter>();
+			_renderer ??= GetComponent<MeshRenderer>();
+
+			_renderer.material = _material;
+
+			_filter.mesh = _mesh;
+
+			SetSize( new Vector3( Width, Height, Thickness ) );
+		}
+		public void SetSizeFromCanvas ( Vector3 size )
+			=> SetSize( ( size * _canvasScale ) + new Vector3( GetChamfer * 2, GetChamfer * 2, Thickness ) );
 		public void SetSize ( Vector3 size ) {
 
 			Width = size.x;
@@ -30,49 +44,40 @@ namespace Explorer.View {
 				canvasRT.pivot = new Vector2( 0.5f, 0.0f );
 				canvasRT.sizeDelta = new Vector2( contentW / _canvasScale, contentH / _canvasScale );
 				_canvas.transform.localScale = new Vector3( _canvasScale, _canvasScale, _canvasScale );
-				_canvas.transform.localRotation = Quaternion.AngleAxis( 180f, Vector3.up );
-				_canvas.transform.localPosition = new Vector3( 0f, -contentH / 2, ( Thickness / 2f ) + _canvasHover );
+				_canvas.transform.localPosition = new Vector3( 0f, -contentH / 2, ( -Thickness / 2f ) - _canvasHover ) + PivotOffset;
 			}
 		}
 
-		[SerializeField] private Canvas _canvas;
-		[SerializeField] private float _canvasScale;
-		[SerializeField] private float _canvasHover;
-		[SerializeField] private Material _material;
+		[SerializeField] private Canvas _canvas = null;
+		[SerializeField] private float _canvasScale = 0.03527f; // this is cm -> pt
+		[SerializeField] private float _canvasHover = 0.01f;
+		[SerializeField] private Vector2 _pivot = new Vector2( 0.5f, 0.5f );
+		[SerializeField] private Material _material = null;
 
 		public float GetWidth => Width.WithFloor( 0.01f );
 		public float GetHeight => Height.WithFloor( 0.01f );
 		public float GetThickness => Thickness.WithFloor( 0.01f );
 		public float GetCornerRadius => CornerRadius.ClampedBetween( 0f, SmallestDimension / 2f );
-		public int GetSegments => CornerResolution.ClampedBetween( 0, 50 );
 		public float GetChamfer => ChamferDepth.ClampedBetween( 0f, Mathf.Min( GetCornerRadius, ( GetThickness / 2f ) ) );
+		public int GetSegments => CornerResolution.ClampedBetween( 0, 50 );
+		public Vector3 PivotOffset => new Vector3( -GetWidth * ( _pivot.x - 0.5f ), -GetHeight * ( _pivot.y - 0.5f ), 0f );
 
 		public float Width = 1.0f;
 		public float Height = 5f / 3f;
 		public float Thickness = 0.1f;
 		public float CornerRadius = 0.2f;
-		public int CornerResolution = 10;
 		public float ChamferDepth = 0.075f;
+		public int CornerResolution = 10;
 
 		public float SmallestDimension => Mathf.Min( Width, Height );
 
 		[SerializeField] private CornerType _cornerType = CornerType.Superellipse;
-		[SerializeField] private float _power = 4;
+		[SerializeField] private float _power = 3;
 
 		private Mesh _mesh;
 		private MeshFilter _filter;
 		private MeshRenderer _renderer;
 
-		private void Init () {
-
-			_mesh = new Mesh();
-			_filter = GetComponent<MeshFilter>();
-			_renderer = GetComponent<MeshRenderer>();
-
-			_renderer.material = _material;
-
-			_filter.mesh = _mesh;
-		}
 
 		private void GenerateMesh ( Mesh mesh ) {
 
@@ -149,20 +154,22 @@ namespace Explorer.View {
 				var rearZ = centerPoint.z - ( thickness / 2f );
 
 				// front/rear inner corners
-				vertices[frontFaceStartIndex] = new Vector3( centerPoint.x, centerPoint.y, frontZ );
-				vertices[rearFaceStartIndex] = new Vector3( centerPoint.x, centerPoint.y, rearZ );
+				vertices[frontFaceStartIndex] = new Vector3( centerPoint.x, centerPoint.y, frontZ ) + PivotOffset;
+				vertices[rearFaceStartIndex] = new Vector3( centerPoint.x, centerPoint.y, rearZ ) + PivotOffset;
 
 				// corner radius segments
 				for ( int cornerSegment = 0; cornerSegment <= segments; cornerSegment++ ) {
 
 					var ø = ( angleIncrement * cornerSegment ) + angleOffset;
 					var x = _cornerType switch {
+						CornerType.Superellipse => supercos( ø, 1 ),
 						CornerType.RoundedRect => Mathf.Cos( ø ),
-						CornerType.Superellipse => supercos( ø, 1 )
+						_ => Mathf.Cos( ø )
 					};
 					var y = _cornerType switch {
 						CornerType.RoundedRect => Mathf.Sin( ø ),
-						CornerType.Superellipse => supersin( ø, 1 )
+						CornerType.Superellipse => supersin( ø, 1 ),
+						_ => Mathf.Sin( ø )
 					};
 					var frontVert = new Vector3(
 						centerPoint.x + ( x * cornerRadius ),
@@ -184,8 +191,8 @@ namespace Explorer.View {
 					var rearIndex = rearFaceStartIndex + 1 + cornerSegment;
 					var frontFaceVert = frontVert - chamferXYOffset;
 					var rearFaceRimVert = rearVert - chamferXYOffset;
-					vertices[frontIndex] = frontFaceVert;
-					vertices[rearIndex] = rearFaceRimVert;
+					vertices[frontIndex] = frontFaceVert + PivotOffset;
+					vertices[rearIndex] = rearFaceRimVert + PivotOffset;
 					if ( cornerSegment < segments ) {
 						tris.AddRange( new[] { frontFaceStartIndex, frontIndex, frontIndex + 1 } ); // ccw, forward
 						tris.AddRange( new[] { rearFaceStartIndex, rearIndex + 1, rearIndex } ); // cw, backwards
@@ -196,8 +203,8 @@ namespace Explorer.View {
 					var rearEdgeIndex = rearEdgeStartIndex + cornerSegment;
 					var frontEdgeVert = frontVert - chamferZOffset;
 					var rearEdgeRimVert = rearVert + chamferZOffset;
-					vertices[frontEdgeIndex] = frontEdgeVert;
-					vertices[rearEdgeIndex] = rearEdgeRimVert;
+					vertices[frontEdgeIndex] = frontEdgeVert + PivotOffset;
+					vertices[rearEdgeIndex] = rearEdgeRimVert + PivotOffset;
 					if ( cornerSegment > 0 ) {
 						var leadingFrontIndex = frontEdgeIndex;
 						var trailingFrontIndex = frontEdgeIndex - 1;
@@ -221,10 +228,10 @@ namespace Explorer.View {
 					var frontChamferEdgeIndex = frontChamferStartIndex + cornerSegment + edgeOffset;
 					var rearChamferFaceIndex = rearChamferStartIndex + cornerSegment;
 					var rearChamferEdgeIndex = rearChamferStartIndex + cornerSegment + edgeOffset;
-					vertices[frontChamferFaceIndex] = frontFaceVert;
-					vertices[frontChamferEdgeIndex] = frontEdgeVert;
-					vertices[rearChamferFaceIndex] = rearFaceRimVert;
-					vertices[rearChamferEdgeIndex] = rearEdgeRimVert;
+					vertices[frontChamferFaceIndex] = frontFaceVert + PivotOffset;
+					vertices[frontChamferEdgeIndex] = frontEdgeVert + PivotOffset;
+					vertices[rearChamferFaceIndex] = rearFaceRimVert + PivotOffset;
+					vertices[rearChamferEdgeIndex] = rearEdgeRimVert + PivotOffset;
 					if ( cornerSegment > 0 ) {
 						tris.AddRange( new[] { frontChamferFaceIndex, frontChamferFaceIndex - 1, frontChamferEdgeIndex } );
 						tris.AddRange( new[] { frontChamferEdgeIndex, frontChamferFaceIndex - 1, frontChamferEdgeIndex - 1 } );
@@ -300,8 +307,10 @@ namespace Explorer.View {
 				);
 			}
 
-			mesh.vertices = vertices;
-			mesh.triangles = tris.ToArray();
+			mesh.Clear();
+			mesh.SetVertices( vertices );
+			mesh.SetTriangles( tris, 0 );
+			// mesh.triangles = tris.ToArray();
 
 			mesh.RecalculateNormals();
 		}
@@ -370,12 +379,14 @@ namespace Explorer.View {
 
 				var ø = ( angle * i ) + angleOffset;
 				var x = _cornerType switch {
+					CornerType.Superellipse => supercos( ø, 1 ),
 					CornerType.RoundedRect => Mathf.Cos( ø ),
-					CornerType.Superellipse => supercos( ø, 1 )
+					_ => Mathf.Cos( ø )
 				};
 				var y = _cornerType switch {
 					CornerType.RoundedRect => Mathf.Sin( ø ),
-					CornerType.Superellipse => supersin( ø, 1 )
+					CornerType.Superellipse => supersin( ø, 1 ),
+					_ => Mathf.Sin( ø )
 				};
 				var frontVert = new Vector3(
 					centerPoint.x + ( x * radius ),
@@ -476,6 +487,10 @@ namespace Explorer.View {
 			);
 		}
 
+		private void Awake () {
+
+			Init();
+		}
 		private void OnDrawGizmos () {
 
 			Init();

@@ -31,8 +31,8 @@ namespace Explorer.View {
 		[SerializeField] private Sprite _onSprite;
 
 		// static values
-		private static int SELECTION_OFFSET = 10;
-		private static Vector3 OFF_IMAGE_SCALE = new Vector3( 0.6f, 0.6f, 0.6f );
+		private static int SELECTION_OFFSET = 7;
+		private static Vector3 OFF_IMAGE_SCALE = new Vector3( 1f, 1f, 1f );
 		private static Vector3 ON_IMAGE_SCALE = new Vector3( 1f, 1f, 1f );
 
 		// model data

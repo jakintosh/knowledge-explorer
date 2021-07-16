@@ -103,11 +103,11 @@ namespace Explorer.View {
 			_newWorkspaceDialog.SetValidators( validators: Client.Application.Resources.Workspaces.ValidateName );
 
 			// sub to app events
-			Client.Application.Resources.Workspaces.OnMetadataChanged += HandleNewWorkspaceMetadata;
+			Client.Application.Resources.Workspaces.OnAnyMetadataChanged += HandleNewWorkspaceMetadata;
 		}
 		protected override void OnCleanup () {
 
-			Client.Application.Resources.Workspaces.OnMetadataChanged -= HandleNewWorkspaceMetadata;
+			Client.Application.Resources.Workspaces.OnAnyMetadataChanged -= HandleNewWorkspaceMetadata;
 		}
 
 		private void HandleNewWorkspaceMetadata ( IList<Metadata> metadata ) => _allWorkspaces.Set( metadata );

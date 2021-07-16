@@ -54,12 +54,14 @@ namespace Explorer.View {
 
 			if ( _isInitialized && !_isQuitting ) {
 				OnRecycle();
+				OnCleanup();
 			}
 		}
 
 		protected abstract void OnInitialize ();
 		protected abstract void OnPopulate ( T data );
 		protected abstract void OnRecycle ();
+		protected abstract void OnCleanup ();
 
 		private bool _isInitialized;
 		private bool _isQuitting;

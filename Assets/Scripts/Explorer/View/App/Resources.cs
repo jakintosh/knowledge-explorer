@@ -14,6 +14,8 @@ namespace Explorer.Client {
 
 		private Subsystems.Resources _resources = new Subsystems.Resources();
 
+		private static bool _isQuitting = false;
+
 		private static Resources _instance;
 		private static Resources Instance {
 			get {
@@ -24,6 +26,8 @@ namespace Explorer.Client {
 			}
 		}
 		private static void GetNewInstance () {
+
+			if ( _isQuitting ) { return; }
 
 			_instance = GameObject.FindObjectOfType<Resources>();
 			if ( _instance == null ) {
@@ -44,6 +48,9 @@ namespace Explorer.Client {
 		private void OnDestroy () {
 
 			_resources.Teardown();
+		}
+		private void OnApplicationQuit () {
+			_isQuitting = true;
 		}
 	}
 }

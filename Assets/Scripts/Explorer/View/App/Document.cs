@@ -15,16 +15,18 @@ namespace Explorer.View {
 		[Header( "UI Control" )]
 		[SerializeField] private DraggableUIControl _corner;
 		[SerializeField] private DocumentModeToolbar _documentToolbar;
+		[SerializeField] private TextEdit.Scroll _scroll;
+		[SerializeField] private TextEdit.Text _textEdit;
+		[SerializeField] private BlockEdit _blockEdit;
 
 		[Header( "UI Configuration" )]
 		[SerializeField] private Vector2 _minDocumentSize;
 		[SerializeField] private Vector2 _maxDocumentSize;
 
 		[Header( "UI Display" )]
+		[SerializeField] private Panel _panel;
 		[SerializeField] private Canvas _canvas;
 		[SerializeField] private Image _background;
-		[SerializeField] private TextEdit.Text _textEdit;
-		[SerializeField] private BlockEdit _blockEdit;
 
 		// observables
 		private Observable<Vector2> _documentSize;
@@ -35,6 +37,7 @@ namespace Explorer.View {
 		protected override void OnInitialize () {
 
 			// init subviews
+			_panel.Init();
 			_documentToolbar.Init();
 			_blockEdit.Init();
 			_textEdit.Init();
@@ -43,7 +46,8 @@ namespace Explorer.View {
 			_documentSize = new Observable<Vector2>(
 				initialValue: ( _canvas.transform as RectTransform ).rect.size,
 				onChange: size => {
-					( _canvas.transform as RectTransform ).sizeDelta = size;
+					_panel.SetSizeFromCanvas( size );
+					_scroll.SetViewportInset( left: size.x * 0.2f, right: size.x * 0.2f );
 					_textEdit.RefreshSize();
 				}
 			);
@@ -65,14 +69,13 @@ namespace Explorer.View {
 				_dragPosition = GetBottomRightWorldPosition();
 			} );
 			_corner.OnDragDelta.AddListener( delta => {
+				delta.y = 0;
 				_dragPosition += delta;
 				var size = GetSize( GetTopLeftWorldPosition(), _dragPosition ).Clamp( _minDocumentSize, _maxDocumentSize );
 				_documentSize.Set( size );
 			} );
 		}
-		protected override void OnCleanup () {
-
-		}
+		protected override void OnCleanup () { }
 
 
 

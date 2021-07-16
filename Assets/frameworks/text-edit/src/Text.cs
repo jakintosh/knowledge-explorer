@@ -1,3 +1,4 @@
+using Jakintosh.Observable;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -465,7 +466,8 @@ namespace TextEdit {
 	}
 
 	// component
-	[RequireComponent( typeof( Scroll ) )]
+	[RequireComponent( typeof( CanvasGroup ) )]
+	// [RequireComponent( typeof( Scroll ) )]
 	public partial class Text : MonoBehaviour,
 		IPointerEnterHandler,
 		IPointerDownHandler,
@@ -481,19 +483,17 @@ namespace TextEdit {
 
 		public string GetText () {
 
-			// get rid of that null width space garbage
-			var text = _textMesh.text;
-			if ( text == Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString() ) {
-				return "";
-			} else {
-				return text;
-			}
+			return _text;
 		}
 		public void SetText ( string text ) {
 
-			if ( text == _textMesh.text ) { return; }
+			if ( text == _text ) { return; }
+			if ( text == null ) { text = ""; }
 
-			_textMesh.text = text;
+			_text = text;
+
+			_editing.Set( false );
+
 			RenderTextMesh( _textMesh );
 		}
 
@@ -502,15 +502,17 @@ namespace TextEdit {
 
 		public void SetEditable ( bool isEditable ) {
 
-			if ( _isEditable = isEditable ) { return; }
+			_editable.Set( isEditable );
 
-			_isEditable = isEditable;
+			// if ( _isEditable = isEditable ) { return; }
 
-			if ( _isEditable ) {
-				SetEditing( _isSelected );
-			} else {
-				SetEditing( false );
-			}
+			// _isEditable = isEditable;
+
+			// if ( _isEditable ) {
+			// 	SetEditing( _isSelected );
+			// } else {
+			// 	SetEditing( false );
+			// }
 		}
 
 		public void RefreshSize () {
@@ -520,6 +522,7 @@ namespace TextEdit {
 		}
 
 		[Header( "UI Config" )]
+		[SerializeField] private string _text;
 		[SerializeField] private bool _isEditable;
 		[SerializeField] private EnterBehaviors _enterBehavior;
 
@@ -547,6 +550,7 @@ namespace TextEdit {
 		[SerializeField] private bool _showContactPoint;
 
 		// ui elements
+		private CanvasGroup _canvasGroup;
 		private Image _primarySelection;
 		private Image _leftCapSelection;
 		private Image _rightCapSelection;
@@ -559,13 +563,16 @@ namespace TextEdit {
 		private SelectionInfo _selection;
 		private Bounds _textBounds;
 
+		// view model
+		private Observable<bool> _selected;
+		private Observable<bool> _editable;
+		private Observable<bool> _editing;
+
 		// state data
 		private bool _isInitialized;
 		private bool _isAwake;
 		private bool _isInside;
 		private bool _isDown;
-		private bool _isSelected;
-		private bool _isEditing;
 		private Vector2 _intendedCaretPosition = Vector2.zero;
 
 		// frame flags
@@ -607,9 +614,12 @@ namespace TextEdit {
 			// 	_textTransformations.Clear();
 			// }
 
+			// if ( !_isEditing ) {
+			// 	return;
+			// }
 
 			// process pending text transformations
-			bool textChanged = false;
+			// bool textChanged = false;
 
 			if ( _pendingTextTransformations.Count > 0 ) {
 				if ( _pendingTextTransformations.Count > 1 ) {
@@ -617,11 +627,15 @@ namespace TextEdit {
 				}
 				foreach ( var textTransformation in _pendingTextTransformations ) {
 
-					// update text mesh
-					_textMesh.text = textTransformation.text;
-					textChanged = true;
+					// update text
+					_text = textTransformation.text;
+					// if ( textChanged ) {
+					OnTextChanged?.Invoke( GetText() );
+					// }
+
+					// re-render mesh
 					RenderTextMesh( _textMesh ); // TODO: remove once this is better
-												 // _renderTextMesh = true; // TODO: put this back in once fixed
+					/*_renderTextMesh = true; // TODO: put this back in once fixed */
 
 					// update selection
 					var caretIndex = GetCaretIndexFromCharIndex( textTransformation.charIndex );
@@ -643,9 +657,9 @@ namespace TextEdit {
 				_refreshSelection = false;
 			}
 
-			if ( textChanged ) {
-				OnTextChanged?.Invoke( GetText() );
-			}
+			// if ( textChanged ) {
+			// 	OnTextChanged?.Invoke( GetText() );
+			// }
 		}
 		private void OnEnable () {
 
@@ -654,14 +668,16 @@ namespace TextEdit {
 		private void OnDrawGizmos () {
 
 			var scrollOffset = _scroll?.Offset ?? Vector2.zero;
-			var needsLayout = ( _visualizeLineMargins ||
+			var needsLayout = (
+				_visualizeLineMargins ||
 				_visualizeLineExtents ||
 				_visualizeWordMargins ||
 				_visualizeWordExtents ||
 				_visualizeWordCarets ||
 				_visualizeCharacterMargins ||
 				_visualizeCharacterExtents ||
-				_visualizeCaretBounds );
+				_visualizeCaretBounds
+			);
 
 			if ( !Application.isPlaying && needsLayout ) {
 
@@ -704,33 +720,35 @@ namespace TextEdit {
 		}
 
 		// state
-		private void SetSelected ( bool isSelected ) {
+		// private bool _isSelected;
+		// private bool _isEditing;
+		// private void SetSelected ( bool isSelected ) {
 
-			if ( _isSelected == isSelected ) { return; }
+		// 	if ( _isSelected == isSelected ) { return; }
 
-			_isSelected = isSelected;
+		// 	_isSelected = isSelected;
 
-			if ( _isSelected ) {
-				SetEditing( true );
-			} else {
-				SetEditing( false );
-			}
-		}
-		private void SetEditing ( bool isEditing ) {
+		// 	if ( _isSelected ) {
+		// 		SetEditing( true );
+		// 	} else {
+		// 		SetEditing( false );
+		// 	}
+		// }
+		// private void SetEditing ( bool isEditing ) {
 
-			// AND request with permission
-			isEditing = isEditing && _isEditable;
+		// 	// AND request with permission
+		// 	isEditing = isEditing && _isEditable;
 
-			if ( _isEditing == isEditing ) { return; }
+		// 	if ( _isEditing == isEditing ) { return; }
 
-			_isEditing = isEditing;
+		// 	_isEditing = isEditing;
 
-			if ( _isEditing ) {
-			} else {
-				_selection = new SelectionInfo( Span.Invalid, _caretInfo );
-				RefreshSelection( _selection );
-			}
-		}
+		// 	if ( _isEditing ) {
+		// 	} else {
+		// 		_selection = new SelectionInfo( Span.Invalid, _caretInfo );
+		// 		RefreshSelection( _selection );
+		// 	}
+		// }
 
 		// user manipulation functions
 		private void Insert ( char c )
@@ -744,7 +762,7 @@ namespace TextEdit {
 			// create transformation
 			var charIndex = _selection.CharacterSpan.Min;
 			var range = _selection.CharacterSpan.Length;
-			var newText = _textMesh.text;
+			var newText = _text;
 			if ( range > 0 ) { newText = newText.Remove( startIndex: charIndex, count: range ); }
 			newText = newText.Insert( startIndex: charIndex, text );
 
@@ -782,10 +800,10 @@ namespace TextEdit {
 		}
 		private (int charIndex, string text) ClearSelectedSubstring () {
 
-			if ( !_selection.CaretSpan.IsValid() ) { return (-1, _textMesh.text); }
-			if ( _textMesh.text.IsNullOrEmpty() ) { return (-1, _textMesh.text); }
+			if ( !_selection.CaretSpan.IsValid() ) { return (-1, _text); }
+			if ( _text.IsNullOrEmpty() ) { return (-1, _text); }
 
-			var newText = _textMesh.text.Remove(
+			var newText = _text.Remove(
 				startIndex: _selection.CharacterSpan.Min,
 				count: _selection.CharacterSpan.Length
 			);
@@ -794,7 +812,7 @@ namespace TextEdit {
 		}
 		private (int charIndex, string text) Backspace () {
 
-			if ( _selection.CaretSpan.Min <= 0 ) { return (0, _textMesh.text); }
+			if ( _selection.CaretSpan.Min <= 0 ) { return (0, _text); }
 
 			var isWordMovement = Input.GetKey( KeyCode.LeftAlt ) || Input.GetKey( KeyCode.RightAlt );
 			var isLineMovement = Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand );
@@ -809,7 +827,7 @@ namespace TextEdit {
 
 			var startIndex = _caretInfo[caretIndex].CharIndex;
 			var count = _selection.CharacterSpan.Min - startIndex;
-			var newText = _textMesh.text.Remove( startIndex, count );
+			var newText = _text.Remove( startIndex, count );
 
 			return (startIndex, newText);
 		}
@@ -938,6 +956,9 @@ namespace TextEdit {
 				caretInfo: _caretInfo
 			);
 
+			// get components
+			_canvasGroup = GetComponent<CanvasGroup>();
+
 			// init scroll
 			_scroll.Init();
 
@@ -950,6 +971,33 @@ namespace TextEdit {
 			_leftCapSelection = CreateSelectionRect( "Left-cap Selection" );
 			_rightCapSelection = CreateSelectionRect( "Right-cap Selection" );
 
+
+			// init observables
+			_editing = new Observable<bool>(
+				initialValue: false,
+				onChange: editing => {
+					if ( !editing ) {
+						_selection = new SelectionInfo( Span.Invalid, _caretInfo );
+						RefreshSelection( _selection );
+					}
+				}
+			);
+			_selected = new Observable<bool>(
+				initialValue: false,
+				onChange: selected => {
+					_editing.Set( selected );
+				}
+			);
+			_editable = new Observable<bool>(
+				initialValue: _isEditable,
+				onChange: editable => {
+					_canvasGroup.blocksRaycasts = editable;
+					_canvasGroup.interactable = editable;
+					_editing.Set( _selected.Get() && editable );
+				}
+			);
+
+
 			// refresh everything
 			RenderTextMesh( _textMesh );
 			RefreshSelection( _selection );
@@ -959,15 +1007,17 @@ namespace TextEdit {
 				_refreshSelection = true;
 			} );
 			_scroll.OnViewportBoundsChanged.AddListener( _ => {
+				_refreshSelection = true;
 				_renderTextMesh = true;
 			} );
 			_scroll.OnContentBoundsChanged.AddListener( _ => {
-				_renderTextMesh = true;
+				_refreshSelection = true;
+				// _renderTextMesh = true;
 			} );
 		}
 		private void ReadInput () {
 
-			if ( !_isEditing ) { return; }
+			if ( !_editing.Get() ) { return; }
 
 			// commands
 			bool executedCommand = false;
@@ -978,7 +1028,7 @@ namespace TextEdit {
 				if ( Input.GetKeyDown( KeyCode.V ) ) { Paste(); executedCommand = true; }
 			}
 
-			if ( !executedCommand ) { Insert( FilterValidCharacterInput( Input.inputString ) ); }
+			if ( !executedCommand && !Input.inputString.IsNullOrEmpty() ) { Insert( FilterValidCharacterInput( Input.inputString ) ); }
 			if ( Input.GetKeyDown( KeyCode.Delete ) || Input.GetKeyDown( KeyCode.Backspace ) ) { Delete(); }
 			if ( Input.GetKeyDown( KeyCode.UpArrow ) ) { MoveCaret( Directions.Up ); }
 			if ( Input.GetKeyDown( KeyCode.DownArrow ) ) { MoveCaret( Directions.Down ); }
@@ -990,6 +1040,7 @@ namespace TextEdit {
 						Insert( Environment.NewLine );
 						break;
 					case EnterBehaviors.Submit:
+						_selected.Set( false );
 						OnSubmit?.Invoke();
 						break;
 				};
@@ -1006,10 +1057,9 @@ namespace TextEdit {
 			//
 			// Step 1 ) Re-render TextMesh and extract all metadata
 
-			if ( textMesh.text.IsNullOrEmpty() ) { textMesh.text = Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString(); };
+			textMesh.text = _text.IsNullOrEmpty() ? GetNullWidthString() : _text;
 			textMesh.ForceMeshUpdate();
 			LayoutRebuilder.ForceRebuildLayoutImmediate( textMesh.rectTransform );
-
 
 			var textInfo_tmp = textMesh.textInfo;
 			var lines_tmp = textInfo_tmp.lineInfo;
@@ -1039,8 +1089,9 @@ namespace TextEdit {
 			};
 			var lineExtentsHeight = numLines_tmp switch {
 				0 => 0, // technically impossible
-				_ => lines_tmp[0].lineExtents.max.y - lines_tmp[0].lineExtents.min.y
-				// _ => lines_tmp[0].ascender - lines_tmp[1].ascender
+						// _ => lines_tmp[0].lineExtents.max.y - lines_tmp[0].lineExtents.min.y
+				1 => lineMarginHeight,
+				_ => lines_tmp[0].ascender - lines_tmp[1].ascender
 			};
 
 			// TODO: how do we tell if the frame can't support a single character width?
@@ -1096,7 +1147,7 @@ namespace TextEdit {
 					var char_tmp = chars_tmp[charIndex];
 					var isFirstChar = charIndex == line.firstCharacterIndex;
 					var isLastChar = charIndex == line.lastCharacterIndex;
-					var isNewLineCharacter = IsNewLineCharacter( char_tmp.character );
+					var isEmptyCharacter = IsNewLineCharacter( char_tmp.character ) || IsNullWidthSpace( char_tmp.character );
 
 					// determine word status
 					var isWordActive = wordCharStart > -1;
@@ -1153,13 +1204,13 @@ namespace TextEdit {
 						charIndex: charIndex,
 						lineIndex: lineIndex,
 						left: isFirstChar ? bounds.Left : chars[charIndex - 1].Margin.Center,
-						right: isLastChar && isNewLineCharacter ? bounds.Right : charMargin.Center,
+						right: isLastChar && isEmptyCharacter ? bounds.Right : charMargin.Center,
 						target: charMargin.Left
 					);
 					carets.Add( caret );
 
 					// add extra line-end caret when relevant
-					if ( isLastChar && !isNewLineCharacter ) {
+					if ( isLastChar && !isEmptyCharacter ) {
 						var endCaret = caret.After(
 							right: bounds.Right,
 							target: charMargin.Right
@@ -1375,7 +1426,7 @@ namespace TextEdit {
 		private string GetSelectionString () {
 
 			return _selection.CaretSpan.IsValid() ?
-				_textMesh.text.Substring( startIndex: _selection.CharacterSpan.Min, length: _selection.CharacterSpan.Length ) :
+				_text.Substring( startIndex: _selection.CharacterSpan.Min, length: _selection.CharacterSpan.Length ) :
 				"";
 		}
 
@@ -1445,6 +1496,10 @@ namespace TextEdit {
 
 
 		// text processing
+		private string GetNullWidthString ()
+			=> Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).ToString();
+		private bool IsNullWidthSpace ( char character )
+			=> Convert.ToChar( NULL_WIDTH_SPACE_ASCII_CODE ).Equals( character );
 		private bool IsNewLineCharacter ( char c ) {
 			return Regex.IsMatch( c.ToString(), @"(\r\n|\r|\n)" );
 		}
@@ -1487,14 +1542,17 @@ namespace TextEdit {
 
 			_isDown = true;
 
-			if ( !_isEditable ) { return; }
+			if ( !_editable.Get() ) { return; }
+
+			// set selected
+			EventSystem.current.SetSelectedGameObject( gameObject, eventData );
 
 			var localPosition = GetLocal2DPositionFromScreenPoint( eventData.position );
-			SetCaretIndexFromLocalPosition( localPosition, setAnchor: true );
+			SetCaretIndexFromLocalPosition( localPosition, setAnchor: !( Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift ) ) );
 		}
 		void IDragHandler.OnDrag ( PointerEventData eventData ) {
 
-			if ( !_isEditable ) { return; }
+			if ( !_editable.Get() ) { return; }
 
 			var localPosition = GetLocal2DPositionFromScreenPoint( eventData.position );
 			SetCaretIndexFromLocalPosition( localPosition, setAnchor: false );
@@ -1509,15 +1567,15 @@ namespace TextEdit {
 		}
 		void ISelectHandler.OnSelect ( BaseEventData eventData ) {
 
-			SetSelected( true );
+			_selected.Set( true );
 		}
 		void IDeselectHandler.OnDeselect ( BaseEventData eventData ) {
 
-			SetSelected( false );
+			_selected.Set( false );
 		}
 		void ICancelHandler.OnCancel ( BaseEventData eventData ) {
 
-			SetSelected( false );
+			_selected.Set( false );
 		}
 	}
 

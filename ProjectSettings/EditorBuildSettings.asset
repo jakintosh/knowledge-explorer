@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Text Editor.unity
-    guid: d2f1a3a41b45d4c35bd820966a6ca90c
+    path: Assets/Scenes/App.unity
+    guid: 696d12c11ff39448497c0ad2dfc95f0b
   m_configObjects: {}

@@ -9,6 +9,8 @@ namespace Explorer.Client {
 
 		private void Awake () {
 
+			// Framework.Data.PersistentStore.IsLoggingEnabled = false;
+
 			// create an initial context
 			Contexts.New();
 

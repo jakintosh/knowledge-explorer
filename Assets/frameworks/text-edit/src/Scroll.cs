@@ -150,7 +150,16 @@ namespace TextEdit {
 		}
 		public void SetPreferredContentSize ( Vector2 size )
 			=> _contentSize?.Set( size );
+		public void SetViewportInset ( float? top = null, float? bottom = null, float? left = null, float? right = null ) {
 
+			var t = top.HasValue ? top.Value : _viewportInset.Top;
+			var b = bottom.HasValue ? bottom.Value : _viewportInset.Bottom;
+			var l = left.HasValue ? left.Value : _viewportInset.Left;
+			var r = right.HasValue ? right.Value : _viewportInset.Right;
+			_viewportInset = new Bounds( t, b, l, r );
+
+			_viewportBounds.Set( _containerBounds.Get().InsetBy( _viewportInset ) );
+		}
 
 		// *********** Private Interface ***********
 
@@ -190,9 +199,10 @@ namespace TextEdit {
 		}
 		private void LateUpdate () {
 
-			if ( _containerNeedsLayout ) {
+			if ( _containerNeedsLayout || transform.hasChanged ) {
 				_containerBounds.Set( GenerateContainerBounds() );
 				_containerNeedsLayout = false;
+				transform.hasChanged = false;
 			}
 		}
 		private void OnDrawGizmos () {
@@ -221,11 +231,11 @@ namespace TextEdit {
 
 				viewport.DrawGizmos( container: transform, color: Color.black );
 				Gizmos.color = Color.black;
-				Gizmos.DrawSphere( transform.TransformPoint( viewport.PositionAtPivot( _pivot ) ), 0.05f );
+				Gizmos.DrawSphere( transform.TransformPoint( viewport.PositionAtPivot( _pivot ) ), 1f * transform.lossyScale.x );
 
 				content.DrawGizmos( container: transform, color: Color.blue );
 				Gizmos.color = Color.blue;
-				Gizmos.DrawSphere( transform.TransformPoint( content.PositionAtPivot( _pivot ) ), 0.05f );
+				Gizmos.DrawSphere( transform.TransformPoint( content.PositionAtPivot( _pivot ) ), 1f * transform.lossyScale.x );
 
 				offset.Duplicate().MoveBy( viewport.PositionAtPivot( _pivot ) ).DrawGizmos( container: transform, color: Color.red );
 

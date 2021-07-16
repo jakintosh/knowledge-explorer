@@ -78,6 +78,7 @@ namespace Explorer.View {
 
 			_context.OnContextStateModified.RemoveListener( _contextState.Set );
 		}
+		protected override void OnCleanup () { }
 	}
 
 }

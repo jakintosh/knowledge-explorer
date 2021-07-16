@@ -1,3 +1,4 @@
+using Framework.Data;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace Jakintosh.Resources {
 
 	public class ResourceNameEmptyException : Exception { }
 	public class ResourceNameConflictException : Exception { }
+	public class ResourceFileNameConflictException : Exception { }
 	public class ResourceNotLoadedException : Exception { }
 	public class ResourceMetadataNotFoundException : Exception { }
 
@@ -45,7 +47,10 @@ namespace Jakintosh.Resources {
 
 		// ********** IEquatable Implementation **********
 
-		bool IEquatable<Metadata>.Equals ( Metadata other ) => other?.UID.Equals( this.UID ) ?? false;
+		bool IEquatable<Metadata>.Equals ( Metadata other )
+			=> ( other?.UID.Equals( this.UID ) ?? false ) &&
+			   ( other?.Name.Equals( this.Name ) ?? false ) &&
+			   ( other?.Path.Equals( this.Path ) ?? false );
 	}
 
 	// TODO: Resources need dependencies
@@ -58,12 +63,19 @@ namespace Jakintosh.Resources {
 
 		// *********** Public Interface ***********
 
-		public event Framework.Event<IList<TMetadata>>.Signature OnMetadataChanged;
+		public event Framework.Event<IList<TMetadata>>.Signature OnAnyMetadataChanged;
+		public event Framework.Event<TMetadata>.Signature OnMetadataAdded;
+		public event Framework.Event<TMetadata>.Signature OnMetadataUpdated;
+		public event Framework.Event<TMetadata>.Signature OnMetadataDeleted;
 
 		public Resources ( string resourcePath, string resourceExtension, int uidLength ) {
 
-			// init data structures
+			// init serialized data structures
 			_allMetadata = new List<TMetadata>();
+			_persistedUIDList = new List<string>();
+
+			// init runtime data structures
+			_persistedUIDs = new HashSet<string>();
 			_allResourceNames = new HashSet<string>();
 			_metadataByUID = new Dictionary<string, TMetadata>();
 			_loadedResourcesByUID = new Dictionary<string, TResource>();
@@ -75,18 +87,40 @@ namespace Jakintosh.Resources {
 		}
 		public void Close () {
 
-			SaveMetadataToDisk();
 			var loadedResourceUIDs = new List<string>( _loadedResourcesByUID.Keys );
 			foreach ( var uid in loadedResourceUIDs ) {
 				UnloadResource( uid, save: true );
 			}
+			SaveMetadataToDisk();
 		}
 
 		// data operations
-		public void LoadMetadataFromDisk ()
-			=> Framework.Data.PersistentStore.LoadInto( path: MetadataPath, obj: this );
-		public void SaveMetadataToDisk ()
-			=> Framework.Data.PersistentStore.Save( path: MetadataPath, data: this );
+		public void LoadMetadataFromDisk () {
+
+			try {
+
+				PersistentStore.LoadInto_Throws( path: MetadataPath, obj: this );
+
+			} catch ( PersistentStore.InvalidJsonException ) {
+
+				Debug.LogError( $"Client.Model.Resources.LoadMetadataFromDisk: Couldn't LoadMetadataFromDiskload metadata, invalid json in file." );
+
+			} catch ( PersistentStore.FileNotFoundException ) {
+
+				// this is not an error, it just isnhasn't been saved before
+			}
+		}
+		public void SaveMetadataToDisk () {
+
+			try {
+
+				PersistentStore.Save_Throws( path: MetadataPath, data: this );
+
+			} catch ( PersistentStore.InvalidPathException ) {
+
+				Debug.LogError( $"Client.Model.Resources.SaveMetadataToDisk: Couldn't save metadata, invalid save path." );
+			}
+		}
 
 		// resource creation
 		public (TMetadata metadata, TResource resource) New ( string name ) {
@@ -122,6 +156,56 @@ namespace Jakintosh.Resources {
 
 			return (metadata, resource);
 		}
+		public bool Rename ( string uid, string name ) {
+
+			if ( uid == null ) { return false; }
+
+			// require name
+			if ( string.IsNullOrEmpty( name ) ) {
+				throw new ResourceNameEmptyException();
+			}
+
+			// avoid name conflicts
+			if ( !NameIsUnique( name ) ) {
+				throw new ResourceNameConflictException();
+			}
+
+			try {
+
+				// rename the file
+				var metadata = RequestMetadata( uid );
+				var newPath = ResourcePath( name );
+
+				// move file
+				if ( ResourceIsOnDisk( uid ) ) {
+					try {
+						PersistentStore.Move_Throws( metadata.Path, newPath );
+					} catch ( PersistentStore.MoveDestinationConflictException ) {
+						throw new ResourceFileNameConflictException();
+					}
+				}
+
+
+				// create and migrate new metadata entry
+				var newMetadata = new TMetadata();
+				newMetadata.SetResourceData(
+					uid: uid,
+					name: name,
+					path: ResourcePath( name )
+				);
+				MigrateTrackedMetadata(
+					source: metadata,
+					destination: newMetadata
+				);
+
+				return true;
+
+			} catch ( ResourceMetadataNotFoundException ) {
+
+				Debug.LogError( $"Client.Model.Resources.Rename: Can't rename, metadata for uid {uid} doesn't exist." );
+				return false;
+			}
+		}
 		public bool Delete ( string uid ) {
 
 			if ( uid == null ) { return false; }
@@ -133,7 +217,15 @@ namespace Jakintosh.Resources {
 				UntrackMetadata( metadata );
 				UnloadResource( uid, save: false );
 
-				Framework.Data.PersistentStore.Delete( metadata.Path );
+				if ( ResourceIsOnDisk( uid ) ) {
+					try {
+						PersistentStore.Delete( metadata.Path );
+						_persistedUIDs.Remove( uid );
+					} catch ( PersistentStore.FileNotFoundException ) {
+						Debug.LogError( $"Client.Model.Resources.Delete: Can't delete resource with uid {uid}, file doesn't exist at path." );
+						return false;
+					}
+				}
 
 				return true;
 
@@ -153,7 +245,7 @@ namespace Jakintosh.Resources {
 			try {
 
 				var metadata = RequestMetadata( uid );
-				var resource = Framework.Data.PersistentStore.Load<TResource>( metadata.Path );
+				var resource = PersistentStore.Load_Throws<TResource>( metadata.Path );
 				_loadedResourcesByUID[uid] = resource;
 				return true;
 
@@ -161,8 +253,17 @@ namespace Jakintosh.Resources {
 
 				Debug.LogError( $"Client.Model.Resources.Load: Couldn't find resource metadata for uid {uid}" );
 				return false;
+
+			} catch ( PersistentStore.FileNotFoundException ) {
+
+				Debug.LogError( $"Client.Model.Resources.Load: File not found at path in metadata for uid {uid}" );
+				return false;
+
+			} catch ( PersistentStore.InvalidJsonException ) {
+
+				Debug.LogError( $"Client.Model.Resources.Load: Invalid json at path in metadata for uid {uid}" );
+				return false;
 			}
-			// TODO: handle deserialization exceptions
 		}
 		public void UnloadResource ( string uid, bool save = true ) {
 
@@ -182,7 +283,8 @@ namespace Jakintosh.Resources {
 
 				var metadata = RequestMetadata( uid );
 				var resource = RequestResource( uid, load: false );
-				Framework.Data.PersistentStore.Save<TResource>( metadata.Path, resource );
+				PersistentStore.Save_Throws<TResource>( metadata.Path, resource );
+				_persistedUIDs.Add( uid );
 				return true;
 
 			} catch ( ResourceNotLoadedException ) {
@@ -232,11 +334,14 @@ namespace Jakintosh.Resources {
 
 		// serialized data
 		[JsonProperty( propertyName: "metadata", NullValueHandling = NullValueHandling.Ignore )] private List<TMetadata> _allMetadata;
+		[JsonProperty( propertyName: "persistedUIDs", NullValueHandling = NullValueHandling.Ignore )] private List<string> _persistedUIDList;
 
 		// runtime data
 		private HashSet<string> _allResourceNames;
 		private Dictionary<string, TMetadata> _metadataByUID;
 		private Dictionary<string, TResource> _loadedResourcesByUID;
+		private HashSet<string> _persistedUIDs;
+
 
 		// instance variables
 		private string _path;
@@ -247,6 +352,7 @@ namespace Jakintosh.Resources {
 		private string MetadataPath => $"{_path}/{_extension}.metadata";
 		private string ResourcePath ( string name ) => $"{_path}/{name}.{_extension}";
 		private bool ResourceIsLoaded ( string uid ) => _loadedResourcesByUID.ContainsKey( uid );
+		private bool ResourceIsOnDisk ( string uid ) => _persistedUIDs.Contains( uid );
 
 		private void TrackMetadata ( TMetadata metadata ) {
 
@@ -256,10 +362,42 @@ namespace Jakintosh.Resources {
 			_metadataByUID.Add( metadata.UID, metadata );
 
 			// fire event
+			Framework.Event<TMetadata>.Fire(
+				@event: OnMetadataAdded,
+				value: metadata,
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnMetadataAdded",
+				priority: Framework.EventLogPriorities.Important
+			);
 			Framework.Event<IList<TMetadata>>.Fire(
-				@event: OnMetadataChanged,
+				@event: OnAnyMetadataChanged,
 				value: _allMetadata.AsReadOnly(),
-				id: $"Resources<{typeof( TResource ).ToString()}>.OnMetadataChanged",
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnAnyMetadataChanged",
+				priority: Framework.EventLogPriorities.Important
+			);
+		}
+		private void MigrateTrackedMetadata ( TMetadata source, TMetadata destination ) {
+
+			// untrack old
+			_allMetadata.Remove( source );
+			_allResourceNames.Remove( source.Name );
+			_metadataByUID.Remove( source.UID );
+
+			// track new
+			_allMetadata.Add( destination );
+			_allResourceNames.Add( destination.Name );
+			_metadataByUID.Add( destination.UID, destination );
+
+			// fire event
+			Framework.Event<TMetadata>.Fire(
+				@event: OnMetadataUpdated,
+				value: destination,
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnMetadataUpdated",
+				priority: Framework.EventLogPriorities.Important
+			);
+			Framework.Event<IList<TMetadata>>.Fire(
+				@event: OnAnyMetadataChanged,
+				value: _allMetadata.AsReadOnly(),
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnAnyMetadataChanged",
 				priority: Framework.EventLogPriorities.Important
 			);
 		}
@@ -271,27 +409,43 @@ namespace Jakintosh.Resources {
 			_metadataByUID.Remove( metadata.UID );
 
 			// fire event
+			Framework.Event<TMetadata>.Fire(
+				@event: OnMetadataDeleted,
+				value: metadata,
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnMetadataDeleted",
+				priority: Framework.EventLogPriorities.Important
+			);
 			Framework.Event<IList<TMetadata>>.Fire(
-				@event: OnMetadataChanged,
+				@event: OnAnyMetadataChanged,
 				value: _allMetadata.AsReadOnly(),
-				id: "Resources.OnMetadataChanged",
+				id: $"Resources<{typeof( TResource ).ToString()}>.OnAnyMetadataChanged",
 				priority: Framework.EventLogPriorities.Important
 			);
 		}
 
 
+		[OnSerializing]
+		private void OnBeforeSerialize ( StreamingContext context ) {
+
+			// move runtime data into serialized structures
+			_persistedUIDList.Clear();
+			_persistedUIDList.AddRange( _persistedUIDs );
+		}
+
 		[OnDeserialized]
 		private void OnAfterDeserialize ( StreamingContext context ) {
 
 			// clear runtime data
-			_allResourceNames?.Clear();
-			_metadataByUID?.Clear();
+			_allResourceNames.Clear();
+			_metadataByUID.Clear();
+			_persistedUIDs.Clear();
 
 			// copy serialized data into runtime structures
 			_allMetadata.ForEach( metadata => {
 				_allResourceNames.Add( metadata.Name );
 				_metadataByUID.Add( metadata.UID, metadata );
 			} );
+			_persistedUIDs.UnionWith( _persistedUIDList );
 		}
 	}
 

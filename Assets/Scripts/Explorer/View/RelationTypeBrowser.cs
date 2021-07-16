@@ -128,6 +128,7 @@ namespace Explorer.View {
 			_newRelationTypeDialog.SetValidators( null );
 			_graph?.OnRelationTypeEvent.RemoveListener( HandleRelationTypeEvent );
 		}
+		protected override void OnCleanup () { }
 
 		// event handlers
 		private void HandleRelationTypeEvent ( Jakintosh.Knowledge.Graph.ResourceEventData eventData ) {

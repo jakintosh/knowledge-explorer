@@ -16,55 +16,64 @@ namespace Explorer.View {
 		// *********** Private Interface ***********
 
 		[Header( "UI Control" )]
+		[SerializeField] private ValidatedTextInput _nameInput;
 		[SerializeField] private Button _cancelButton;
 		[SerializeField] private Button _confirmButton;
-		[SerializeField] private TextEdit.Text _input;
-
-		[Header( "UI Display" )]
-		[SerializeField] private Image _validIndicator;
 
 		// view model
-		private ValidatedObservable<string> _name;
+		private Observable<string> _name;
+		private Observable<bool> _canSubmit;
 
 		protected override void OnInitialize () {
 
-			_input.Init();
+			// init subviews
+			_nameInput.Init();
+			_nameInput.SetValidators( Client.Resources.Workspaces.ValidateName );
 
 			// init observables
-			_name = new ValidatedObservable<string>(
+			_name = new Observable<string>(
 				initialValue: "",
 				onChange: name => {
-					_input.SetText( name );
-				},
-				onValid: isValid => {
-					_validIndicator.color = isValid ? Client.Colors.Action : Client.Colors.Error;
-					_confirmButton.interactable = isValid;
-				},
-				validators: Client.Resources.Workspaces.ValidateName
+					_nameInput.SetText( name );
+				}
+			);
+			_canSubmit = new Observable<bool>(
+				initialValue: false,
+				onChange: canSubmit => {
+					_confirmButton.interactable = canSubmit;
+				}
 			);
 
 			// sub to controls
+			_nameInput.OnTextChanged.AddListener( validatedName => {
+				_name.Set( validatedName.text );
+				_canSubmit.Set( validatedName.isValid );
+			} );
+			_nameInput.OnSubmit.AddListener( () => {
+				ConfirmNewWorkspace( _name.Get() );
+			} );
 			_confirmButton.onClick.AddListener( () => {
 				ConfirmNewWorkspace( _name.Get() );
 			} );
 			_cancelButton.onClick.AddListener( () => {
-				_name.Set( "" );
-				OnDismiss?.Invoke();
-			} );
-			_input.OnTextChanged.AddListener( name => {
-				_name.Set( name );
-			} );
-			_input.OnSubmit.AddListener( () => {
-				if ( _name.IsValid ) {
-					ConfirmNewWorkspace( _name.Get() );
-				}
+				Dismiss();
 			} );
 		}
 		protected override void OnCleanup () { }
 
 		private void ConfirmNewWorkspace ( string name ) {
 
-			Client.Resources.Workspaces.New( name );
+			var metadata = Client.Resources.Workspaces.New( name );
+			if ( metadata != null ) {
+				Client.Contexts.Current.SetWorkspace( metadata.UID );
+				Dismiss();
+			} else {
+				// uh, idk maybe a visual error
+			}
+		}
+		private void Dismiss () {
+
+			_name.Set( "" );
 			OnDismiss?.Invoke();
 		}
 

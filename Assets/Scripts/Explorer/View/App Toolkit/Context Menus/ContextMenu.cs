@@ -11,6 +11,8 @@ namespace Explorer.View {
 		public override Model.ContextMenu GetState () {
 			throw new NotImplementedException();
 		}
+
+
 		protected override void OnInitialize () {
 
 			_list.OnCellClicked.AddListener( cellData => {
@@ -22,5 +24,6 @@ namespace Explorer.View {
 			_list.SetData( data.Actions );
 		}
 		protected override void OnRecycle () { }
+		protected override void OnCleanup () { }
 	}
 }

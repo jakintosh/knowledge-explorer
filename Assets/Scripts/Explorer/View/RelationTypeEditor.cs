@@ -85,6 +85,7 @@ namespace Explorer.View {
 			_deleteButton.interactable = interactive;
 		}
 		protected override void OnRecycle () { }
+		protected override void OnCleanup () { }
 	}
 
 }

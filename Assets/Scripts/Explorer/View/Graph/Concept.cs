@@ -254,6 +254,8 @@ namespace Explorer.View {
 			_position.Set( model.Position );
 		}
 		protected override void OnRecycle () { }
+		protected override void OnCleanup () { }
+
 
 
 		// helpers
