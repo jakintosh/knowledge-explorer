@@ -48,14 +48,22 @@ namespace Explorer.Client {
 		}
 
 		private Holochain.AppConductor conductor;
+
 		private void InitHolochain () {
 
-			var dnaHash = Holochain.DNAHash.Get();
-			var agentPubKey = Holochain.AgentPubKey.Get();
 			conductor = new Holochain.AppConductor(
-				dnaHash: dnaHash,
-				agentPubKey: agentPubKey
+				dnaHash: Holochain.DNAHash.Get(),
+				agentPubKey: Holochain.AgentPubKey.Get()
 			);
+			conductor.OnResponse.AddListener( bytes => {
+				try {
+
+					var formatter = new MessagePackFormatter();
+					var content = formatter.Deserialize<Explorer.Client.App.MyOutput>( bytes );
+					Debug.Log( $"Holochain: AppConductor received content:\n{content.output}" );
+
+				} catch { Debug.Log( "Holochain: Couldn't deserialize zome_call bytes into MyOutput" ); }
+			} );
 		}
 		private void UpdateHolochain () {
 

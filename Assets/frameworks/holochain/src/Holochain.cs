@@ -5,17 +5,17 @@ using UnityEngine;
 
 namespace Holochain {
 
-	static class AgentPubKey {
+	static public class AgentPubKey {
 		private static string _agentPubKey = "uhCAkt_cNGyYJZIp08b2ZzxoE6EqPndRPb_WwjVkM_mOBcFyq7zCw";
 		public static byte[] GetBytes () => System.Text.Encoding.UTF8.GetBytes( _agentPubKey );
 		public static string Get () => _agentPubKey;
 	}
-	static class DNAHash {
+	static public class DNAHash {
 		private static string _dnaHash = "uhC0kTMixTG0lNZCF4SZfQMGozf2WfjQht7E06_wy3h29-zPpWxPQ";
 		public static byte[] GetBytes () => System.Text.Encoding.UTF8.GetBytes( _dnaHash );
 		public static string Get () => _dnaHash;
 	}
-	static class CellID {
+	static public class CellID {
 		public static string[] Get ()
 			=> Create( DNAHash.Get(), AgentPubKey.Get() );
 		public static byte[][] GetBytes ()
@@ -183,6 +183,8 @@ namespace Holochain {
 
 	public class AppConductor : Conductor {
 
+		public UnityEngine.Events.UnityEvent<byte[]> OnResponse = new UnityEngine.Events.UnityEvent<byte[]>();
+
 		// constructor
 		public AppConductor ( string dnaHash, string agentPubKey ) {
 
@@ -234,13 +236,8 @@ namespace Holochain {
 
 					var zomeResponse = formatter.Deserialize<ZomeCallResponse>( response.data );
 					Debug.Log( $"Holochain: AppConductor received content:\n{zomeResponse}" );
+					OnResponse?.Invoke( zomeResponse.data );
 
-					try {
-
-						var content = formatter.Deserialize<Explorer.Client.App.MyOutput>( zomeResponse.data );
-						Debug.Log( $"Holochain: AppConductor received content:\n{content.output}" );
-
-					} catch { Debug.Log( "Holochain: Couldn't deserialize zome_call bytes into MyOutput" ); }
 				} catch { Debug.Log( "Holochain: Couldn't deserialize ConductorResponse bytes into ZomeCallResponse" ); }
 			} catch { Debug.Log( "Holochain: Couldn't deserialize received message bytes into ConductorResponse" ); }
 		}
