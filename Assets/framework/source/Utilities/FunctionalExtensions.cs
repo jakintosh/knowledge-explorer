@@ -26,6 +26,17 @@ public static class List_T_FunctionalExtensions {
 
 		return ( collection.Count == 0 ) ? throw new IndexOutOfRangeException() : collection[collection.Count - 1];
 	}
+	public static List<List<T>> Subdivide<T> ( this List<T> list, int maxLength ) {
+
+		var results = new List<List<T>>();
+		int position = 0;
+		while ( position < list.Count ) {
+			var end = ( position + maxLength ).WithCeiling( list.Count );
+			results.Add( new List<T>( list.GetRange( position, end - position ) ) );
+			position = end;
+		}
+		return results;
+	}
 	public static List<T> Map<T> ( this IList<T> list, Func<T, T> modify ) {
 
 		var results = new List<T>();

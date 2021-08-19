@@ -1,0 +1,16 @@
+{
+    "name": "content-addressable-graph",
+    "rootNamespace": "",
+    "references": [
+        "GUID:1f889a000da9442e29496c39bfddd53f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

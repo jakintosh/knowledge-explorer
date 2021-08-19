@@ -1,0 +1,16 @@
+{
+    "name": "subscribable",
+    "rootNamespace": "",
+    "references": [
+        "GUID:363261f8a46d94fe1beb85f98b5aba9b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

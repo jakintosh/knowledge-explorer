@@ -5,6 +5,80 @@ using UnityEngine;
 
 namespace Holochain {
 
+	public class Holochain : MonoBehaviour {
+
+		// types
+		[Serializable]
+		private class MyInput {
+			public string first_name;
+			public string last_name;
+			public MyInput ( string firstName, string lastName ) {
+				first_name = firstName;
+				last_name = lastName;
+			}
+		}
+		[Serializable]
+		private class MyOutput {
+			public string output;
+			public override string ToString () => $"MyOutput({output})";
+		}
+
+		// data
+		private bool _holochainIsRunning = false;
+		private AppConductor conductor;
+
+		// lifecycle
+		private void Awake () {
+
+			_holochainIsRunning = true;
+			conductor = new AppConductor(
+				dnaHash: DNAHash.Get(),
+				agentPubKey: AgentPubKey.Get()
+			);
+			conductor.OnResponse.AddListener( bytes => {
+				try {
+
+					var formatter = new MessagePackFormatter();
+					var content = formatter.Deserialize<MyOutput>( bytes );
+					Debug.Log( $"Holochain: AppConductor received content:\n{content.output}" );
+
+				} catch { Debug.Log( "Holochain: Couldn't deserialize zome_call bytes into MyOutput" ); }
+			} );
+		}
+		private void Update () {
+
+			if ( _holochainIsRunning ) {
+
+				conductor.DispatchMessageQueue();
+				if ( Input.GetKeyDown( KeyCode.Space ) ) { SendRequest(); }
+			}
+		}
+		protected void OnApplicationQuit () {
+
+			if ( _holochainIsRunning ) {
+				conductor.CloseConnection();
+			}
+		}
+
+		// functions
+		private void SendRequest () {
+
+			var formatter = new MessagePackFormatter();
+			var payload = formatter.Serialize(
+				new MyInput(
+					firstName: "Mochi",
+					lastName: "May"
+				)
+			);
+			conductor.CallFunction(
+				zome: "simple",
+				function: "say_my_name",
+				payload: payload
+			);
+		}
+	}
+
+
 	static public class AgentPubKey {
 		private static string _agentPubKey = "uhCAkt_cNGyYJZIp08b2ZzxoE6EqPndRPb_WwjVkM_mOBcFyq7zCw";
 		public static byte[] GetBytes () => System.Text.Encoding.UTF8.GetBytes( _agentPubKey );
@@ -247,4 +321,3 @@ namespace Holochain {
 		private string agentPubKey;
 	}
 }
-

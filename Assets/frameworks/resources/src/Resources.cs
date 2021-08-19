@@ -107,7 +107,7 @@ namespace Jakintosh.Resources {
 
 			} catch ( PersistentStore.FileNotFoundException ) {
 
-				// this is not an error, it just isnhasn't been saved before
+				// this is not an error, it just hasn't been saved before
 			}
 		}
 		public void SaveMetadataToDisk () {
@@ -123,7 +123,7 @@ namespace Jakintosh.Resources {
 		}
 
 		// resource creation
-		public (TMetadata metadata, TResource resource) New ( string name ) {
+		public (TMetadata metadata, TResource resource) Create ( string name ) {
 
 			// require name
 			if ( string.IsNullOrEmpty( name ) ) {
@@ -151,10 +151,22 @@ namespace Jakintosh.Resources {
 			);
 
 			// store
-			TrackMetadata( metadata );
-			_loadedResourcesByUID[resourceID] = resource;
+			// TrackMetadata( metadata );
+			// _loadedResourcesByUID[resourceID] = resource;
 
 			return (metadata, resource);
+		}
+		public bool Insert ( TMetadata metadata, TResource resource ) {
+
+			if ( metadata == null ) { return false; }
+			if ( resource == null ) { return false; }
+			if ( _metadataByUID.ContainsKey( metadata.UID ) ) { return false; }
+
+			// store
+			TrackMetadata( metadata );
+			_loadedResourcesByUID[metadata.UID] = resource;
+
+			return true;
 		}
 		public bool Rename ( string uid, string name ) {
 
@@ -210,30 +222,28 @@ namespace Jakintosh.Resources {
 
 			if ( uid == null ) { return false; }
 
+			TMetadata metadata;
 			try {
-
-				var metadata = RequestMetadata( uid );
-
-				UntrackMetadata( metadata );
-				UnloadResource( uid, save: false );
-
-				if ( ResourceIsOnDisk( uid ) ) {
-					try {
-						PersistentStore.Delete( metadata.Path );
-						_persistedUIDs.Remove( uid );
-					} catch ( PersistentStore.FileNotFoundException ) {
-						Debug.LogError( $"Client.Model.Resources.Delete: Can't delete resource with uid {uid}, file doesn't exist at path." );
-						return false;
-					}
-				}
-
-				return true;
-
+				metadata = RequestMetadata( uid );
 			} catch ( ResourceMetadataNotFoundException ) {
-
 				Debug.LogError( $"Client.Model.Resources.Delete: Can't delete, metadata for uid {uid} doesn't exist." );
 				return false;
 			}
+
+			UntrackMetadata( metadata );
+			UnloadResource( uid, save: false );
+
+			if ( ResourceIsOnDisk( uid ) ) {
+				try {
+					PersistentStore.Delete( metadata.Path );
+					_persistedUIDs.Remove( uid );
+				} catch ( PersistentStore.FileNotFoundException ) {
+					Debug.LogError( $"Client.Model.Resources.Delete: Can't delete resource with uid {uid}, file doesn't exist at path." );
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		// resource loading

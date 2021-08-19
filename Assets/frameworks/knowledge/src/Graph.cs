@@ -27,9 +27,9 @@ namespace Jakintosh.Knowledge {
 
 
 		// events
-		public UnityEvent<ResourceEventData> OnNodeEvent = new UnityEvent<ResourceEventData>();
-		public UnityEvent<ResourceEventData> OnLinkEvent = new UnityEvent<ResourceEventData>();
-		public UnityEvent<ResourceEventData> OnRelationTypeEvent = new UnityEvent<ResourceEventData>();
+		[JsonIgnore] public UnityEvent<ResourceEventData> OnNodeEvent = new UnityEvent<ResourceEventData>();
+		[JsonIgnore] public UnityEvent<ResourceEventData> OnLinkEvent = new UnityEvent<ResourceEventData>();
+		[JsonIgnore] public UnityEvent<ResourceEventData> OnRelationTypeEvent = new UnityEvent<ResourceEventData>();
 
 
 		// properties
@@ -63,6 +63,12 @@ namespace Jakintosh.Knowledge {
 
 			SubscribeToEvents( this.graph );
 		}
+
+		// debug purposes
+		[JsonIgnore] public System.Collections.ObjectModel.ReadOnlyCollection<Node> AllNodes => graph.GetAllNodes();
+		[JsonIgnore] public System.Collections.ObjectModel.ReadOnlyCollection<Link> AllLinks => graph.GetAllLinks();
+		[JsonIgnore] public System.Collections.ObjectModel.ReadOnlyCollection<string> AllInvalidNodes => graph.GetAllInvalidatedNodeUIDs();
+		[JsonIgnore] public System.Collections.ObjectModel.ReadOnlyCollection<string> AllInvalidLinks => graph.GetAllInvalidatedLinkUIDs();
 
 		// Concepts
 		public string GetConceptTitle ( string conceptUID ) {
@@ -113,6 +119,37 @@ namespace Jakintosh.Knowledge {
 			var bodyNode = graph.GetNode( bodyLink.ToUID ) as Node<string>;
 			graph.UpdateNodeValue( bodyNode.UID, body );
 		}
+		public void DeleteConcept ( string conceptUID ) {
+
+			graph.MarkNodeInvalid( conceptUID, false );
+			var node = graph.GetNode( conceptUID );
+			node.LinkUIDs.ForEach( link => graph.MarkLinkInvalid( link, false ) );
+			var titleLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == titleRelationTypeUID ).First();
+			var bodyLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == bodyRelationTypeUID ).First();
+
+			graph.DeleteNode( conceptUID );
+			graph.DeleteNode( titleLink.ToUID );
+			graph.DeleteNode( bodyLink.ToUID );
+		}
+		public void MarkConceptInvalid ( string conceptUID, bool invalid ) {
+
+			// enable it first
+			if ( invalid == false ) {
+				graph.MarkNodeInvalid( conceptUID, false );
+				graph.GetNode( conceptUID ).LinkUIDs.ForEach( link => graph.MarkLinkInvalid( link, false ) );
+			}
+
+			var node = graph.GetNode( conceptUID );
+			var titleLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == titleRelationTypeUID ).First();
+			var bodyLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == bodyRelationTypeUID ).First();
+			graph.MarkNodeInvalid( titleLink.ToUID, invalid );
+			graph.MarkNodeInvalid( bodyLink.ToUID, invalid );
+
+			if ( invalid == true ) {
+				node.LinkUIDs.ForEach( link => graph.MarkLinkInvalid( link, true ) );
+				graph.MarkNodeInvalid( conceptUID, true );
+			}
+		}
 
 		// Links
 		public Link GetLink ( string linkUID ) {
@@ -160,7 +197,7 @@ namespace Jakintosh.Knowledge {
 
 			return relationTypeUID != null ? graph.GetRelationType( relationTypeUID ) : null;
 		}
-		public void NewRelationType ( string name ) {
+		public void CreateRelationType ( string name ) {
 
 			var uid = graph.CreateRelationType( name );
 			relationTypeMetadata.Add( uid, new Metadata.RelationType() );

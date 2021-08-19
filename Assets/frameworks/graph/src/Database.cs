@@ -34,6 +34,9 @@ namespace Jakintosh.Graph {
 			nodes = new Dictionary<string, Node>();
 			links = new Dictionary<string, Link>();
 			relationTypes = new Dictionary<string, RelationType>();
+			invalidatedNodes = new HashSet<string>();
+			invalidatedLinks = new HashSet<string>();
+			invalidatedRelationTypes = new HashSet<string>();
 
 			_linkUIDsByType = new Dictionary<string, HashSet<string>>();
 
@@ -41,11 +44,13 @@ namespace Jakintosh.Graph {
 		}
 
 		// nodes
+		public System.Collections.ObjectModel.ReadOnlyCollection<Node> GetAllNodes ()
+			=> new System.Collections.ObjectModel.ReadOnlyCollection<Node>( new List<Node>( nodes.Values ) );
+		public System.Collections.ObjectModel.ReadOnlyCollection<string> GetAllInvalidatedNodeUIDs ()
+			=> new System.Collections.ObjectModel.ReadOnlyCollection<string>( new List<string>( invalidatedNodes ) );
 		public Node GetNode ( string uid ) {
-			if ( !nodes.TryGetValue( uid, out var node ) ) {
-				UnityEngine.Debug.LogError( $"Graph.Database.GetNode(): Node not found for uid: {uid}" );
-			}
-			return node;
+			if ( !nodes.TryGetValue( uid, out var node ) ) { UnityEngine.Debug.LogError( $"Graph.Database.GetNode(): Node not found for uid: {uid}" ); }
+			return invalidatedNodes.Contains( uid ) ? null : node;
 		}
 		public List<Node> GetNodes ( IEnumerable<string> uids )
 			=> uids.Convert( uid => GetNode( uid ) );
@@ -107,6 +112,19 @@ namespace Jakintosh.Graph {
 				id: $"Framework.Graph.Graph.OnNodeUpdated(uid: {uid})"
 			);
 		}
+		public void MarkNodeInvalid ( string uid, bool invalid ) {
+			if ( invalid ) {
+				invalidatedNodes.Add( uid );
+			} else {
+				invalidatedNodes.Remove( uid );
+			}
+
+			Event<string>.Fire(
+				@event: OnNodeUpdated,
+				value: uid,
+				id: $"Framework.Graph.Graph.OnNodeUpdated(uid: {uid})"
+			);
+		}
 		public void DeleteNode ( string uid ) {
 
 			var node = nodes[uid];
@@ -132,8 +150,12 @@ namespace Jakintosh.Graph {
 		}
 
 		// links
+		public System.Collections.ObjectModel.ReadOnlyCollection<Link> GetAllLinks ()
+			=> new System.Collections.ObjectModel.ReadOnlyCollection<Link>( new List<Link>( links.Values ) );
+		public System.Collections.ObjectModel.ReadOnlyCollection<string> GetAllInvalidatedLinkUIDs ()
+			=> new System.Collections.ObjectModel.ReadOnlyCollection<string>( new List<string>( invalidatedLinks ) );
 		public Link GetLink ( string uid )
-			=> links[uid];
+			=> invalidatedLinks.Contains( uid ) ? null : links[uid];
 		public List<Link> GetLinks ( IEnumerable<string> uids )
 			=> uids.Convert( uid => GetLink( uid ) );
 		public HashSet<string> GetLinkUIDsOfRelationType ( string relationTypeUID )
@@ -181,6 +203,19 @@ namespace Jakintosh.Graph {
 				id: $"Framework.Graph.Graph.OnLinkUpdated(uid: {linkUID})"
 			);
 		}
+		public void MarkLinkInvalid ( string linkUID, bool invalid ) {
+			if ( invalid ) {
+				invalidatedLinks.Add( linkUID );
+			} else {
+				invalidatedLinks.Remove( linkUID );
+			}
+
+			Event<string>.Fire(
+				@event: OnLinkUpdated,
+				value: linkUID,
+				id: $"Framework.Graph.Graph.OnLinkUpdated(uid: {linkUID})"
+			);
+		}
 		public void DeleteLink ( string uid ) {
 
 			var link = links[uid];
@@ -204,12 +239,23 @@ namespace Jakintosh.Graph {
 		}
 
 		// relation types
-		public ICollection<string> GetAllRelationTypeUIDs ()
-			=> relationTypes.Keys;
-		public IReadOnlyDictionary<string, RelationType> GetAllRelationTypes ()
-			=> relationTypes;
+		public ICollection<string> GetAllRelationTypeUIDs () {
+			var keys = new HashSet<string>( relationTypes.Keys );
+			keys.ExceptWith( invalidatedRelationTypes );
+			return keys;
+		}
+		public IReadOnlyDictionary<string, RelationType> GetAllRelationTypes () {
+			var uids = GetAllRelationTypeUIDs();
+			var allTypes = new Dictionary<string, RelationType>();
+			foreach ( var uid in uids ) {
+				allTypes[uid] = relationTypes[uid];
+			}
+			return allTypes;
+		}
+		public IReadOnlyList<string> GetAllInvalidatedRelationTypeUIDs ()
+			=> new List<string>( invalidatedRelationTypes );
 		public RelationType GetRelationType ( string uid )
-			=> relationTypes[uid];
+			=> invalidatedRelationTypes.Contains( uid ) ? null : relationTypes[uid];
 		public IList<RelationType> GetRelationTypes ( IEnumerable<string> uids )
 			=> uids.Convert( uid => GetRelationType( uid ) ).AsReadOnly();
 		public string CreateRelationType ( string name ) {
@@ -242,6 +288,13 @@ namespace Jakintosh.Graph {
 				priority: EventLogPriorities.Important
 			);
 		}
+		public void MarkRelationTypeInvalid ( string uid, bool invalid ) {
+			if ( invalid ) {
+				invalidatedRelationTypes.Add( uid );
+			} else {
+				invalidatedRelationTypes.Remove( uid );
+			}
+		}
 		public void DeleteRelationType ( string uid ) {
 
 			// TODO: what should happen here
@@ -259,6 +312,9 @@ namespace Jakintosh.Graph {
 		[JsonProperty( ItemConverterType = typeof( NodeConverter ) )] protected Dictionary<string, Node> nodes;
 		[JsonProperty] protected Dictionary<string, Link> links;
 		[JsonProperty] protected Dictionary<string, RelationType> relationTypes;
+		[JsonProperty] protected HashSet<string> invalidatedNodes;
+		[JsonProperty] protected HashSet<string> invalidatedLinks;
+		[JsonProperty] protected HashSet<string> invalidatedRelationTypes;
 
 
 		// ********** Private Interface **********

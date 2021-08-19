@@ -16,6 +16,10 @@ public static class Bool_Extensions {
 	public static bool Toggled ( this bool b ) {
 		return !b;
 	}
+
+	public static void Toggle ( this ref bool b ) {
+		b = !b;
+	}
 }
 
 public static class Int_Extensions {
