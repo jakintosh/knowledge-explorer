@@ -110,14 +110,14 @@ namespace Jakintosh.Knowledge {
 			var titleNode = graph.GetNode( titleLink.ToUID ) as Node<string>;
 			var oldTitle = titleNode.Value;
 			if ( oldTitle == title ) { return; }
-			graph.UpdateNodeValue( titleNode.UID, title );
+			graph.UpdateNodeValue( titleNode.Identifier, title );
 		}
 		public void UpdateConceptBody ( string conceptUID, string body ) {
 
 			var node = graph.GetNode( conceptUID );
 			var bodyLink = graph.GetLinks( node.LinkUIDs ).Filter( link => link.TypeUID == bodyRelationTypeUID ).First();
 			var bodyNode = graph.GetNode( bodyLink.ToUID ) as Node<string>;
-			graph.UpdateNodeValue( bodyNode.UID, body );
+			graph.UpdateNodeValue( bodyNode.Identifier, body );
 		}
 		public void DeleteConcept ( string conceptUID ) {
 

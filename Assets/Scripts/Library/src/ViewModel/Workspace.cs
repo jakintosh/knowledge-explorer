@@ -9,16 +9,23 @@ namespace Library.ViewModel {
 	*/
 	public class Workspace {
 
-		// data
-		[JsonProperty( propertyName: "uid" )] public string UID { get; private set; }
-		[JsonProperty( propertyName: "name" )] public string Name { get; set; }
-		[JsonProperty( propertyName: "graphViewport" )] public GraphViewport GraphViewport { get; set; }
+		[JsonIgnore] public string UID => _uid;
+		[JsonIgnore] public string Name => _name;
+		[JsonIgnore] public GraphViewport GraphViewport => _graphViewport;
 
 		public void Initialize ( string uid, string name ) {
 
-			UID = uid;
-			Name = name;
-			GraphViewport = GraphViewport.Empty;
+			_uid = uid;
+			_name = name;
+			_graphViewport = new GraphViewport();
 		}
+		public void Rename ( string to ) {
+			_name = to;
+		}
+
+		// serializable data
+		[JsonProperty( propertyName: "uid" )] private string _uid;
+		[JsonProperty( propertyName: "name" )] private string _name;
+		[JsonProperty( propertyName: "graphViewport" )] private GraphViewport _graphViewport;
 	}
 }

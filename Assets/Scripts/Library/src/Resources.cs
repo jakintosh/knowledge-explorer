@@ -54,7 +54,7 @@ namespace Library.Resources {
 					return _graphs.RequestResource( defaultGraphQuery[0].UID, load: true );
 
 				} catch ( ResourceMetadataNotFoundException ) {
-					UnityEngine.Debug.LogError( "Model.GraphResources.Get: Failed due to missing graph." );
+					UnityEngine.Debug.LogError( "Library.Resources.Graphs.Get: Failed due to missing graph." );
 					return null;
 				}
 			} else {
@@ -78,11 +78,11 @@ namespace Library.Resources {
 				_graphs.Insert( graphMetadata, graphResource );
 
 			} catch ( ResourceNameEmptyException ) {
-				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Create: Failed due to Resource Name Empty" );
+				UnityEngine.Debug.LogError( "Library.Resources.Graphs.Create: Failed due to Resource Name Empty" );
 				return;
 
 			} catch ( ResourceNameConflictException ) {
-				UnityEngine.Debug.LogError( "Model.Application.GraphResources.Create: Failed due to Resource Name Conflict" );
+				UnityEngine.Debug.LogError( "Library.Resources.Graphs.Create: Failed due to Resource Name Conflict" );
 				return;
 			}
 			graphResource.Initialize( graphMetadata.UID );
@@ -111,8 +111,7 @@ namespace Library.Resources {
 
 			// update name when metadata updates
 			_workspaces.OnMetadataUpdated += metadata => {
-				var workspace = Get( metadata.UID );
-				workspace.Name = metadata.Name;
+				Get( metadata.UID )?.Rename( metadata.Name );
 			};
 
 			// pass through event

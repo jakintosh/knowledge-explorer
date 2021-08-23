@@ -1,3 +1,4 @@
+using Jakintosh.Data;
 using Jakintosh.Observable;
 using Jakintosh.View;
 using System.Collections.Generic;
@@ -17,85 +18,55 @@ namespace Library.Views {
 		[Header( "UI Assets" )]
 		[SerializeField] private Concept _conceptPrefab;
 
-
-		// private data
-		private int _lastActiveConceptIndex;
-		private List<Concept> _conceptViews;
-
-		private Observable<ViewModel.Workspace> _workspace;
+		// data
+		private ViewPool<Concept, ViewModel.Concept> _conceptViewPool;
+		private Dictionary<int, Concept> _conceptViews;
+		private SubscribableDictionary<int, ViewModel.Concept> _conceptModels;
 
 		protected override void OnInitialize () {
-
-			// init data
-			_conceptViews = new List<Concept>();
 
 			// init subviews
 			_workspaceMenu.Init();
 			_graphToolbar.Init();
 
-			// init observables
-			_workspace = new Observable<ViewModel.Workspace>(
-				initialValue: null,
-				onChange: workspace => {
-					_graphToolbar.gameObject.SetActive( workspace != null );
-					PopulateGraphViewport( workspace?.GraphViewport );
+			// init data
+			_conceptViews = new Dictionary<int, Concept>();
+			_conceptViewPool = new ViewPool<Concept, ViewModel.Concept>(
+				prefab: _conceptPrefab,
+				container: _conceptContainer,
+				setup: ( view, model ) => {
+					view.InitWith( model );
+					view.gameObject.SetActive( true );
+				},
+				teardown: view => {
+					view.gameObject.SetActive( false );
 				}
 			);
 
 			// sub to controls
 			_graphToolbar.OnNewItem.AddListener( () => {
-
 				Library.App.History.ExecuteAction(
-					new Actions.Concept.Create(
-						shouldOpen: true
-					)
+					new Actions.Concept.Create( shouldOpen: true )
 				);
 			} );
 			_graphToolbar.OnDeleteItem.AddListener( () => {
 
 			} );
-			_graphToolbar.OnSave.AddListener( () => {
-				SaveViewportState();
-			} );
 
-			// sub to model
-			Library.App.State.ActiveWorkspace.Subscribe( _workspace.Set );
+			// sub to app state
+			Library.App.State.ActiveWorkspace.Subscribe( HandleNewWorkspace );
 		}
 		protected override void OnCleanup () {
 
-			// unsub from model
-			Library.App.State.ActiveWorkspace.Unsubscribe( _workspace.Set );
+			// unsub from app state
+			Library.App.State.ActiveWorkspace.Unsubscribe( HandleNewWorkspace );
 		}
 
 		// event handlers
+		private void HandleNewWorkspace ( ViewModel.Workspace workspace ) {
 
-		// private functions
-		private void SaveViewportState () {
-
-			var conceptViews = _conceptViews
-				.Filter( view => view.gameObject.activeSelf );
-			conceptViews.ForEach( view => view.Save() );
-
-			var conceptModels = conceptViews
-				.Convert( view => view.GetState() );
-
-			var linkModels = (List<ViewModel.Link>)null;
-
-			var viewportModel = new ViewModel.GraphViewport( conceptModels, linkModels );
-
-			_workspace.Get().GraphViewport = viewportModel;
-		}
-
-		// get next concept view
-		private Concept GetConceptView () {
-
-			// if there isn't another one left in queue, create one
-			if ( ++_lastActiveConceptIndex > _conceptViews.Count - 1 ) {
-				var view = Instantiate<Concept>( _conceptPrefab, _conceptContainer, false );
-				_conceptViews.Add( view );
-			}
-			_conceptViews[_lastActiveConceptIndex].gameObject.SetActive( true );
-			return _conceptViews[_lastActiveConceptIndex];
+			_graphToolbar.gameObject.SetActive( workspace != null );
+			PopulateGraphViewport( workspace?.GraphViewport );
 		}
 
 		// view population
@@ -103,22 +74,39 @@ namespace Library.Views {
 
 			PopulateConceptViews( viewportModel?.Concepts );
 		}
-		private void PopulateConceptViews ( SubscribableDictionary<ViewHandle, ViewModel.Concept> models ) {
+		private void PopulateConceptViews ( SubscribableDictionary<int, ViewModel.Concept> models ) {
 
-			var viewModels = models?.GetAll();
-			_lastActiveConceptIndex = ( viewModels?.Count ?? 0 ) - 1;
+			// release all old views
+			_conceptViews.ForEach( ( handle, view ) => _conceptViewPool.ReleaseView( view ) );
 
-			while ( _conceptViews.Count - 1 < _lastActiveConceptIndex ) {
-				var view = Instantiate<Concept>( _conceptPrefab, _conceptContainer, false );
-				_conceptViews.Add( view );
-			}
+			// unsub from old models
+			_conceptModels?.OnAdded.RemoveListener( HandleConceptViewAdded );
+			_conceptModels?.OnUpdated.RemoveListener( HandleConceptViewUpdated );
+			_conceptModels?.OnRemoved.RemoveListener( HandleConceptViewRemoved );
 
-			for ( int i = 0; i < _conceptViews.Count; i++ ) {
-				var view = _conceptViews[i];
-				var hasModel = i <= _lastActiveConceptIndex;
-				if ( hasModel ) { view.InitWith( viewModels[i] ); }
-				view.gameObject.SetActive( hasModel );
-			}
+			// open all new models
+			_conceptModels = models;
+			_conceptModels?.GetAll().ForEach( model => OpenView( model ) );
+
+			// sub to future changes
+			_conceptModels?.OnAdded.AddListener( HandleConceptViewAdded );
+			_conceptModels?.OnUpdated.AddListener( HandleConceptViewUpdated );
+			_conceptModels?.OnRemoved.AddListener( HandleConceptViewRemoved );
+		}
+		private void HandleConceptViewAdded ( int handle ) => OpenView( _conceptModels.Get( handle ) );
+		private void HandleConceptViewUpdated ( int handle ) => _conceptViews[handle].InitWith( _conceptModels.Get( handle ) );
+		private void HandleConceptViewRemoved ( int handle ) => CloseView( handle );
+
+		private void OpenView ( ViewModel.Concept model ) {
+
+			var view = _conceptViewPool.GetView( model );
+			_conceptViews.Add( view.LinkedIdentifier, view );
+		}
+		private void CloseView ( int handle ) {
+
+			var view = _conceptViews[handle];
+			_conceptViews.Remove( handle );
+			_conceptViewPool.ReleaseView( view );
 		}
 
 	}

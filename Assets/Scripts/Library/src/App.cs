@@ -43,6 +43,7 @@ namespace Library {
 		}
 		protected override void Deinit () {
 
+			_history.Flush();
 			_workspaces.Close();
 			_graphs.Close();
 		}

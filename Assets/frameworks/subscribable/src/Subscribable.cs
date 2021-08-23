@@ -25,8 +25,10 @@ namespace Jakintosh.Subscribable {
 			=> _observable.Get();
 		public void Set ( T value )
 			=> _observable.Set( value );
-		public void Subscribe ( Action<T> handler )
-			=> _handlers.Add( handler );
+		public void Subscribe ( Action<T> handler ) {
+			_handlers.Add( handler );
+			handler( _observable.Get() );
+		}
 		public void Unsubscribe ( Action<T> handler )
 			=> _handlers.Remove( handler );
 

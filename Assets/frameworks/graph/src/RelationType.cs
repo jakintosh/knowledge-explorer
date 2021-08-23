@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using System;
 
 namespace Jakintosh.Graph {
 
@@ -7,8 +6,7 @@ namespace Jakintosh.Graph {
 		void SetName ( string name );
 	}
 
-	public class RelationType : IdentifiableResource<RelationType>,
-		IEditableRelationType {
+	public class RelationType : IdentifiableResource<string, RelationType>, IEditableRelationType {
 
 		[JsonProperty] public string Name { get; private set; }
 
@@ -18,7 +16,7 @@ namespace Jakintosh.Graph {
 		}
 
 		public override string ToString () {
-			return $"Graph.RelationType {{\n    uid: {UID},\n    Name: {Name}\n}}";
+			return $"Graph.RelationType {{\n    uid: {Identifier},\n    Name: {Name}\n}}";
 		}
 
 		// ********** IEditableRelationshipType **********

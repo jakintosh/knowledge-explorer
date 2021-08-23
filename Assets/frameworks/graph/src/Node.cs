@@ -7,7 +7,7 @@ namespace Jakintosh.Graph {
 
 	// ********** Base Node **********
 
-	public class Node : IdentifiableResource<Node> {
+	public class Node : IdentifiableResource<string, Node> {
 
 		[JsonProperty] public virtual NodeDataTypes Type => NodeDataTypes.Node;
 		[JsonProperty] public List<string> LinkUIDs { get; private set; }

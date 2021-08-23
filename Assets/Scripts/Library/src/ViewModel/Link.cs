@@ -1,35 +1,38 @@
+using Jakintosh.Data;
 using Jakintosh.View;
-using Newtonsoft.Json;
+using System;
 using UnityEngine.Events;
 
 namespace Library.ViewModel {
 
-	[System.Serializable]
-	public class Link : BaseViewModel, ISubscribableDictionaryElement<ViewHandle, Link> {
+	[Serializable]
+	public class Link : IIdentifiable<int>, IUpdatable<Link> {
 
-		// ***** ISubscribableDictionaryElement *****
+		// ***** interface implementations *****
 
 		public UnityEvent<Link> OnUpdated => _onUpdated;
-		public ViewHandle GetKey () => GetViewHandle();
+		public int Identifier => _viewHandle;
 
 
 		// ********** Public Interface **********
 
-		// properties
-		[JsonIgnore] public string UID => _uid;
+		public string LinkUID => _linkUid;
 
 		// constructor
 		public Link ( string uid ) {
-			_uid = uid;
+
+			_viewHandle = ViewHandles.Generate();
+			_linkUid = uid;
 		}
 
 
 		// ********** Private Interface **********
 
 		// serialized data
-		[JsonProperty( propertyName: "uid" )] private string _uid;
+		private int _viewHandle;
+		private string _linkUid;
 
 		// private data
-		[JsonIgnore] private UnityEvent<Link> _onUpdated;
+		private UnityEvent<Link> _onUpdated;
 	}
 }

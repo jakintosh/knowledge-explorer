@@ -1,8 +1,9 @@
 {
-    "name": "content-addressable-graph",
+    "name": "data",
     "rootNamespace": "",
     "references": [
-        "GUID:1f889a000da9442e29496c39bfddd53f"
+        "GUID:1f889a000da9442e29496c39bfddd53f",
+        "GUID:7a60cbec7ea824ffcb244d0126240d40"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

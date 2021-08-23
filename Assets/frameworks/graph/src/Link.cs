@@ -6,7 +6,7 @@ namespace Jakintosh.Graph {
 		void SetTypeUID ( string typeUID );
 	}
 
-	public class Link : IdentifiableResource<Link>,
+	public class Link : IdentifiableResource<string, Link>,
 		IEditableLink {
 
 		[JsonProperty] public string TypeUID { get; private set; }
@@ -22,7 +22,7 @@ namespace Jakintosh.Graph {
 
 
 		public override string ToString () {
-			return $"Graph.Link {{\n    uid: {UID},\n    TypeUID: {TypeUID},\n    FromUID: {FromUID},\n    ToUID: {ToUID}\n}}";
+			return $"Graph.Link {{\n    uid: {Identifier},\n    TypeUID: {TypeUID},\n    FromUID: {FromUID},\n    ToUID: {ToUID}\n}}";
 		}
 
 		// ********** IEditableLink **********

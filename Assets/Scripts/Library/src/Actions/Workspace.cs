@@ -27,8 +27,8 @@ namespace Library.Actions.Workspace {
 			App.State.ActiveWorkspaceUID.Set( _openedUID );
 
 			// save names
-			_closedName ??= App.Workspaces.Get( _closedUID ).Name;
-			_openedName ??= App.Workspaces.Get( _openedUID ).Name;
+			_closedName ??= App.Workspaces.Get( _closedUID )?.Name;
+			_openedName ??= App.Workspaces.Get( _openedUID )?.Name;
 		}
 		void IHistoryAction.Undo () {
 
@@ -185,26 +185,28 @@ namespace Library.Actions.Workspace {
 
 		void IHistoryAction.Do () {
 
-			_metadata = App.Workspaces.GetMetadata( _uid );
-			_workspace = App.Workspaces.Get( _uid );
-
-			var success = App.Workspaces.Delete( _uid );
-			if ( !success ) { throw new System.Exception( "Actions.Workspace.Delete.Do was not successful" ); }
-
 			// if deleted workspace is open and should close, close it
 			var deletedIsOpen = _uid == App.State.ActiveWorkspaceUID.Get();
 			if ( deletedIsOpen && _shouldClose ) {
 				_closeAction ??= new Close();
 				_closeAction.Do();
 			}
+
+			_metadata = App.Workspaces.GetMetadata( _uid );
+			_workspace = App.Workspaces.Get( _uid );
+
+			var success = App.Workspaces.Delete( _uid );
+			if ( !success ) { throw new System.Exception( "Actions.Workspace.Delete.Do was not successful" ); }
+
 		}
 		void IHistoryAction.Undo () {
 
-			// undo close, if exists
-			_closeAction?.Undo();
-
+			// reinsert
 			var success = App.Workspaces.Insert( _metadata, _workspace );
 			if ( !success ) { throw new System.Exception( "Actions.Workspace.Create.Undo was not successful" ); }
+
+			// undo close, if exists
+			_closeAction?.Undo();
 		}
 		void IHistoryAction.Retire () { }
 

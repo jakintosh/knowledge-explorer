@@ -1,27 +1,28 @@
+using Jakintosh.Data;
 using Jakintosh.View;
-using Newtonsoft.Json;
+using System;
 using UnityEngine.Events;
 
 namespace Library.ViewModel {
 
-	[System.Serializable]
-	public class Concept : BaseViewModel, ISubscribableDictionaryElement<ViewHandle, Concept> {
+	[Serializable]
+	public class Concept : IIdentifiable<int>, IUpdatable<Concept> {
 
-		// ***** ISubscribableDictionaryElement *****
+		// ***** interface implementations *****
 
+		public int Identifier => _viewHandle;
 		public UnityEvent<Concept> OnUpdated => _onUpdated;
-		public ViewHandle GetKey () => GetViewHandle();
-
 
 		// ********** Public Interface **********
 
 		// properties
-		[JsonIgnore] public string NodeUID => _nodeUid;
-		[JsonIgnore] public Float3 Position => _position;
+		public string NodeUID => _nodeUid;
+		public Float3 Position => _position;
 
 		// constructor
 		public Concept ( string uid, Float3 position ) {
 
+			_viewHandle = ViewHandles.Generate();
 			_nodeUid = uid;
 			_position = position;
 			_onUpdated = new UnityEvent<Concept>();
@@ -36,11 +37,11 @@ namespace Library.ViewModel {
 		// ********** Private Interface **********
 
 		// serialized data
-		[JsonProperty( propertyName: "nodeUid" )] private string _nodeUid;
-		[JsonProperty( propertyName: "position" )] private Float3 _position;
+		private int _viewHandle;
+		private string _nodeUid;
+		private Float3 _position;
 
 		// internal data
-		[JsonIgnore] private UnityEvent<Concept> _onUpdated;
+		[NonSerialized] private UnityEvent<Concept> _onUpdated;
 	}
-
 }

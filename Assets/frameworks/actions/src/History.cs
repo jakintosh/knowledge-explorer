@@ -41,6 +41,15 @@ namespace Jakintosh.Actions {
 			if ( !TryDo( _nextAction.Value ) ) { return; }
 			CycleForward();
 		}
+		public void Flush () {
+
+			var action = _history.First;
+			while ( action != null ) {
+				action.Value.Retire();
+				action = action.Next;
+			}
+			_history.Clear();
+		}
 
 		// info
 		public List<IHistoryAction> GetPastActions ( int count ) {
@@ -105,9 +114,14 @@ namespace Jakintosh.Actions {
 
 		private void RecordAction ( IHistoryAction action ) {
 
-			// remove all future actions
+			// retire all future actions
+			var next = _mostRecentAction?.Next;
+			while ( next != null ) {
+				next.Value.Retire();
+				next = next.Next;
+			}
+			// pop all future actions
 			for ( int i = 0; i < _futureActions; i++ ) {
-				_history.Last.Value.Retire();
 				_history.RemoveLast();
 			}
 			_futureActions = 0;

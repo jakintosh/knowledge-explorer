@@ -93,20 +93,24 @@ namespace Library.Views {
 			sb.AppendLine();
 			nodes.ForEach( node => {
 				// header
-				var invalidNode = invalidatedNodes.Contains( node.UID );
-				sb.AppendLine( $"{( invalidNode ? "<color=\"red\">" : "" )}node {node.UID} (type: {node.Type.ToString()}){( invalidNode ? "</color>" : "" )}" );
+				var invalidNode = invalidatedNodes.Contains( node.Identifier );
+				sb.AppendLine( $"{( invalidNode ? "<color=\"red\">" : "" )}node {node.Identifier} (type: {node.Type.ToString()}){( invalidNode ? "</color>" : "" )}" );
 
 				// links
+				sb.Append( "    -link: " );
 				node.LinkUIDs.ForEach( link => {
 					var invalid = invalidatedLinks.Contains( link );
-					sb.AppendLine( $"{( invalid ? "<color=\"red\">" : "" )}    -link: {link}{( invalid ? "</color=\"red\">" : "" )}" );
+					sb.Append( $"{( invalid ? "<color=\"red\">" : "" )}{link} |{( invalid ? "</color=\"red\">" : "" )}" );
 				} );
+				sb.Append( "\n" );
 
 				// backlinks
+				sb.Append( "    -backlink: " );
 				node.BacklinkUIDs.ForEach( backlink => {
 					var invalid = invalidatedLinks.Contains( backlink );
-					sb.AppendLine( $"{( invalid ? "<color=\"red\">" : "" )}    -backlink: {backlink}{( invalid ? "</color=\"red\">" : "" )}" );
+					sb.Append( $"{( invalid ? "<color=\"red\">" : "" )}{backlink} |{( invalid ? "</color=\"red\">" : "" )}" );
 				} );
+				sb.Append( "\n" );
 			} );
 			sb.AppendLine();
 
@@ -115,8 +119,8 @@ namespace Library.Views {
 			links.ForEach( link => {
 
 				// header
-				var invalidLink = invalidatedLinks.Contains( link.UID );
-				sb.AppendLine( $"{( invalidLink ? "<color=\"red\">" : "" )}link {link.UID} (type: {link.TypeUID}){( invalidLink ? "</color>" : "" )}" );
+				var invalidLink = invalidatedLinks.Contains( link.Identifier );
+				sb.AppendLine( $"{( invalidLink ? "<color=\"red\">" : "" )}link {link.Identifier} (type: {link.TypeUID}){( invalidLink ? "</color>" : "" )}" );
 
 				var invalidFromLink = invalidatedNodes.Contains( link.FromUID );
 				sb.AppendLine( $"{( invalidFromLink ? "<color=\"red\">" : "" )}- from: {link.FromUID}{( invalidFromLink ? "</color=\"red\">" : "" )}" );

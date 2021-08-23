@@ -1,31 +1,41 @@
 using Newtonsoft.Json;
 using System;
 
-public abstract class IdentifiableResource<T> : IEquatable<T>
-	where T : IdentifiableResource<T> {
+public interface IIdentifiable<T> {
+	T Identifier { get; }
+}
+public interface IIdentifiableLink<T> {
+	T LinkedIdentifier { get; }
+	void Link ( IIdentifiable<T> identifiable );
+}
+
+public abstract class IdentifiableResource<TIdentifier, TResource> :
+	IIdentifiable<TIdentifier>,
+	IEquatable<TResource>
+	where TResource : IdentifiableResource<TIdentifier, TResource> {
 
 	// *********** Public Interface ***********
 
-	public string UID => uid;
-	public IdentifiableResource ( string uid ) => this.uid = uid;
+	public TIdentifier Identifier => uid;
+	public IdentifiableResource ( TIdentifier uid ) => this.uid = uid;
 
 
 	// ********** Private Interface ***********
 
-	[JsonProperty] private string uid = null;
+	[JsonProperty] private TIdentifier uid = default( TIdentifier );
 
 
 	// *** IEquatable<IdentifiableResource> ***
 
-	public bool Equals ( T other ) =>
+	public bool Equals ( TResource other ) =>
 		other?.uid.Equals( uid ) ?? false;
 
 
 	// ********** Equality Overrides **********
 
 	public override bool Equals ( object obj ) =>
-		obj is IdentifiableResource<T> ?
-			this.Equals( obj as IdentifiableResource<T> ) :
+		obj is IdentifiableResource<TIdentifier, TResource> ?
+			this.Equals( obj as IdentifiableResource<TIdentifier, TResource> ) :
 			false;
 	public override int GetHashCode () =>
 		uid.GetHashCode();

@@ -1,5 +1,4 @@
 using Jakintosh.Actions;
-using Jakintosh.View;
 using System;
 using System.Collections.Generic;
 
@@ -22,11 +21,11 @@ namespace Library.Actions.Concept {
 			// create concept if it doesn't exist
 			if ( _viewModel == null ) {
 				_viewModel = ConceptViewModel.Default( _uid );
-				_viewHandle = _viewModel.GetViewHandle();
+				_viewHandle = _viewModel.Identifier;
 			}
 
 			// open concept
-			App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Register( _viewHandle, _viewModel );
+			App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Register( _viewModel );
 		}
 		void IHistoryAction.Undo () {
 
@@ -38,7 +37,7 @@ namespace Library.Actions.Concept {
 		// ********** Data **********
 
 		private string _uid;
-		private ViewHandle _viewHandle;
+		private int _viewHandle;
 		private ConceptViewModel _viewModel;
 
 		public Open ( string uid ) {
@@ -57,23 +56,23 @@ namespace Library.Actions.Concept {
 
 		void IHistoryAction.Do () {
 
-			if ( _viewHandle.Equals( ViewHandle.Empty ) ) { throw new System.Exception( "Actions.Workspace.Close.Do: Tried to close concept with empty view handle." ); }
+			if ( _viewHandle == 0 ) { throw new System.Exception( "Actions.Workspace.Close.Do: Tried to close concept with empty view handle." ); }
 
 			_viewModel = App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Get( _viewHandle );
 			App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Unregister( _viewHandle );
 		}
 		void IHistoryAction.Undo () {
 
-			App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Register( _viewHandle, _viewModel );
+			App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts.Register( _viewModel );
 		}
 		void IHistoryAction.Retire () { }
 
 		// ********** Data **********
 
-		private ViewHandle _viewHandle;
+		private int _viewHandle;
 		private ConceptViewModel _viewModel;
 
-		public Close ( ViewHandle viewHandle ) {
+		public Close ( int viewHandle ) {
 
 			_viewHandle = viewHandle;
 		}
@@ -151,7 +150,7 @@ namespace Library.Actions.Concept {
 				_closeActions ??= App.State.ActiveWorkspace.Get()?.GraphViewport.Concepts
 					.GetAll()
 					.Filter( concept => concept.NodeUID == _uid )
-					.Convert( concept => new Close( concept.GetViewHandle() ) as IHistoryAction );
+					.Convert( concept => new Close( concept.Identifier ) as IHistoryAction );
 				_closeActions?.ForEach( action => action.Do() );
 			}
 		}

@@ -3,53 +3,19 @@ using UnityEngine;
 
 namespace Jakintosh.View {
 
-	public interface IViewHandle {
-		ViewHandle GetViewHandle ();
-	}
-	internal interface IViewHandleSet {
-		void SetViewHandle ( ViewHandle handle );
+
+	public static class ViewHandles {
+
+		private static int handle = 1;
+		public static int Generate () => handle++;
 	}
 
-	public struct ViewHandle : IEquatable<ViewHandle> {
+	public abstract class View : MonoBehaviour, IIdentifiableLink<int> {
 
-		private int _handle;
-		public bool IsEmpty ()
-			=> _handle == 0;
-		public static ViewHandle Empty
-			=> new ViewHandle( 0 );
-		public ViewHandle ( int handle ) {
-			_handle = handle;
+		public int LinkedIdentifier { get; private set; }
+		public void Link ( IIdentifiable<int> viewModel ) {
+			LinkedIdentifier = viewModel.Identifier;
 		}
-
-		public bool Equals ( ViewHandle other )
-			=> _handle.Equals( other._handle );
-		public override bool Equals ( object obj )
-			=> ( obj is ViewHandle ) ? this.Equals( (ViewHandle)obj ) : false;
-		public override int GetHashCode ()
-			=> -558203912 + _handle.GetHashCode();
-	}
-
-	public abstract class BaseViewModel : IViewHandle {
-
-		static int handle = 1;
-		public BaseViewModel () {
-			_viewHandle = new ViewHandle( handle++ );
-		}
-
-		private ViewHandle _viewHandle = ViewHandle.Empty;
-		public ViewHandle GetViewHandle () => _viewHandle;
-	}
-
-	public abstract class BaseView : MonoBehaviour,
-		IViewHandle,
-		IViewHandleSet {
-
-		private ViewHandle _viewHandle = ViewHandle.Empty;
-		public ViewHandle GetViewHandle () => _viewHandle;
-		void IViewHandleSet.SetViewHandle ( ViewHandle handle ) => _viewHandle = handle;
-	}
-
-	public abstract class View : BaseView {
 
 		public void Init () {
 
@@ -79,7 +45,13 @@ namespace Jakintosh.View {
 		private bool _isQuitting;
 	}
 
-	public abstract class ReuseableView<T> : BaseView {
+	public abstract class ReuseableView<T> : MonoBehaviour, IIdentifiableLink<int> {
+
+		public int LinkedIdentifier { get; private set; }
+		public void Link ( IIdentifiable<int> viewModel ) {
+			LinkedIdentifier = viewModel.Identifier;
+		}
+
 
 		public void InitWith ( T data ) {
 
