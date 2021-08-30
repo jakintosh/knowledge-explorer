@@ -3,25 +3,19 @@ using NUnit.Framework;
 using System;
 using UnityEngine.Events;
 
-public class Data_Tests {
-
-	public interface IReadOnlyPerson {
-		string Name { get; }
-		int Age { get; }
-		string Quote { get; }
-	}
+public class AddressableData_Tests {
 
 	[Serializable]
-	public class Person : IReadOnlyPerson,
-		IReadOnlyConvertible<IReadOnlyPerson>,
+	public class Person :
+		IBytesSerializable,
 		IDuplicatable<Person>,
 		IUpdatable<Person> {
 
 		// interfaces
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
 		public UnityEvent<Person> OnUpdated
 			=> _onUpdated;
-		public IReadOnlyPerson ToReadOnly ()
-			=> this as IReadOnlyPerson;
 		public Person Duplicate () {
 
 			var duplicate = new Person();
@@ -37,7 +31,7 @@ public class Data_Tests {
 			set {
 				if ( _name == value ) return;
 				_name = value;
-				OnUpdated?.Invoke( this );
+				_onUpdated?.Invoke( this );
 			}
 		}
 		public int Age {
@@ -45,7 +39,7 @@ public class Data_Tests {
 			set {
 				if ( _age == value ) return;
 				_age = value;
-				OnUpdated?.Invoke( this );
+				_onUpdated?.Invoke( this );
 			}
 		}
 		public string Quote {
@@ -53,12 +47,13 @@ public class Data_Tests {
 			set {
 				if ( _quote == value ) return;
 				_quote = value;
-				OnUpdated?.Invoke( this );
+				_onUpdated?.Invoke( this );
 			}
 		}
 
 		public override string ToString ()
 			=> $"name: {_name}, age: {_age}, quote: \"{_quote}\"";
+
 
 		// data
 		private string _name = null;
@@ -90,84 +85,86 @@ public class Data_Tests {
 			- expect data exists
 			- expect events fire
 
+		Deleting data:
+
+		Delete data via Drop()
+			- expect data at address is deleted
+			- expect events no longer fire on old refs
+			- (what happens to old refs? maybe they need invalidate event)
+
+		Other:
+
+		Do subscriptions carry over to new addresses? They probably should? But
+		right now versioning isn't really built in
 	*/
 
-	[Test]
-	public void AddressableData_New () {
-
-		var people = new AddressableData<Person, IReadOnlyPerson>();
-		var mutablePersonAddress = people.New();
-		Assert.NotNull( mutablePersonAddress );
-		Assert.NotNull( mutablePersonAddress.Identifier );
-		Assert.Null( mutablePersonAddress.Parent );
-	}
+	private AddressableData<Person> GetPeople () => new AddressableData<Person>();
 
 	[Test]
 	public void AddressableData_Get_ReturnsDataForTempAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
-		var person = people.Get( mutablePersonAddress );
+		var person = people.GetCopy( mutablePersonAddress );
 		Assert.NotNull( person );
 	}
 
 	[Test]
 	public void AddressableData_Get_ReturnsDataForContentAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var contentAddress = people.Commit( new Person() );
-		var person = people.Get( contentAddress );
+		var person = people.GetCopy( contentAddress );
 		Assert.NotNull( person );
 	}
 
 	[Test]
 	public void AddressableData_Get_ReturnsNullAfterDrop () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
 		people.Drop( mutablePersonAddress );
 
-		var person = people.Get( mutablePersonAddress );
+		var person = people.GetCopy( mutablePersonAddress );
 		Assert.Null( person );
 	}
 
 	[Test]
 	public void AddressableData_GetLatest_ReturnsDataForTempAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
-		var person = people.GetLatest( mutablePersonAddress );
+		var person = people.GetLatestCopy( mutablePersonAddress );
 		Assert.NotNull( person );
 	}
 
 	[Test]
 	public void AddressableData_GetLatest_ReturnsDataForContentAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var contentAddress = people.Commit( new Person() );
-		var person = people.GetLatest( contentAddress );
+		var person = people.GetLatestCopy( contentAddress );
 		Assert.NotNull( person );
 	}
 
 	[Test]
 	public void AddressableData_GetLatest_ReturnsDataForForkedContent () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var contentAddress = people.Commit( new Person() );
 		var forkedAddress = people.Fork( contentAddress );
 
-		var personFromContent = people.GetLatest( contentAddress );
+		var personFromContent = people.GetLatestCopy( contentAddress );
 		Assert.NotNull( personFromContent );
 
-		var personFromFork = people.GetLatest( forkedAddress );
+		var personFromFork = people.GetLatestCopy( forkedAddress );
 		Assert.NotNull( personFromFork );
 	}
-
 
 	[Test]
 	public void AddressableData_GetMutable_ReturnsDataForTempAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
 		var person = people.GetMutable( mutablePersonAddress );
 		Assert.NotNull( person );
@@ -176,7 +173,7 @@ public class Data_Tests {
 	[Test]
 	public void AddressableData_GetMutable_ReturnsNullAfterDrop () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
 		people.Drop( mutablePersonAddress );
 
@@ -187,7 +184,7 @@ public class Data_Tests {
 	[Test]
 	public void AddressableData_GetLatestMutable_ReturnsDataForTempAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var mutablePersonAddress = people.New();
 		var person = people.GetLatestMutable( mutablePersonAddress );
 		Assert.NotNull( person );
@@ -196,7 +193,7 @@ public class Data_Tests {
 	[Test]
 	public void AddressableData_GetLatestMutable_ReturnsNullForContentAddress () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var contentAddress = people.Commit( new Person() );
 		var success = people.GetLatestMutable( contentAddress, out var person );
 		Assert.False( success );
@@ -206,7 +203,7 @@ public class Data_Tests {
 	[Test]
 	public void AddressableData_GetLatestMutable_ReturnsDataForForkedContent () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 		var contentAddress = people.Commit( new Person() );
 		var forkedAddress = people.Fork( contentAddress );
 
@@ -219,21 +216,44 @@ public class Data_Tests {
 	}
 
 	[Test]
-	public void AddressableData_Fork_CreatesProperAddress () {
+	public void AddressableData_New_DataIsCreated () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
-		var contentAddress = people.Commit( new Person() );
-		var forkedAddress = people.Fork( contentAddress );
+		var people = GetPeople();
+		var mutablePersonAddress = people.New();
+		var person = people.GetCopy( mutablePersonAddress );
+		Assert.NotNull( person );
+	}
 
-		Assert.NotNull( forkedAddress );
-		Assert.NotNull( forkedAddress.Identifier );
-		Assert.AreEqual( forkedAddress.Parent, contentAddress.Identifier );
+	[Test]
+	public void AddressableData_New_CreatesProperAddress () {
+
+		var people = GetPeople();
+		var mutablePersonAddress = people.New();
+		Assert.NotNull( mutablePersonAddress );
+		Assert.NotNull( mutablePersonAddress.Identifier );
+		Assert.Null( mutablePersonAddress.Parent );
+	}
+
+	[Test]
+	public void AddressableData_New_EventsFire () {
+
+		int eventFlag = 0;
+		var people = GetPeople();
+		var mutablePersonAddress = people.New();
+		people.Subscribe( mutablePersonAddress, updatedPerson => {
+			eventFlag++;
+		} );
+		var person = people.GetMutable( mutablePersonAddress );
+		person.Name = "Jak";
+		person.Age = 27;
+		person.Name = "sic parvis magna";
+		Assert.AreEqual( eventFlag, 3 );
 	}
 
 	[Test]
 	public void AddressableData_Commit_DataIsCreated () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 
 		// test with committing data
 		var person = new Person();
@@ -241,7 +261,7 @@ public class Data_Tests {
 		person.Age = 10;
 		person.Quote = "Quote";
 		var contentAddress = people.Commit( person );
-		var savedPerson = people.Get( contentAddress );
+		var savedPerson = people.GetCopy( contentAddress );
 		Assert.AreEqual( savedPerson.Name, "Test" );
 		Assert.AreEqual( savedPerson.Age, 10 );
 		Assert.AreEqual( savedPerson.Quote, "Quote" );
@@ -253,7 +273,7 @@ public class Data_Tests {
 		tempPerson.Age = 10;
 		tempPerson.Quote = "Quote";
 		var tempPersonContentAddress = people.Commit( tempPersonAddress );
-		var savedTempPerson = people.Get( tempPersonContentAddress );
+		var savedTempPerson = people.GetCopy( tempPersonContentAddress );
 		Assert.AreEqual( savedTempPerson.Name, "Test" );
 		Assert.AreEqual( savedTempPerson.Age, 10 );
 		Assert.AreEqual( savedTempPerson.Quote, "Quote" );
@@ -262,7 +282,7 @@ public class Data_Tests {
 	[Test]
 	public void AddressableData_Commit_TempDataIsCleared () {
 
-		var people = new AddressableData<Person, IReadOnlyPerson>();
+		var people = GetPeople();
 
 		// test with committing from temp address
 		var tempPersonAddress = people.New();
@@ -271,57 +291,189 @@ public class Data_Tests {
 		tempPerson.Age = 10;
 		tempPerson.Quote = "Quote";
 		var tempPersonContentAddress = people.Commit( tempPersonAddress );
-		var clearedPerson = people.Get( tempPersonAddress );
+		var clearedPerson = people.GetCopy( tempPersonAddress );
 		Assert.Null( clearedPerson );
 	}
 
+	[Test]
+	public void AddressableData_Commit_Fork_EventsFire () {
 
-	// [Test]
-	// public void AddressableData_Test () {
+		var people = GetPeople();
+
+		int contentEventFlag = 0;
+		Action<Person> contentAddressHandler = person => contentEventFlag++;
+
+		var tempEventFlags = 0;
+		Action<Person> tempAddressHandler = person => tempEventFlags++;
+
+		// commit data and subscribe
+		var contentAddress = people.Commit( new Person() );
+		people.Subscribe( contentAddress, contentAddressHandler );
+
+		// fork data and subscribe
+		var tempPersonAddress = people.Fork( contentAddress );
+		people.Subscribe( tempPersonAddress, tempAddressHandler );
+
+		// make sure both events fire
+		var tempPerson = people.GetMutable( tempPersonAddress );
+		tempPerson.Name = "Test";
+		tempPerson.Age = 10;
+		tempPerson.Quote = "Quote";
+		Assert.AreEqual( contentEventFlag, 3 );
+		Assert.AreEqual( tempEventFlags, 3 );
+
+		// make sure unsubscribe from content address works
+		people.Unsubscribe( contentAddress, contentAddressHandler );
+		tempPerson.Name = "Test 2";
+		Assert.AreEqual( contentEventFlag, 3 );
+		Assert.AreEqual( tempEventFlags, 4 );
+
+		// make sure unsubscribe from temp address works
+		people.Unsubscribe( tempPersonAddress, tempAddressHandler );
+		tempPerson.Name = "Test 3";
+		Assert.AreEqual( contentEventFlag, 3 );
+		Assert.AreEqual( tempEventFlags, 4 );
+
+		// resubscribe to temp, commit, change
+		people.Subscribe( tempPersonAddress, tempAddressHandler );
+		var contentAddressV2 = people.Commit( tempPersonAddress );
+		var tempAddressV2 = people.Fork( contentAddress );
+		var tempPerson2 = people.GetLatestMutable( tempAddressV2 );
+		tempPerson2.Name = "Test 4";
+		Assert.AreEqual( contentEventFlag, 3 );
+		Assert.AreEqual( tempEventFlags, 4 );
+	}
+
+	[Test]
+	public void AddressableData_Fork_CreatesProperAddress () {
+
+		var people = GetPeople();
+		var contentAddress = people.Commit( new Person() );
+		var forkedAddress = people.Fork( contentAddress );
+
+		Assert.NotNull( forkedAddress );
+		Assert.NotNull( forkedAddress.Identifier );
+		Assert.AreEqual( forkedAddress.Parent, contentAddress.Identifier );
+	}
+
+}
 
 
-	// 	var people = new AddressableData<Person, IReadOnlyPerson>();
+public class DiffableData_Tests {
 
-	// 	// create a new mutable person, and store its address
-	// 	var mutablePersonAddress = people.New();
-	// 	people.Subscribe( mutablePersonAddress, person => {
+	[Serializable]
+	public class Item :
+		IBytesSerializable,
+		IDiffable<Item, ItemDiff>,
+		IDuplicatable<Item>,
+		IUpdatable<Item> {
 
-	// 	} );
+		public int InventoryId {
+			get => _inventoryId;
+			set {
+				if ( _inventoryId == value ) { return; }
+				_inventoryId = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+		public float Price {
+			get => _price;
+			set {
+				if ( _price == value ) { return; }
+				_price = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
 
-	// 	// get the actual mutable person data
-	// 	var mutablePerson = people.GetLatestMutable( mutablePersonAddress );
-	// 	mutablePerson.Age = 27;
-	// 	mutablePerson.Name = "Jak";
-	// 	mutablePerson.Quote = "Sic parvis magna";
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
+		public ItemDiff Diff ( Item from )
+			=> new ItemDiff() {
+				InventoryIdDiff = _inventoryId - from.InventoryId,
+				PriceChange = _price - from.Price
+			};
+		public Item Apply ( ItemDiff diff )
+			=> new Item(
+				id: this._inventoryId + diff.InventoryIdDiff,
+				price: this.Price + diff.PriceChange
+			);
+		public Item Duplicate ()
+			=> new Item(
+				id: _inventoryId,
+				price: _price
+			);
+		public UnityEvent<Item> OnUpdated
+			=> _onUpdated;
 
-	// 	// commit temp person into static data, subscribe to changes on that
-	// 	var staticAddress = people.Commit( mutablePersonAddress );
-	// 	people.Subscribe( staticAddress, person => {
+		public Item () { }
+		public Item ( int id, float price ) {
+			_inventoryId = id;
+			_price = price;
+		}
 
-	// 	} );
+		// serialized data
+		private int _inventoryId;
+		private float _price;
 
-	// 	// fork the static and get latest mutable from the static address
-	// 	var mutablePersonAddressV2 = people.Fork( staticAddress );
-	// 	if ( people.GetLatestMutable( staticAddress, out var mutablePersonV2 ) ) {
-	// 		// this won't get called here, but lets you handle case where its not there
-	// 	}
+		// runtime data
+		[NonSerialized] private UnityEvent<Item> _onUpdated = new UnityEvent<Item>();
+	}
 
-	// 	// these will fire events to the subscribe to Static person
-	// 	mutablePersonV2.Name = "Daisy";
-	// 	mutablePersonV2.Age = 25;
-	// 	mutablePersonV2.Quote = "Mochi is cute";
+	[Serializable]
+	public class ItemDiff : IBytesSerializable {
 
-	// 	// using "get" without mutable is always read only
-	// 	var staticPerson = people.Get( staticAddress );
-	// 	// staticPerson.Name = "Mochi";	 // Compile error
+		public int InventoryIdDiff;
+		public float PriceChange;
 
-	// 	var readOnlyMutablePerson = people.Get( mutablePersonAddressV2 );
-	// 	// readOnlyMutablePerson.Name = "Mochi";  // Compile error
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
 
-	// 	var okayMutablePerson = people.GetMutable( mutablePersonAddressV2 );
-	// 	okayMutablePerson.Name = "Mochi"; // okay, because "GetMutable"
+		public override string ToString () => $"IdDiff: {InventoryIdDiff}; PriceChange: {PriceChange}";
+	}
 
+	private AddressableData<Item> GetInventory () => new AddressableData<Item>();
+	private DiffableData<Item, ItemDiff> GetInventoryDeltas ( AddressableData<Item> inventory ) => new DiffableData<Item, ItemDiff>( inventory );
 
-	// 	// Assert.That( intFlag == true );
-	// }
+	private Item GetItem () => new Item( id: 001, price: 4.99f );
+
+	[Test]
+	public void DiffableData_Commit () {
+
+		var inventory = GetInventory();
+		var inventoryDeltas = GetInventoryDeltas( inventory );
+		var item = GetItem();
+
+		// create delta
+		var deltaAdress = inventoryDeltas.Commit( item, "" );
+		Assert.NotNull( deltaAdress );
+
+		// check delta
+		var delta = inventoryDeltas.GetDelta( deltaAdress );
+		Assert.AreEqual( delta.Diff.InventoryIdDiff, 1 );
+		Assert.AreEqual( delta.Diff.PriceChange, 4.99f );
+		Assert.AreEqual( delta.Author, "" );
+		Assert.AreEqual( delta.Previous, null );
+
+		// check data
+		var data = inventoryDeltas.GetData( deltaAdress );
+		Assert.AreEqual( data.InventoryId, 1 );
+		Assert.AreEqual( data.Price, 4.99f );
+
+		// check data exists in content
+		var dataHash = Hasher.HashDataToBase64String( data );
+		data = inventory.GetCopy( new Address( dataHash ) );
+		Assert.NotNull( data );
+
+		// change item
+		item.InventoryId += 1;
+		item.Price += 1;
+
+		// update chain
+		var deltaAdress2 = inventoryDeltas.Commit( item, "", compile: false, previousDeltaAddress: deltaAdress );
+		delta = inventoryDeltas.GetDelta( deltaAdress2 );
+		Assert.AreEqual( delta.Diff.InventoryIdDiff, 1 );
+		Assert.AreEqual( delta.Diff.PriceChange, 1 );
+		Assert.AreEqual( delta.Author, "" );
+		Assert.AreEqual( delta.Previous, deltaAdress.Identifier );
+	}
 }

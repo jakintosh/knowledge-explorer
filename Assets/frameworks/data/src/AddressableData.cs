@@ -1,19 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using UnityEngine.Events;
 
 namespace Jakintosh.Data {
-
-	public interface IReadOnlyConvertible<TInterface> {
-		TInterface ToReadOnly ();
-	}
-	public interface IDuplicatable<T> {
-		T Duplicate ();
-	}
-	public interface IUpdatable<T> {
-		UnityEvent<T> OnUpdated { get; }
-	}
 
 	[Serializable]
 	public class Address : IIdentifiable<string> {
@@ -29,27 +17,25 @@ namespace Jakintosh.Data {
 	}
 
 	[Serializable]
-	public class TempAddress : Address {
+	public class MutableAddress : Address {
 
 		public string Parent => _parent;
 
-		public TempAddress () : this( address: null, parent: null ) { }
-		public TempAddress ( string address, Address parent = null ) : base( address ) => _parent = parent?.Identifier;
+		public MutableAddress () : this( address: null, parent: null ) { }
+		public MutableAddress ( string address, Address parent = null ) : base( address ) => _parent = parent?.Identifier;
 
-		public override string ToString () => $"FORK::{_parent} => {Identifier}";
+		public override string ToString () => $"MUTA::{_parent} => {Identifier}";
 
 		private string _parent;
 	}
 
-
 	[Serializable]
-	public class AddressableData<TData, TReadInterface>
+	public class AddressableData<TData>
 		where TData : class,
-			IReadOnlyConvertible<TReadInterface>,
+			IBytesSerializable,
 			IDuplicatable<TData>,
 			IUpdatable<TData>,
-			new()
-		where TReadInterface : class {
+			new() {
 
 		public AddressableData () {
 
@@ -59,21 +45,21 @@ namespace Jakintosh.Data {
 		}
 
 		// public interface
-		public TempAddress New () {
+		public MutableAddress New () {
 
-			var tempAddress = GenerateTempAddress();
-			var tempData = new TData();
-			tempData.OnUpdated.AddListener( data => {
-				if ( _handlers.TryGetValue( tempAddress.Identifier, out var handlers ) ) {
+			var mutableAddress = GenerateMutableAddress();
+			var mutableData = new TData();
+			mutableData.OnUpdated.AddListener( data => {
+				if ( _handlers.TryGetValue( mutableAddress.Identifier, out var handlers ) ) {
 					handlers?.ForEach( handler => handler( data ) );
 				}
 			} );
-			_data.Add( tempAddress.Identifier, tempData );
-			return tempAddress;
+			_data.Add( mutableAddress.Identifier, mutableData );
+			return mutableAddress;
 		}
-		public void Drop ( TempAddress tempAddress ) {
+		public void Drop ( MutableAddress mutableAddress ) {
 
-			var key = tempAddress.Identifier;
+			var key = mutableAddress.Identifier;
 
 			if ( _data.ContainsKey( key ) ) {
 				var data = GetData( key );
@@ -85,23 +71,23 @@ namespace Jakintosh.Data {
 				_handlers.Remove( key );
 			}
 
-			if ( tempAddress.Parent != null ) {
-				_forks.Remove( tempAddress.Parent );
+			if ( mutableAddress.Parent != null ) {
+				_forks.Remove( mutableAddress.Parent );
 			}
 		}
-		public TReadInterface Get ( Address address ) {
+		public TData GetCopy ( Address address ) {
 
-			return GetData( address.Identifier )?.ToReadOnly();
+			return GetData( address.Identifier )?.Duplicate();
 		}
-		public TReadInterface GetLatest ( Address address ) {
+		public TData GetLatestCopy ( Address address ) {
 
 			TData data;
 
-			// try as temp address
-			var tempAddress = address as TempAddress;
-			if ( tempAddress != null ) {
+			// try as mutable address
+			var mutableAddress = address as MutableAddress;
+			if ( mutableAddress != null ) {
 
-				data = GetLatestMutable( tempAddress );
+				data = GetLatestMutable( mutableAddress );
 
 			} else if ( _forks.TryGetValue( address.Identifier, out var forkedAddress ) ) {
 
@@ -112,22 +98,22 @@ namespace Jakintosh.Data {
 				data = GetData( address.Identifier );
 			}
 
-			return data?.ToReadOnly();
+			return data?.Duplicate();
 		}
-		public TData GetMutable ( TempAddress tempAddress ) {
+		public TData GetMutable ( MutableAddress mutableAddress ) {
 
-			return GetData( tempAddress.Identifier );
+			return GetData( mutableAddress.Identifier );
 		}
 		public bool GetLatestMutable ( Address address, out TData data ) {
 
-			// try as temp address
-			var tempAddress = address as TempAddress;
-			if ( tempAddress != null ) {
-				data = GetLatestMutable( tempAddress );
+			// try as mutable address
+			var mutableAddress = address as MutableAddress;
+			if ( mutableAddress != null ) {
+				data = GetLatestMutable( mutableAddress );
 				return data != null;
 			}
 
-			// if not temp, get fork
+			// if not mutable, get fork
 			if ( _forks.TryGetValue( address.Identifier, out var forkedAddress ) ) {
 				data = GetData( forkedAddress );
 				return data != null;
@@ -137,34 +123,34 @@ namespace Jakintosh.Data {
 			data = null;
 			return false;
 		}
-		public TData GetLatestMutable ( TempAddress tempAddress ) {
+		public TData GetLatestMutable ( MutableAddress mutableAddress ) {
 
-			return GetData( tempAddress.Identifier );
+			return GetData( mutableAddress.Identifier );
 		}
-		public TempAddress Fork ( Address address ) {
+		public MutableAddress Fork ( Address address ) {
 
 			// if already exists, just return it
 			if ( _forks.TryGetValue( address.Identifier, out var soft ) ) {
-				return new TempAddress( soft, parent: address );
+				return new MutableAddress( soft, parent: address );
 			}
 
 			// if not, create the fork
 			var data = GetData( address.Identifier );
-			var tempAddress = GenerateTempAddress( parent: address );
+			var mutableAddress = GenerateMutableAddress( parent: address );
 			var duplicate = data.Duplicate();
-			_data.Add( tempAddress.Identifier, data );
-			_forks.Add( address.Identifier, tempAddress.Identifier );
-			return tempAddress;
+			_data.Add( mutableAddress.Identifier, data );
+			_forks.Add( address.Identifier, mutableAddress.Identifier );
+			return mutableAddress;
 		}
-		public Address Commit ( TempAddress tempAddress ) {
+		public Address Commit ( MutableAddress mutableAddress ) {
 
-			var data = GetData( tempAddress.Identifier );
-			Drop( tempAddress );
+			var data = GetData( mutableAddress.Identifier );
+			Drop( mutableAddress );
 			return Commit( data.Duplicate() );
 		}
 		public Address Commit ( TData data ) {
 
-			var contentHash = Hash( data );
+			var contentHash = Hasher.HashDataToBase64String( data );
 			data.OnUpdated.AddListener( data => {
 				var handlers = _handlers[contentHash];
 				handlers?.ForEach( handler => handler( data ) );
@@ -174,8 +160,8 @@ namespace Jakintosh.Data {
 		}
 		public void Subscribe ( Address address, Action<TData> handler ) {
 
-			var tempAddress = address as TempAddress;
-			var key = tempAddress?.Parent ?? address.Identifier;
+			var mutableAddress = address as MutableAddress;
+			var key = mutableAddress?.Parent ?? address.Identifier;
 			if ( !_handlers.TryGetValue( key, out var list ) ) {
 				list = new List<Action<TData>>();
 				_handlers[key] = list;
@@ -184,8 +170,8 @@ namespace Jakintosh.Data {
 		}
 		public void Unsubscribe ( Address address, Action<TData> handler ) {
 
-			var tempAddress = address as TempAddress;
-			var key = tempAddress != null ? tempAddress.Parent : address.Identifier;
+			var mutableAddress = address as MutableAddress;
+			var key = mutableAddress != null ? mutableAddress.Parent : address.Identifier;
 			if ( _handlers.TryGetValue( key, out var list ) ) {
 				list.Remove( handler );
 			}
@@ -206,7 +192,7 @@ namespace Jakintosh.Data {
 			}
 			return null;
 		}
-		private TempAddress GenerateTempAddress ( Address parent = null ) {
+		private MutableAddress GenerateMutableAddress ( Address parent = null ) {
 
 			int i = 0;
 			string key;
@@ -214,58 +200,7 @@ namespace Jakintosh.Data {
 			do {
 				key = $"{time}-{i}";
 			} while ( _data.ContainsKey( key ) );
-			return new TempAddress( address: key, parent );
-		}
-		private string Hash ( TData data ) {
-
-			var formatter = new SouthPointe.Serialization.MessagePack.MessagePackFormatter();
-			var sha256 = new SHA256CryptoServiceProvider();
-			var bytes = formatter.Serialize<TData>( data );
-			var hash = sha256.ComputeHash( bytes );
-			return Convert.ToBase64String( hash );
+			return new MutableAddress( address: key, parent );
 		}
 	}
-
-	[Serializable]
-	public class SubscribableDictionary<TKey, TModel>
-		where TModel : IUpdatable<TModel>, IIdentifiable<TKey> {
-
-		// events
-		[NonSerialized] public UnityEvent<TKey> OnAdded = new UnityEvent<TKey>();
-		[NonSerialized] public UnityEvent<TKey> OnUpdated = new UnityEvent<TKey>();
-		[NonSerialized] public UnityEvent<TKey> OnRemoved = new UnityEvent<TKey>();
-
-		// crud
-		public TModel Get ( TKey handle ) {
-
-			return _data[handle];
-		}
-		public List<TModel> GetAll () {
-
-			return new List<TModel>( _data.Values );
-		}
-		public void Register ( TModel data ) {
-
-			var handle = data.Identifier;
-			data.OnUpdated.AddListener( HandleDataUpdated );
-			_data.Add( handle, data );
-			OnAdded?.Invoke( handle );
-		}
-		public void Unregister ( TKey handle ) {
-
-			_data[handle]?.OnUpdated.RemoveListener( HandleDataUpdated );
-			_data.Remove( handle );
-			OnRemoved?.Invoke( handle );
-		}
-
-		// data
-		private Dictionary<TKey, TModel> _data = new Dictionary<TKey, TModel>();
-
-		// event handlers
-		private void HandleDataUpdated ( TModel data )
-			=> OnUpdated?.Invoke( data.Identifier );
-	}
-
-
-
 }
