@@ -1,10 +1,157 @@
+using Jakintosh.Data;
 using Jakintosh.Resources;
+using System;
 using System.Collections.Generic;
+using UnityEngine.Events;
 
 using Graph = Jakintosh.Knowledge.Graph;
 using Workspace = Library.ViewModel.Workspace;
 
 namespace Library.Resources {
+
+	[Serializable]
+	public class NodeDiff :
+		IBytesSerializable {
+
+		// properties
+		public StringDiff Title => title;
+		public StringDiff Body => body;
+
+		// interfaces
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
+
+		// constructor
+		public NodeDiff ( StringDiff titleDiff, StringDiff bodyDiff ) {
+
+			title = titleDiff;
+			body = bodyDiff;
+		}
+
+		// serialized data
+		private StringDiff title;
+		private StringDiff body;
+	}
+
+	[Serializable]
+	public class Node :
+		IBytesSerializable,
+		IDiffable<Node, NodeDiff>,
+		IDuplicatable<Node>,
+		IUpdatable<Node> {
+
+		// properties
+		public string Title {
+			get => title;
+			set {
+				if ( title == value ) { return; }
+				title = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+		public string Body {
+			get => body;
+			set {
+				if ( body == value ) { return; }
+				body = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+
+		// interfaces
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
+		public UnityEvent<Node> OnUpdated
+			=> _onUpdated;
+		public Node Apply ( NodeDiff diff ) {
+
+			var node = new Node();
+			node.Title = diff.Title.ApplyTo( Title );
+			node.Body = diff.Body.ApplyTo( Body );
+			return node;
+		}
+		public NodeDiff Diff ( Node from ) {
+
+			return new NodeDiff(
+				titleDiff: DiffUtil.CreateStringDiff( from.Title, Title ),
+				bodyDiff: DiffUtil.CreateStringDiff( from.Body, Body )
+			);
+		}
+		public Node Duplicate () {
+
+			var duplicate = new Node();
+			duplicate.Title = Title;
+			duplicate.Body = Body;
+			return duplicate;
+		}
+
+		// serialized data
+		private string title;
+		private string body;
+
+		// runtime data
+		[NonSerialized] private UnityEvent<Node> _onUpdated = new UnityEvent<Node>();
+	}
+
+	[Serializable]
+	public class Link :
+		IBytesSerializable,
+		IDuplicatable<Link>,
+		IUpdatable<Link> {
+
+		// properties
+		public string Type {
+			get => type;
+			set {
+				if ( type == value ) { return; }
+				type = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+		public string Source {
+			get => source;
+			set {
+				if ( source == value ) { return; }
+				source = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+		public string Destination {
+			get => destination;
+			set {
+				if ( destination == value ) { return; }
+				destination = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
+
+		// interface
+		public byte[] GetSerializedBytes ()
+			=> Serializer.GetSerializedBytes( this );
+		public UnityEvent<Link> OnUpdated
+			=> _onUpdated;
+		public Link Duplicate () {
+
+			var duplicate = new Link();
+			return duplicate;
+		}
+
+		// serialized data
+		private string type;
+		private string source;
+		private string destination;
+
+		// runtime data
+		[NonSerialized] private UnityEvent<Link> _onUpdated = new UnityEvent<Link>();
+	}
+
+	public class Data {
+
+		private DiffableData<Node, NodeDiff> _nodeDeltas;
+
+		private AddressableData<Node> _nodes;
+		private AddressableData<Link> _links;
+	}
 
 	public class Graphs {
 
