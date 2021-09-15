@@ -4,7 +4,9 @@ using System.Reflection;
 using UnityEngine;
 
 namespace SouthPointe.Serialization.MessagePack {
+
 	public class MapDefinition {
+
 		const BindingFlags MethodFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.InvokeMethod;
 
 		static readonly Type[] serializableUnityTypes = {

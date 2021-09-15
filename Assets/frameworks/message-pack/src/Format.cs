@@ -1,13 +1,12 @@
 ﻿using UnityEngine;
 
-namespace SouthPointe.Serialization.MessagePack
-{
-	public struct Format
-	{
+namespace SouthPointe.Serialization.MessagePack {
+
+	public struct Format {
+
 		readonly public byte Value;
 
-		public Format(byte value)
-		{
+		public Format ( byte value ) {
 			this.Value = value;
 		}
 
@@ -54,10 +53,10 @@ namespace SouthPointe.Serialization.MessagePack
 		public const byte NegativeFixIntMin = 0xe0;
 		public const byte NegativeFixIntMax = 0xff;
 
-		public bool IsPositiveFixInt { get { return Between(PositiveFixIntMin, PositiveFixIntMax); } }
-		public bool IsFixMap { get { return Between(FixMapMin, FixMapMax); } }
-		public bool IsFixArray { get { return Between(FixArrayMin, FixArrayMax); } }
-		public bool IsFixStr { get { return Between(FixStrMin, FixStrMax); } }
+		public bool IsPositiveFixInt { get { return Between( PositiveFixIntMin, PositiveFixIntMax ); } }
+		public bool IsFixMap { get { return Between( FixMapMin, FixMapMax ); } }
+		public bool IsFixArray { get { return Between( FixArrayMin, FixArrayMax ); } }
+		public bool IsFixStr { get { return Between( FixStrMin, FixStrMax ); } }
 		public bool IsNil { get { return Value == Nil; } }
 		public bool IsNeverUsed { get { return Value == NeverUsed; } }
 		public bool IsFalse { get { return Value == False; } }
@@ -90,7 +89,7 @@ namespace SouthPointe.Serialization.MessagePack
 		public bool IsArray32 { get { return Value == Array32; } }
 		public bool IsMap16 { get { return Value == Map16; } }
 		public bool IsMap32 { get { return Value == Map32; } }
-		public bool IsNegativeFixInt { get { return Between(NegativeFixIntMin, NegativeFixIntMax); } }
+		public bool IsNegativeFixInt { get { return Between( NegativeFixIntMin, NegativeFixIntMax ); } }
 		public bool IsEmptyArray { get { return Value == FixArrayMin; } }
 
 		public bool IsIntFamily { get { return IsPositiveFixInt || IsNegativeFixInt || IsInt8 || IsUInt8 || IsInt16 || IsUInt16 || IsInt32 || IsUInt32 || IsInt64 || IsUInt64; } }
@@ -102,45 +101,38 @@ namespace SouthPointe.Serialization.MessagePack
 		public bool IsMapFamily { get { return IsFixMap || IsMap16 || IsMap32; } }
 		public bool IsExtFamily { get { return IsFixExt1 || IsFixExt2 || IsFixExt4 || IsFixExt8 || IsFixExt16 || IsExt8 || IsExt16 || IsExt32; } }
 
-		bool Between(byte min, byte max)
-		{
+		bool Between ( byte min, byte max ) {
 			return Value >= min && Value <= max;
 		}
 
-		public override int GetHashCode()
-		{
+		public override int GetHashCode () {
 			return this.Value.GetHashCode();
 		}
 
-		public override bool Equals(object obj)
-		{
-			if(obj is Format) {
-				return this.Value == ((Format)obj).Value;
+		public override bool Equals ( object obj ) {
+			if ( obj is Format ) {
+				return this.Value == ( (Format)obj ).Value;
 			}
-			if(obj is byte) {
+			if ( obj is byte ) {
 				return this.Value == (byte)obj;
 			}
 			return false;
 		}
 
-		public static byte operator &(Format f1, byte value)
-		{
-			return (byte)(f1.Value & value);
+		public static byte operator & ( Format f1, byte value ) {
+			return (byte)( f1.Value & value );
 		}
 
-		public static bool operator ==(Format f1, Format f2)
-		{
+		public static bool operator == ( Format f1, Format f2 ) {
 			return f1.Value == f2.Value;
 		}
 
-		public static bool operator !=(Format f1, Format f2)
-		{
+		public static bool operator != ( Format f1, Format f2 ) {
 			return f1.Value != f2.Value;
 		}
 
-		public override string ToString()
-		{
-			return string.Concat("0x", Value.ToString("X2"));
+		public override string ToString () {
+			return string.Concat( "0x", Value.ToString( "X2" ) );
 		}
 	}
 }

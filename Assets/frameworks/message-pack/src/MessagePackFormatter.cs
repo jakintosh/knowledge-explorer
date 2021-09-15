@@ -1,9 +1,10 @@
 ﻿using System;
 using System.IO;
-using UnityEngine;
 
 namespace SouthPointe.Serialization.MessagePack {
+
 	public class MessagePackFormatter {
+
 		public SerializationContext Context { get; set; }
 
 		public MessagePackFormatter ( SerializationContext context = null ) {

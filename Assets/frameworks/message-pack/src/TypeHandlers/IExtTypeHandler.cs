@@ -1,9 +1,9 @@
-﻿namespace SouthPointe.Serialization.MessagePack
-{
-	public interface IExtTypeHandler : ITypeHandler
-	{
+﻿namespace SouthPointe.Serialization.MessagePack {
+
+	public interface IExtTypeHandler : ITypeHandler {
+
 		sbyte ExtType { get; }
 
-		object ReadExt(uint length, FormatReader reader);
+		object ReadExt ( uint length, FormatReader reader );
 	}
 }

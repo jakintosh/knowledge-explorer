@@ -4,7 +4,9 @@ using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SouthPointe.Serialization.MessagePack {
+
 	public class DynamicMapHandler : ITypeHandler {
+
 		readonly SerializationContext context;
 		readonly Lazy<MapDefinition> lazyDefinition;
 		readonly ITypeHandler nameHandler;

@@ -3,17 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SouthPointe.Serialization.MessagePack
-{
-	public class TypeHandlers
-	{
+namespace SouthPointe.Serialization.MessagePack {
+
+	public class TypeHandlers {
+
 		readonly SerializationContext context;
 		readonly Dictionary<Type, ITypeHandler> handlers;
 		readonly Dictionary<sbyte, IExtTypeHandler> extHandlers;
 		readonly Dictionary<Type, MapDefinition> mapDefinitions;
 
-		public TypeHandlers(SerializationContext context)
-		{
+		public TypeHandlers ( SerializationContext context ) {
 			this.context = context;
 
 			this.handlers = new Dictionary<Type, ITypeHandler> {
@@ -57,82 +56,69 @@ namespace SouthPointe.Serialization.MessagePack
 			this.mapDefinitions = new Dictionary<Type, MapDefinition>();
 		}
 
-		public ITypeHandler Get<T>()
-		{
-			return Get(typeof(T));
+		public ITypeHandler Get<T> () {
+			return Get( typeof( T ) );
 		}
 
-		public ITypeHandler Get(Type type)
-		{
-			lock(handlers) {
-				AddIfNotExist(type);
+		public ITypeHandler Get ( Type type ) {
+			lock ( handlers ) {
+				AddIfNotExist( type );
 				return handlers[type];
 			}
 		}
 
-		public IExtTypeHandler GetExt(sbyte extType)
-		{
-			lock(handlers) {
+		public IExtTypeHandler GetExt ( sbyte extType ) {
+			lock ( handlers ) {
 				return extHandlers[extType];
 			}
 		}
 
-		public void SetHandler(Type type, ITypeHandler handler)
-		{
-			lock(handlers) {
+		public void SetHandler ( Type type, ITypeHandler handler ) {
+			lock ( handlers ) {
 				handlers[type] = handler;
 			}
-			if(handler is IExtTypeHandler) {
+			if ( handler is IExtTypeHandler ) {
 				IExtTypeHandler extHandler = (IExtTypeHandler)handler;
-				lock(extHandlers) {
+				lock ( extHandlers ) {
 					extHandlers[extHandler.ExtType] = extHandler;
 				}
 			}
 		}
 
-		void AddIfNotExist(Type type)
-		{
-			if(handlers.ContainsKey(type)) {
+		void AddIfNotExist ( Type type ) {
+			if ( handlers.ContainsKey( type ) ) {
 				return;
 			}
-			if(type.IsEnum) {
-				AddIfNotExist(type, new DynamicEnumHandler(context, type));
-			}
-			else if(type.IsNullable()) {
-				AddIfNotExist(type, new DynamicNullableHandler(context, type));
-			}
-			else if(type.IsArray) {
-				AddIfNotExist(type, new DynamicArrayHandler(context, type));
-			}
-			else if(typeof(IList).IsAssignableFrom(type)) {
-				AddIfNotExist(type, new DynamicListHandler(context, type));
-			}
-			else if(typeof(IDictionary).IsAssignableFrom(type)) {
-				AddIfNotExist(type, new DynamicDictionaryHandler(context, type));
-			}
-			else if(type.IsClass || type.IsValueType) {
-				AddIfNotExist(type, new DynamicMapHandler(context, GetLazyMapDefinition(type)));
-			}
-			else {
-				throw new FormatException("No TypeHandler found for type: " + type);
+			if ( type.IsEnum ) {
+				AddIfNotExist( type, new DynamicEnumHandler( context, type ) );
+			} else if ( type.IsNullable() ) {
+				AddIfNotExist( type, new DynamicNullableHandler( context, type ) );
+			} else if ( type.IsArray ) {
+				AddIfNotExist( type, new DynamicArrayHandler( context, type ) );
+			} else if ( typeof( IList ).IsAssignableFrom( type ) ) {
+				AddIfNotExist( type, new DynamicListHandler( context, type ) );
+			} else if ( typeof( IDictionary ).IsAssignableFrom( type ) ) {
+				AddIfNotExist( type, new DynamicDictionaryHandler( context, type ) );
+			} else if ( type.IsClass || type.IsValueType ) {
+				AddIfNotExist( type, new DynamicMapHandler( context, GetLazyMapDefinition( type ) ) );
+			} else {
+				throw new FormatException( "No TypeHandler found for type: " + type );
 			}
 		}
 
-		void AddIfNotExist(Type type, ITypeHandler handler)
-		{
-			if(!handlers.ContainsKey(type)) {
-				handlers.Add(type, handler);
+		void AddIfNotExist ( Type type, ITypeHandler handler ) {
+			if ( !handlers.ContainsKey( type ) ) {
+				handlers.Add( type, handler );
 			}
 		}
 
-		Lazy<MapDefinition> GetLazyMapDefinition(Type type)
-		{
-			return new Lazy<MapDefinition>(() => {
-				if(!mapDefinitions.ContainsKey(type)) {
-					mapDefinitions[type] = new MapDefinition(context, type);
+		Lazy<MapDefinition> GetLazyMapDefinition ( Type type ) {
+			return new Lazy<MapDefinition>( () => {
+				if ( !mapDefinitions.ContainsKey( type ) ) {
+					mapDefinitions[type] = new MapDefinition( context, type );
 				}
 				return mapDefinitions[type];
-			});
+			} );
 		}
 	}
 }

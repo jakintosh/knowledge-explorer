@@ -1,7 +1,7 @@
-﻿namespace SouthPointe.Serialization.MessagePack
-{
-	public class DateTimeOptions
-	{
+﻿namespace SouthPointe.Serialization.MessagePack {
+
+	public class DateTimeOptions {
+
 		/// <summary>
 		/// The packing format for DateTime format. Available formats are...
 		/// Extension: packs using extension format defined in spec.

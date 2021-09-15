@@ -1,11 +1,10 @@
-﻿namespace SouthPointe.Serialization.MessagePack
-{
-	public class SerializationContext
-	{
+﻿namespace SouthPointe.Serialization.MessagePack {
+
+	public class SerializationContext {
+
 		static SerializationContext defaultContext;
 
-		public static SerializationContext Default
-		{
+		public static SerializationContext Default {
 			get { return defaultContext = defaultContext ?? new SerializationContext(); }
 		}
 
@@ -21,14 +20,13 @@
 
 		public readonly TypeHandlers TypeHandlers;
 
-		public SerializationContext()
-		{
+		public SerializationContext () {
 			DateTimeOptions = new DateTimeOptions();
 			EnumOptions = new EnumOptions();
 			ArrayOptions = new ArrayOptions();
 			MapOptions = new MapOptions();
 			JsonOptions = new JsonOptions();
-			TypeHandlers = new TypeHandlers(this);
+			TypeHandlers = new TypeHandlers( this );
 		}
 	}
 }

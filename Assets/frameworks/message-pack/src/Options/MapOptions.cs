@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
 
-namespace SouthPointe.Serialization.MessagePack
-{
-	public class MapOptions
-	{
+namespace SouthPointe.Serialization.MessagePack {
+
+	public class MapOptions {
+
 		/// <summary>
 		/// This makes it so that classes/structs will be serialized only if
 		/// they have the `System.Serializable` attribute defined.

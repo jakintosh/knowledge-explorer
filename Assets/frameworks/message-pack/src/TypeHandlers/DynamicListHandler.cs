@@ -1,54 +1,50 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
-namespace SouthPointe.Serialization.MessagePack
-{
-	public class DynamicListHandler : ITypeHandler
-	{
+namespace SouthPointe.Serialization.MessagePack {
+
+	public class DynamicListHandler : ITypeHandler {
+
 		readonly SerializationContext context;
 		readonly Type innerType;
 		readonly ITypeHandler innerTypeHandler;
 
-		public DynamicListHandler(SerializationContext context, Type type)
-		{
+		public DynamicListHandler ( SerializationContext context, Type type ) {
 			this.context = context;
 			this.innerType = type.GetGenericArguments()[0];
-			this.innerTypeHandler = context.TypeHandlers.Get(innerType);
+			this.innerTypeHandler = context.TypeHandlers.Get( innerType );
 		}
 
-		public object Read(Format format, FormatReader reader)
-		{
-			Type listType = typeof(List<>).MakeGenericType(new[] { innerType });
+		public object Read ( Format format, FormatReader reader ) {
+			Type listType = typeof( List<> ).MakeGenericType( new[] { innerType } );
 
-			if(format.IsArrayFamily) {
-				IList list = (IList)Activator.CreateInstance(listType);
-				int size = reader.ReadArrayLength(format);
-				for(int i = 0; i < size; i++) {
-					list.Add(innerTypeHandler.Read(reader.ReadFormat(), reader));
+			if ( format.IsArrayFamily ) {
+				IList list = (IList)Activator.CreateInstance( listType );
+				int size = reader.ReadArrayLength( format );
+				for ( int i = 0; i < size; i++ ) {
+					list.Add( innerTypeHandler.Read( reader.ReadFormat(), reader ) );
 				}
 				return list;
 			}
-			if(format.IsNil) {
-				if(context.ArrayOptions.NullAsEmptyOnUnpack) {
-					return Activator.CreateInstance(listType);
+			if ( format.IsNil ) {
+				if ( context.ArrayOptions.NullAsEmptyOnUnpack ) {
+					return Activator.CreateInstance( listType );
 				}
 				return null;
 			}
-			throw new FormatException(this, format, reader);
+			throw new FormatException( this, format, reader );
 		}
 
-		public void Write(object obj, FormatWriter writer)
-		{
-			if(obj == null) {
+		public void Write ( object obj, FormatWriter writer ) {
+			if ( obj == null ) {
 				writer.WriteNil();
 				return;
 			}
 			IList values = (IList)obj;
-			writer.WriteArrayHeader(values.Count);
-			foreach(object value in values) {
-				innerTypeHandler.Write(value, writer);
+			writer.WriteArrayHeader( values.Count );
+			foreach ( object value in values ) {
+				innerTypeHandler.Write( value, writer );
 			}
 		}
 	}

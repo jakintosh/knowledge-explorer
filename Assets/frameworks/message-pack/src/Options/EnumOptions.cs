@@ -1,7 +1,7 @@
-﻿namespace SouthPointe.Serialization.MessagePack
-{
-	public class EnumOptions
-	{
+﻿namespace SouthPointe.Serialization.MessagePack {
+
+	public class EnumOptions {
+
 		/// <summary>
 		/// The packing format for Enum types. Available formats are...
 		/// Integer: packs using the underlying integer value.

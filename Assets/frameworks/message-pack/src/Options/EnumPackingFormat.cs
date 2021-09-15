@@ -1,7 +1,7 @@
-﻿namespace SouthPointe.Serialization.MessagePack
-{
-	public enum EnumPackingFormat
-	{
+﻿namespace SouthPointe.Serialization.MessagePack {
+
+	public enum EnumPackingFormat {
+
 		Integer,
 		String,
 	}
