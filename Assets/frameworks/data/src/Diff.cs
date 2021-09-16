@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Jakintosh.Data {
@@ -10,7 +11,8 @@ namespace Jakintosh.Data {
 	}
 
 	[Serializable]
-	public class SequenceDiffOperation<T> {
+	public class SequenceDiffOperation<T> : IEquatable<SequenceDiffOperation<T>>
+		where T : IEquatable<T> {
 
 		public readonly DiffOperationTypes Type;
 		public readonly int StartIndex;
@@ -42,10 +44,33 @@ namespace Jakintosh.Data {
 				_ => ""
 			};
 		}
+
+
+		public bool Equals ( SequenceDiffOperation<T> other ) {
+
+			var equal = Type.Equals( other.Type ) && StartIndex.Equals( other.StartIndex ) && Length.Equals( other.Length );
+			if ( Content != null ) { equal = equal && Enumerable.SequenceEqual( Content, other.Content ); }
+			return equal;
+		}
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+			var diffObj = obj as SequenceDiffOperation<T>;
+			if ( diffObj == null ) { return false; }
+			return this.Equals( diffObj );
+		}
+		public override int GetHashCode () {
+
+			var hashCode = (int)Type ^ StartIndex ^ Length;
+			if ( Content != null ) {
+				Content.ForEach( element => hashCode ^= ( element.GetHashCode() * 31 ) );
+			}
+			return hashCode;
+		}
 	}
 
 	[Serializable]
-	public class StringDiffOperation {
+	public class StringDiffOperation : IEquatable<StringDiffOperation> {
 
 		public readonly DiffOperationTypes Type;
 		public readonly int StartIndex;
@@ -77,10 +102,29 @@ namespace Jakintosh.Data {
 				_ => ""
 			};
 		}
+
+		public bool Equals ( StringDiffOperation other ) {
+
+			var equal = Type.Equals( other.Type ) && StartIndex.Equals( other.StartIndex ) && Length.Equals( other.Length );
+			if ( Content != null ) { equal = equal && Content.Equals( other.Content ); }
+			return equal;
+		}
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+			var diffObj = obj as StringDiffOperation;
+			if ( diffObj == null ) { return false; }
+			return this.Equals( diffObj );
+		}
+		public override int GetHashCode () {
+
+			return (int)Type ^ StartIndex ^ Length ^ Content.GetHashCode();
+		}
 	}
 
 	[Serializable]
-	public class SequenceDiff<T> {
+	public class SequenceDiff<T> : IEquatable<SequenceDiff<T>>
+		where T : IEquatable<T> {
 
 		public List<SequenceDiffOperation<T>> Changes { get; private set; }
 
@@ -118,10 +162,36 @@ namespace Jakintosh.Data {
 			Changes.ForEach( change => sb.AppendLine( change.ToString() ) );
 			return sb.ToString();
 		}
+
+
+		public bool Equals ( SequenceDiff<T> other ) {
+
+			if ( other == null ) {
+				return false;
+			}
+
+			if ( Changes != null && other.Changes != null ) {
+				return Enumerable.SequenceEqual( Changes, other.Changes );
+			}
+			return Changes == null && other.Changes == null;
+		}
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+			var diffObj = obj as SequenceDiff<T>;
+			if ( diffObj == null ) { return false; }
+			return this.Equals( diffObj );
+		}
+		public override int GetHashCode () {
+
+			int hashCode = 0;
+			Changes.ForEach( change => hashCode ^= ( change.GetHashCode() * 31 ) );
+			return hashCode;
+		}
 	}
 
 	[Serializable]
-	public class StringDiff {
+	public class StringDiff : IEquatable<StringDiff> {
 
 		public List<StringDiffOperation> Changes { get; private set; }
 
@@ -155,6 +225,31 @@ namespace Jakintosh.Data {
 			Changes.ForEach( change => sb.AppendLine( change.ToString() ) );
 			return sb.ToString();
 		}
+
+		public bool Equals ( StringDiff other ) {
+
+			if ( other == null ) {
+				return false;
+			}
+
+			if ( Changes != null && other.Changes != null ) {
+				return Enumerable.SequenceEqual( Changes, other.Changes );
+			}
+			return Changes == null && other.Changes == null;
+		}
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+			var diffObj = obj as StringDiff;
+			if ( diffObj == null ) { return false; }
+			return this.Equals( diffObj );
+		}
+		public override int GetHashCode () {
+
+			int hashCode = 0;
+			Changes.ForEach( change => hashCode ^= ( change.GetHashCode() * 31 ) );
+			return hashCode;
+		}
 	}
 
 	public struct LongestCommonSubsequence<T>
@@ -168,6 +263,10 @@ namespace Jakintosh.Data {
 		}
 
 		public static int[,] ComputeLength ( IList<T> a, IList<T> b ) {
+
+			// treat null as empty
+			if ( a == null ) { a = new List<T>(); }
+			if ( b == null ) { b = new List<T>(); }
 
 			var m = a.Count;
 			var n = b.Count;
@@ -190,6 +289,10 @@ namespace Jakintosh.Data {
 		}
 
 		public static List<T> Compute ( IList<T> a, IList<T> b ) {
+
+			// treat null as empty
+			if ( a == null ) { a = new List<T>(); }
+			if ( b == null ) { b = new List<T>(); }
 
 			var subsequence = new List<T>();
 			var length = ComputeLength( a, b );
@@ -230,6 +333,10 @@ namespace Jakintosh.Data {
 
 		public static int[,] ComputeLength ( string a, string b ) {
 
+			// treat null as empty
+			if ( a == null ) { a = ""; }
+			if ( b == null ) { b = ""; }
+
 			var m = a.Length;
 			var n = b.Length;
 
@@ -251,6 +358,10 @@ namespace Jakintosh.Data {
 		}
 
 		public static string Compute ( string a, string b ) {
+
+			// treat null as empty
+			if ( a == null ) { a = ""; }
+			if ( b == null ) { b = ""; }
 
 			var sb = new StringBuilder();
 			var length = ComputeLength( a, b );
@@ -304,6 +415,10 @@ namespace Jakintosh.Data {
 		public static SequenceDiff<T> CreateSequenceDiff<T> ( IList<T> oldData, IList<T> newData )
 			where T : IEquatable<T> {
 
+			// treat null as empty
+			if ( oldData == null ) { oldData = new List<T>(); }
+			if ( newData == null ) { newData = new List<T>(); }
+
 			var results = new List<SequenceDiffOperation<T>>();
 			var lcsLength = new LongestCommonSubsequence<T>( oldData, newData ).Length;
 
@@ -313,20 +428,41 @@ namespace Jakintosh.Data {
 
 			var oldIndex = oldData.Count;
 			var newIndex = newData.Count;
+
+			// define a local func to commit an operation to results
+			void CommitOperation () {
+
+				var length = lastOp.Value switch {
+					DiffOperationTypes.Removal => trailingOldIndex - oldIndex,
+					_ => 0,
+				};
+				var content = lastOp.Value switch {
+					DiffOperationTypes.Addition => newData.GetRange( newIndex, trailingNewIndex - newIndex ),
+					_ => null
+				};
+				var op = new SequenceDiffOperation<T>(
+					type: lastOp.Value,
+					start: oldIndex,
+					length: length,
+					content: content
+				);
+				results.Add( op );
+			}
+
 			while ( !( oldIndex == 0 && newIndex == 0 ) ) {
 
 				var newOp = (DiffOperationTypes?)null;
 
-				// if elements are the same, nothing happened
-				if ( oldData[oldIndex - 1].Equals( newData[newIndex - 1] ) ) {  // -1 to go from lcs.Length -> data index
-					/* do nothing... just catch this case */
-				}
-
 				// if one sequence is drained, the rest of the other sequence is logged as all + or -
-				else if ( oldIndex == 0 ) {
+				if ( oldIndex == 0 ) {
 					newOp = DiffOperationTypes.Addition;
 				} else if ( newIndex == 0 ) {
 					newOp = DiffOperationTypes.Removal;
+				}
+
+				// if elements are the same, nothing happened
+				else if ( oldData[oldIndex - 1].Equals( newData[newIndex - 1] ) ) {  // -1 to go from lcs.Length -> data index
+					/* do nothing... just catch this case */
 				}
 
 				// if elements not the same, backtrack with bias for addition in new sequence
@@ -341,22 +477,7 @@ namespace Jakintosh.Data {
 
 					// if last op not null, commit that op to results
 					if ( lastOp.HasValue ) {
-
-						var length = lastOp.Value switch {
-							DiffOperationTypes.Removal => trailingOldIndex - oldIndex,
-							_ => 0,
-						};
-						var content = lastOp.Value switch {
-							DiffOperationTypes.Addition => newData.GetRange( newIndex, trailingNewIndex - newIndex ),
-							_ => null
-						};
-						var op = new SequenceDiffOperation<T>(
-							type: lastOp.Value,
-							start: oldIndex,
-							length: length,
-							content: content
-						);
-						results.Add( op );
+						CommitOperation();
 					}
 
 					// something new is happening, mark indices
@@ -372,11 +493,20 @@ namespace Jakintosh.Data {
 				lastOp = newOp;
 			}
 
+			// if we had an uncommitted op at the end, commit it
+			if ( lastOp.HasValue ) {
+				CommitOperation();
+			}
+
 			// return diff
 			return new SequenceDiff<T>( results );
 		}
 
 		public static StringDiff CreateStringDiff ( string oldString, string newString ) {
+
+			// treat null as empty
+			if ( oldString == null ) { oldString = ""; }
+			if ( newString == null ) { newString = ""; }
 
 			var results = new List<StringDiffOperation>();
 			var lcsLength = new LongestCommonSubstring( oldString, newString ).Length;
@@ -388,20 +518,41 @@ namespace Jakintosh.Data {
 			// drain i and j to zero
 			var oldIndex = oldString.Length;
 			var newIndex = newString.Length;
-			while ( !( oldIndex == 0 && newIndex == 0 ) ) {
+
+			// define a local func to commit an operation to results
+			void CommitOperation () {
+
+				var length = lastOp.Value switch {
+					DiffOperationTypes.Removal => trailingOldIndex - oldIndex,
+					_ => 0,
+				};
+				var content = lastOp.Value switch {
+					DiffOperationTypes.Addition => newString.Substring( newIndex, trailingNewIndex - newIndex ),
+					_ => null
+				};
+				var op = new StringDiffOperation(
+					type: lastOp.Value,
+					start: oldIndex,
+					length: length,
+					content: content
+				);
+				results.Add( op );
+			}
+
+			while ( oldIndex != 0 || newIndex != 0 ) {
 
 				var newOp = (DiffOperationTypes?)null;
 
-				// if chars are the same, nothing happened
-				if ( oldString[oldIndex - 1] == newString[newIndex - 1] ) {  // -1 to go from lcs.Length -> string index
-					/* do nothing... just catch this case */
-				}
-
 				// if one string is drained, the rest of the other string is logged as all + or -
-				else if ( oldIndex == 0 ) {
+				if ( oldIndex == 0 ) {
 					newOp = DiffOperationTypes.Addition;
 				} else if ( newIndex == 0 ) {
 					newOp = DiffOperationTypes.Removal;
+				}
+
+				// if chars are the same, nothing happened
+				else if ( oldString[oldIndex - 1] == newString[newIndex - 1] ) {  // -1 to go from lcs.Length -> string index
+					/* do nothing... just catch this case */
 				}
 
 				// if chars not the same, backtrack with bias for addition in new string
@@ -416,22 +567,7 @@ namespace Jakintosh.Data {
 
 					// if last op not null, commit that op to results
 					if ( lastOp.HasValue ) {
-
-						var length = lastOp.Value switch {
-							DiffOperationTypes.Removal => trailingOldIndex - oldIndex,
-							_ => 0,
-						};
-						var content = lastOp.Value switch {
-							DiffOperationTypes.Addition => newString.Substring( newIndex, trailingNewIndex - newIndex ),
-							_ => ""
-						};
-						var op = new StringDiffOperation(
-							type: lastOp.Value,
-							start: oldIndex,
-							length: length,
-							content: content
-						);
-						results.Add( op );
+						CommitOperation();
 					}
 
 					// something new is happening, mark indices
@@ -445,6 +581,11 @@ namespace Jakintosh.Data {
 
 				// log op
 				lastOp = newOp;
+			}
+
+			// if we had an uncommitted op at the end, commit it
+			if ( lastOp.HasValue ) {
+				CommitOperation();
 			}
 
 			// return delta

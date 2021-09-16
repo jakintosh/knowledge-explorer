@@ -1,6 +1,7 @@
 using Jakintosh.Data;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using UnityEngine.Events;
 
 public class AddressableData_Tests {
@@ -368,6 +369,14 @@ public class DiffableData_Tests {
 		IDuplicatable<Item>,
 		IUpdatable<Item> {
 
+		public string Name {
+			get => _name;
+			set {
+				if ( _name == value ) { return; }
+				_name = value;
+				_onUpdated?.Invoke( this );
+			}
+		}
 		public int InventoryId {
 			get => _inventoryId;
 			set {
@@ -389,16 +398,19 @@ public class DiffableData_Tests {
 			=> Serializer.GetSerializedBytes( this );
 		public ItemDiff Diff ( Item from )
 			=> new ItemDiff() {
+				NameDiff = DiffUtil.CreateStringDiff( from.Name, Name ),
 				InventoryIdDiff = _inventoryId - from.InventoryId,
 				PriceChange = _price - from.Price
 			};
 		public Item Apply ( ItemDiff diff )
 			=> new Item(
+				name: diff.NameDiff.ApplyTo( Name ),
 				id: this._inventoryId + diff.InventoryIdDiff,
 				price: this.Price + diff.PriceChange
 			);
 		public Item Duplicate ()
 			=> new Item(
+				name: _name,
 				id: _inventoryId,
 				price: _price
 			);
@@ -406,12 +418,14 @@ public class DiffableData_Tests {
 			=> _onUpdated;
 
 		public Item () { }
-		public Item ( int id, float price ) {
+		public Item ( string name, int id, float price ) {
+			_name = name;
 			_inventoryId = id;
 			_price = price;
 		}
 
 		// serialized data
+		private string _name;
 		private int _inventoryId;
 		private float _price;
 
@@ -422,19 +436,20 @@ public class DiffableData_Tests {
 	[Serializable]
 	public class ItemDiff : IBytesSerializable {
 
+		public StringDiff NameDiff;
 		public int InventoryIdDiff;
 		public float PriceChange;
 
 		public byte[] GetSerializedBytes ()
 			=> Serializer.GetSerializedBytes( this );
 
-		public override string ToString () => $"IdDiff: {InventoryIdDiff}; PriceChange: {PriceChange}";
+		public override string ToString () => $"NameDiff: {NameDiff}; IdDiff: {InventoryIdDiff}; PriceChange: {PriceChange}";
 	}
 
 	private AddressableData<Item> GetInventory () => new AddressableData<Item>();
 	private DiffableData<Item, ItemDiff> GetInventoryDeltas ( AddressableData<Item> inventory ) => new DiffableData<Item, ItemDiff>( inventory );
 
-	private Item GetItem () => new Item( id: 001, price: 4.99f );
+	private Item GetItem () => new Item( name: "Part", id: 001, price: 4.99f );
 
 	[Test]
 	public void DiffableData_Commit () {
@@ -465,12 +480,21 @@ public class DiffableData_Tests {
 		Assert.NotNull( data );
 
 		// change item
+		item.Name = "Darts";
 		item.InventoryId += 1;
 		item.Price += 1;
 
 		// update chain
 		var deltaAdress2 = inventoryDeltas.Commit( item, "", compile: false, previousDeltaAddress: deltaAdress );
 		delta = inventoryDeltas.GetDelta( deltaAdress2 );
+		Assert.AreEqual(
+			expected: new StringDiff( new List<StringDiffOperation>() {
+				new StringDiffOperation( DiffOperationTypes.Addition, 4, 0, "s"),
+				new StringDiffOperation( DiffOperationTypes.Addition, 1, 0, "D"),
+				new StringDiffOperation( DiffOperationTypes.Removal, 0, 1, null)
+			} ),
+			actual: delta.Diff.NameDiff
+		);
 		Assert.AreEqual( delta.Diff.InventoryIdDiff, 1 );
 		Assert.AreEqual( delta.Diff.PriceChange, 1 );
 		Assert.AreEqual( delta.Author, "" );
