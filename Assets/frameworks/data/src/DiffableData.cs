@@ -1,3 +1,4 @@
+using Coalescent.Computer;
 using System;
 using System.Collections.Generic;
 
@@ -41,6 +42,7 @@ namespace Jakintosh.Data {
 		them, and create a new delta object that contains the changes from the
 		last object.
 	*/
+	[Serializable]
 	public class DiffableData<TData, TDiff>
 		where TData :
 			class,
@@ -51,10 +53,14 @@ namespace Jakintosh.Data {
 			new()
 		where TDiff : IBytesSerializable {
 
-		public DiffableData ( AddressableData<TData> addressableDataRepo ) {
+		public DiffableData () {
 
 			_deltas = new Dictionary<string, Delta<TData, TDiff>>();
 			_deltaToContentMap = new Dictionary<string, string>();
+		}
+
+		public void SetDataRepository ( AddressableData<TData> addressableDataRepo ) {
+
 			_addressableContent = addressableDataRepo;
 		}
 

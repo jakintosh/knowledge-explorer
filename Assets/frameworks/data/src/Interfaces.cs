@@ -34,7 +34,7 @@ namespace Jakintosh.Data {
 			var bytes = formatter.Serialize<T>( data );
 			return bytes;
 		}
-		public static T DeserialiseBytes<T> ( byte[] bytes ) where T : new() {
+		public static T DeserializeBytes<T> ( byte[] bytes ) where T : new() {
 
 			var formatter = new MessagePackFormatter();
 			var data = formatter.Deserialize<T>( bytes );
@@ -82,6 +82,10 @@ namespace Jakintosh.Data {
 		public static string ConvertHashToBase64String ( byte[] hash ) {
 
 			return Convert.ToBase64String( hash );
+		}
+		public static byte[] ConvertBase64StringHashToBytes ( string hash ) {
+
+			return Convert.FromBase64String( hash );
 		}
 	}
 }

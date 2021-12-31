@@ -3,6 +3,20 @@ using System.Collections.Generic;
 
 public static class List_T_FunctionalExtensions {
 
+	public static List<T> GetRange<T> ( this IList<T> list, int index, int count ) {
+
+		if ( list == null ) {
+			return null;
+		}
+
+		var result = new List<T>( count );
+		var stop = index + count;
+		for ( int i = index; i < stop; i++ ) {
+			result.Add( list[i] );
+		}
+		return result;
+	}
+
 	public static void ForEach<T> ( this IEnumerable<T> collection, Action<T> action ) {
 
 		foreach ( var element in collection ) {
@@ -109,10 +123,18 @@ public static class HashSet_T_FunctionalExtensions {
 		}
 		return results;
 	}
-	public static HashSet<U> Convert<T, U> ( this HashSet<T> list, Func<T, U> convert ) {
+	public static HashSet<U> Convert<T, U> ( this HashSet<T> set, Func<T, U> convert ) {
 
 		var results = new HashSet<U>();
-		foreach ( var element in list ) {
+		foreach ( var element in set ) {
+			results.Add( convert( element ) );
+		}
+		return results;
+	}
+	public static List<U> ConvertToList<T, U> ( this HashSet<T> set, Func<T, U> convert ) {
+
+		var results = new List<U>();
+		foreach ( var element in set ) {
 			results.Add( convert( element ) );
 		}
 		return results;

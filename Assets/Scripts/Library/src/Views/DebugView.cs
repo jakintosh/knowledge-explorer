@@ -1,3 +1,4 @@
+using Jakintosh.Data;
 using Jakintosh.Observable;
 using Jakintosh.View;
 using System.Text;
@@ -20,7 +21,8 @@ namespace Library.Views {
 		[SerializeField] private GameObject tabItemPrefab;
 
 		private enum Mode {
-			Graph
+			Data,
+			Graph,
 		}
 		private Observable<Mode> _currentMode;
 
@@ -58,6 +60,11 @@ namespace Library.Views {
 					App.Graphs.Default.OnLinkEvent.AddListener( HandleGraphEvent );
 					break;
 
+				case Mode.Data:
+					FillContentWithData();
+					App.Data.Nodes.SubscribeAny( HandleDataEvent );
+					break;
+
 				default:
 					Debug.Log( "DebugView: Toggled mode that is not supported" );
 					break;
@@ -69,6 +76,10 @@ namespace Library.Views {
 				case Mode.Graph:
 					App.Graphs.Default.OnNodeEvent.RemoveListener( HandleGraphEvent );
 					App.Graphs.Default.OnLinkEvent.RemoveListener( HandleGraphEvent );
+					break;
+
+				case Mode.Data:
+					App.Data.Nodes.UnsubscribeAny( HandleDataEvent );
 					break;
 
 				default:
@@ -128,6 +139,40 @@ namespace Library.Views {
 				var invalidToLink = invalidatedNodes.Contains( link.ToUID );
 				sb.AppendLine( $"{( invalidToLink ? "<color=\"red\">" : "" )}-to: {link.ToUID}{( invalidToLink ? "</color=\"red\">" : "" )}" );
 			} );
+
+			_content.text = sb.ToString();
+		}
+
+		private void HandleDataEvent ( AddressEventArgs e )
+			=> FillContentWithData();
+		private void FillContentWithData () {
+
+			var data = App.Data;
+			var nodes = data.Nodes;
+
+			var sb = new StringBuilder();
+
+			void PrintNode ( Address address, Resources.Node node ) {
+				sb.AppendLine( $"address: {address}" );
+				if ( node != null ) {
+					sb.AppendLine( $"title: {node.Title}" );
+					sb.AppendLine( $"body: {node.Body}" );
+				} else {
+					sb.AppendLine( "DATA is NULL" );
+				}
+				sb.AppendLine();
+			}
+
+			sb.AppendLine( "### NODES ###" );
+			sb.AppendLine();
+
+			sb.AppendLine( "### ACTIVE FORKS ###" );
+			sb.AppendLine();
+			nodes.GetAllForkedAddresses().ForEach( address => PrintNode( address, nodes.GetMutable( address ) ) );
+
+			sb.AppendLine( "### REPOSITORY ###" );
+			sb.AppendLine();
+			nodes.GetAllAddresses().ForEach( address => PrintNode( address, nodes.GetCopy( address ) ) );
 
 			_content.text = sb.ToString();
 		}

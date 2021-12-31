@@ -1,10 +1,11 @@
+using Coalescent.Computer;
 using System;
 using System.Collections.Generic;
 
 namespace Jakintosh.Data {
 
 	[Serializable]
-	public class Address : IIdentifiable<string> {
+	public class Address : IIdentifiable<string>, IEquatable<Address> {
 
 		public string Identifier => _address;
 
@@ -13,11 +14,23 @@ namespace Jakintosh.Data {
 
 		public override string ToString () => $"ADDR::{_address}";
 
+		public bool Equals ( Address other ) => _address.Equals( other?._address );
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+
+			var addrObj = obj as Address;
+			if ( addrObj == null ) { return false; }
+
+			return Equals( addrObj );
+		}
+		public override int GetHashCode () => _address.GetHashCode();
+
 		protected string _address;
 	}
 
 	[Serializable]
-	public class MutableAddress : Address {
+	public class MutableAddress : Address, IEquatable<MutableAddress> {
 
 		public string Parent => _parent;
 
@@ -26,7 +39,37 @@ namespace Jakintosh.Data {
 
 		public override string ToString () => $"MUTA::{_parent} => {Identifier}";
 
+		public bool Equals ( MutableAddress other ) => EqualityComparer<string>.Default.Equals( Parent, other.Parent ) && base.Equals( other );
+		public override bool Equals ( object obj ) {
+
+			if ( obj == null ) { return false; }
+
+			var mutaAddrObj = obj as MutableAddress;
+			if ( mutaAddrObj == null ) { return false; }
+
+			return Equals( mutaAddrObj );
+		}
+		public override int GetHashCode () => _parent != null ? _address.GetHashCode() ^ _parent.GetHashCode() : _address.GetHashCode();
+
 		private string _parent;
+	}
+
+	public enum AddressEventTypes {
+		Created,
+		Dropped,
+		Forked,
+		Committed,
+		Invalidated,
+		Revalidated
+	}
+
+	public class AddressEventArgs : EventArgs {
+		public Address Address { get; private set; }
+		public AddressEventTypes Type { get; private set; }
+		public AddressEventArgs ( Address address, AddressEventTypes type ) {
+			Address = address;
+			Type = type;
+		}
 	}
 
 	[Serializable]
@@ -39,45 +82,41 @@ namespace Jakintosh.Data {
 
 		public AddressableData () {
 
-			_data = new Dictionary<string, TData>();
+			_data = new Dictionary<Address, TData>();
+			_tempData = new Dictionary<MutableAddress, TData>();
+			_invalidAddresses = new HashSet<MutableAddress>();
 			_handlers = new Dictionary<string, List<Action<TData>>>();
+			_anyHandlers = new List<Action<AddressEventArgs>>();
 			_forks = new Dictionary<string, string>();
 		}
 
 		// public interface
-		public MutableAddress New () {
+		public List<Address> GetAllAddresses () {
 
-			var mutableAddress = GenerateMutableAddress();
-			var mutableData = new TData();
-			mutableData.OnUpdated.AddListener( data => {
-				if ( _handlers.TryGetValue( mutableAddress.Identifier, out var handlers ) ) {
-					handlers?.ForEach( handler => handler( data ) );
-				}
-			} );
-			_data.Add( mutableAddress.Identifier, mutableData );
-			return mutableAddress;
+			var addresses = new HashSet<Address>( _data.Keys );
+			var tempAddresses = new HashSet<Address>( _tempData.Keys );
+			addresses.UnionWith( tempAddresses );
+			addresses.ExceptWith( _invalidAddresses );
+			return new List<Address>( addresses );
 		}
-		public void Drop ( MutableAddress mutableAddress ) {
+		public List<MutableAddress> GetAllMutableAddresses () {
 
-			var key = mutableAddress.Identifier;
+			var tempAddresses = new HashSet<MutableAddress>( _tempData.Keys );
+			tempAddresses.ExceptWith( _invalidAddresses );
+			return new List<MutableAddress>( tempAddresses );
+		}
+		public List<MutableAddress> GetAllForkedAddresses () {
 
-			if ( _data.ContainsKey( key ) ) {
-				var data = GetData( key );
-				data.OnUpdated.RemoveAllListeners();
-				_data.Remove( key );
-			}
-
-			if ( _handlers.ContainsKey( key ) ) {
-				_handlers.Remove( key );
-			}
-
-			if ( mutableAddress.Parent != null ) {
-				_forks.Remove( mutableAddress.Parent );
-			}
+			return _forks.ConvertToList( ( parent, fork ) =>
+				new MutableAddress(
+					address: fork,
+					parent: new Address( parent )
+				)
+			);
 		}
 		public TData GetCopy ( Address address ) {
 
-			return GetData( address.Identifier )?.Duplicate();
+			return GetData( address )?.Duplicate();
 		}
 		public TData GetLatestCopy ( Address address ) {
 
@@ -89,20 +128,24 @@ namespace Jakintosh.Data {
 
 				data = GetLatestMutable( mutableAddress );
 
-			} else if ( _forks.TryGetValue( address.Identifier, out var forkedAddress ) ) {
+			} else if ( _forks.TryGetValue( address.Identifier, out var forkedAddressIdentifier ) ) {
 
+				var forkedAddress = new MutableAddress(
+					address: forkedAddressIdentifier,
+					parent: address
+				);
 				data = GetData( forkedAddress );
 
 			} else {
 
-				data = GetData( address.Identifier );
+				data = GetData( address );
 			}
 
 			return data?.Duplicate();
 		}
 		public TData GetMutable ( MutableAddress mutableAddress ) {
 
-			return GetData( mutableAddress.Identifier );
+			return GetData( mutableAddress );
 		}
 		public bool GetLatestMutable ( Address address, out TData data ) {
 
@@ -114,7 +157,11 @@ namespace Jakintosh.Data {
 			}
 
 			// if not mutable, get fork
-			if ( _forks.TryGetValue( address.Identifier, out var forkedAddress ) ) {
+			if ( _forks.TryGetValue( address.Identifier, out var forkedAddressIdentifier ) ) {
+				var forkedAddress = new MutableAddress(
+					address: forkedAddressIdentifier,
+					parent: address
+				);
 				data = GetData( forkedAddress );
 				return data != null;
 			}
@@ -125,39 +172,108 @@ namespace Jakintosh.Data {
 		}
 		public TData GetLatestMutable ( MutableAddress mutableAddress ) {
 
-			return GetData( mutableAddress.Identifier );
+			return GetData( mutableAddress );
+		}
+
+		public MutableAddress New () {
+
+			var mutableAddress = GenerateMutableAddress();
+			var mutableData = new TData();
+			mutableData.OnUpdated.AddListener( data => {
+				// fire for those watching parent
+				if ( mutableAddress.Parent != null && _handlers.TryGetValue( mutableAddress.Parent, out var parentHandlers ) ) {
+					parentHandlers?.ForEach( handler => handler( data ) );
+				}
+				// fire for those watching this
+				if ( _handlers.TryGetValue( mutableAddress.Identifier, out var handlers ) ) {
+					handlers?.ForEach( handler => handler( data ) );
+				}
+			} );
+			_tempData.Add( mutableAddress, mutableData );
+			FireEvent( new AddressEventArgs( mutableAddress, AddressEventTypes.Created ) );
+			return mutableAddress;
+		}
+		public void Invalidate ( MutableAddress mutableAddress ) {
+
+			// mark a mutable address as invalid, should appear "dead" to the app
+			_invalidAddresses.Add( mutableAddress );
+			FireEvent( new AddressEventArgs( mutableAddress, AddressEventTypes.Invalidated ) );
+		}
+		public void Revalidate ( MutableAddress mutableAddress ) {
+
+			// mark a mutable address as valid again, should be "alive" to the app
+			_invalidAddresses.Remove( mutableAddress );
+			FireEvent( new AddressEventArgs( mutableAddress, AddressEventTypes.Revalidated ) );
+		}
+		public void Drop ( MutableAddress mutableAddress ) {
+
+			if ( _tempData.ContainsKey( mutableAddress ) ) {
+				var tempData = GetData( mutableAddress, seeInvalids: true );
+				tempData.OnUpdated.RemoveAllListeners();
+				_tempData.Remove( mutableAddress );
+				FireEvent( new AddressEventArgs( mutableAddress, AddressEventTypes.Dropped ) );
+			}
+
+			var key = mutableAddress.Identifier;
+			if ( _handlers.ContainsKey( key ) ) {
+				_handlers.Remove( key );
+			}
+
+			if ( mutableAddress.Parent != null ) {
+				_forks.Remove( mutableAddress.Parent );
+			}
+
 		}
 		public MutableAddress Fork ( Address address ) {
 
 			// if already exists, just return it
-			if ( _forks.TryGetValue( address.Identifier, out var soft ) ) {
-				return new MutableAddress( soft, parent: address );
+			if ( _forks.TryGetValue( address.Identifier, out var mutableAddressIdentifier ) ) {
+				return new MutableAddress( mutableAddressIdentifier, parent: address );
 			}
 
 			// if not, create the fork
-			var data = GetData( address.Identifier );
+			var data = GetData( address );
 			var mutableAddress = GenerateMutableAddress( parent: address );
 			var duplicate = data.Duplicate();
-			_data.Add( mutableAddress.Identifier, data );
+			duplicate.OnUpdated.AddListener( data => {
+				// fire for those watching parent
+				if ( mutableAddress.Parent != null && _handlers.TryGetValue( mutableAddress.Parent, out var parentHandlers ) ) {
+					parentHandlers?.ForEach( handler => handler( data ) );
+				}
+				// fire for those watching this
+				if ( _handlers.TryGetValue( mutableAddress.Identifier, out var handlers ) ) {
+					handlers?.ForEach( handler => handler( data ) );
+				}
+			} );
+			_tempData.Add( mutableAddress, duplicate );
 			_forks.Add( address.Identifier, mutableAddress.Identifier );
+			FireEvent( new AddressEventArgs( mutableAddress, AddressEventTypes.Forked ) );
 			return mutableAddress;
 		}
 		public Address Commit ( MutableAddress mutableAddress ) {
 
-			var data = GetData( mutableAddress.Identifier );
+			var tempData = GetData( mutableAddress );
 			Drop( mutableAddress );
-			return Commit( data.Duplicate() );
+			return Commit( tempData.Duplicate() );
 		}
 		public Address Commit ( TData data ) {
 
 			var contentHash = Hasher.HashDataToBase64String( data );
-			data.OnUpdated.AddListener( data => {
-				var handlers = _handlers[contentHash];
-				handlers?.ForEach( handler => handler( data ) );
-			} );
-			_data[contentHash] = data;
-			return new Address( contentHash );
+			var address = new Address( contentHash );
+			_data.Add( address, data );
+			FireEvent( new AddressEventArgs( address, AddressEventTypes.Committed ) );
+			return address;
 		}
+
+		public void SubscribeAny ( Action<AddressEventArgs> handler ) {
+
+			_anyHandlers.Add( handler );
+		}
+		public void UnsubscribeAny ( Action<AddressEventArgs> handler ) {
+
+			_anyHandlers.Remove( handler );
+		}
+
 		public void Subscribe ( Address address, Action<TData> handler ) {
 
 			var mutableAddress = address as MutableAddress;
@@ -178,29 +294,48 @@ namespace Jakintosh.Data {
 		}
 
 		// serialized data
-		private Dictionary<string, TData> _data;
+		private Dictionary<Address, TData> _data;
+		private Dictionary<MutableAddress, TData> _tempData;
 		private Dictionary<string, string> _forks;
 
 		// runtime data
+		[NonSerialized] private HashSet<MutableAddress> _invalidAddresses;
 		[NonSerialized] private Dictionary<string, List<Action<TData>>> _handlers;
+		[NonSerialized] private List<Action<AddressEventArgs>> _anyHandlers;
 
 		// private funcs
-		private TData GetData ( string key ) {
+		private TData GetData ( Address address ) {
 
-			if ( _data.TryGetValue( key, out var data ) ) {
-				return data;
+			var mutableAddress = address as MutableAddress;
+			if ( mutableAddress != null ) {
+				return GetData( mutableAddress );
 			}
-			return null;
+
+			_data.TryGetValue( address, out var data );
+			return data;
+		}
+		private TData GetData ( MutableAddress address, bool seeInvalids = false ) {
+
+			if ( !seeInvalids && _invalidAddresses.Contains( address ) ) {
+				return null;
+			}
+
+			_tempData.TryGetValue( address, out var data );
+			return data;
 		}
 		private MutableAddress GenerateMutableAddress ( Address parent = null ) {
 
 			int i = 0;
-			string key;
+			MutableAddress address;
 			var time = System.DateTime.Now.ToString( "o" );
 			do {
-				key = $"{time}-{i}";
-			} while ( _data.ContainsKey( key ) );
-			return new MutableAddress( address: key, parent );
+				address = new MutableAddress( address: $"{time}-{i++}", parent );
+			} while ( _tempData.ContainsKey( address ) );
+			return address;
+		}
+		private void FireEvent ( AddressEventArgs args ) {
+
+			_anyHandlers.ForEach( handler => handler( args ) );
 		}
 	}
 }

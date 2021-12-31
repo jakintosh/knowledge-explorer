@@ -1,3 +1,4 @@
+using Coalescent.Computer;
 using Jakintosh.Data;
 using NUnit.Framework;
 using System;
@@ -320,29 +321,29 @@ public class AddressableData_Tests {
 		tempPerson.Name = "Test";
 		tempPerson.Age = 10;
 		tempPerson.Quote = "Quote";
-		Assert.AreEqual( contentEventFlag, 3 );
-		Assert.AreEqual( tempEventFlags, 3 );
+		Assert.AreEqual( 3, contentEventFlag );
+		Assert.AreEqual( 3, tempEventFlags );
 
 		// make sure unsubscribe from content address works
 		people.Unsubscribe( contentAddress, contentAddressHandler );
 		tempPerson.Name = "Test 2";
-		Assert.AreEqual( contentEventFlag, 3 );
-		Assert.AreEqual( tempEventFlags, 4 );
+		Assert.AreEqual( 3, contentEventFlag );
+		Assert.AreEqual( 4, tempEventFlags );
 
 		// make sure unsubscribe from temp address works
 		people.Unsubscribe( tempPersonAddress, tempAddressHandler );
 		tempPerson.Name = "Test 3";
-		Assert.AreEqual( contentEventFlag, 3 );
-		Assert.AreEqual( tempEventFlags, 4 );
+		Assert.AreEqual( 3, contentEventFlag );
+		Assert.AreEqual( 4, tempEventFlags );
 
-		// resubscribe to temp, commit, change
+		// resubscribe to temp, commit, change, OG shouldn't see it
 		people.Subscribe( tempPersonAddress, tempAddressHandler );
 		var contentAddressV2 = people.Commit( tempPersonAddress );
-		var tempAddressV2 = people.Fork( contentAddress );
+		var tempAddressV2 = people.Fork( contentAddressV2 );
 		var tempPerson2 = people.GetLatestMutable( tempAddressV2 );
 		tempPerson2.Name = "Test 4";
-		Assert.AreEqual( contentEventFlag, 3 );
-		Assert.AreEqual( tempEventFlags, 4 );
+		Assert.AreEqual( 3, contentEventFlag );
+		Assert.AreEqual( 4, tempEventFlags );
 	}
 
 	[Test]
@@ -447,7 +448,12 @@ public class DiffableData_Tests {
 	}
 
 	private AddressableData<Item> GetInventory () => new AddressableData<Item>();
-	private DiffableData<Item, ItemDiff> GetInventoryDeltas ( AddressableData<Item> inventory ) => new DiffableData<Item, ItemDiff>( inventory );
+	private DiffableData<Item, ItemDiff> GetInventoryDeltas ( AddressableData<Item> inventory ) {
+
+		var diffData = new DiffableData<Item, ItemDiff>();
+		diffData.SetDataRepository( inventory );
+		return diffData;
+	}
 
 	private Item GetItem () => new Item( name: "Part", id: 001, price: 4.99f );
 

@@ -22,6 +22,10 @@ namespace Library.Resources {
 			=> Serializer.GetSerializedBytes( this );
 
 		// constructor
+		public NodeDiff () {
+			title = null;
+			body = null;
+		}
 		public NodeDiff ( StringDiff titleDiff, StringDiff bodyDiff ) {
 
 			title = titleDiff;
@@ -85,6 +89,11 @@ namespace Library.Resources {
 			return duplicate;
 		}
 
+		public Node () {
+			title = null;
+			body = null;
+		}
+
 		// serialized data
 		private string title;
 		private string body;
@@ -125,7 +134,7 @@ namespace Library.Resources {
 			}
 		}
 
-		// interface
+		// interfaces
 		public byte[] GetSerializedBytes ()
 			=> Serializer.GetSerializedBytes( this );
 		public UnityEvent<Link> OnUpdated
@@ -134,6 +143,12 @@ namespace Library.Resources {
 
 			var duplicate = new Link();
 			return duplicate;
+		}
+
+		public Link () {
+			type = null;
+			source = null;
+			destination = null;
 		}
 
 		// serialized data
@@ -145,10 +160,27 @@ namespace Library.Resources {
 		[NonSerialized] private UnityEvent<Link> _onUpdated = new UnityEvent<Link>();
 	}
 
+	[Serializable]
 	public class Data {
 
-		private DiffableData<Node, NodeDiff> _nodeDeltas;
+		public DiffableData<Node, NodeDiff> NodeDeltas => _nodeDeltas;
+		public AddressableData<Node> Nodes => _nodes;
+		public AddressableData<Link> Links => _links;
 
+		public Data () {
+
+			_nodes = new AddressableData<Node>();
+			_links = new AddressableData<Link>();
+			_nodeDeltas = new DiffableData<Node, NodeDiff>();
+		}
+
+		public void Init () {
+
+			_nodeDeltas.SetDataRepository( _nodes );
+		}
+
+
+		private DiffableData<Node, NodeDiff> _nodeDeltas;
 		private AddressableData<Node> _nodes;
 		private AddressableData<Link> _links;
 	}

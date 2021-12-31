@@ -1,10 +1,10 @@
+using Jakintosh.Data;
 using System;
 using System.Reflection;
 using System.Text;
 using System.Collections.Generic;
-using UnityEngine;
 
-namespace Jakintosh.Data {
+namespace Coalescent.Computer {
 
 	public enum TypePrimitives {
 		// ??? = 0x00,
@@ -171,7 +171,7 @@ namespace Jakintosh.Data {
 		}
 
 
-		static public TypeBuilder GenerateTypeBuilder ( Type type ) {
+		static public TypeBuilder Parse ( Type type ) {
 
 			// get cached type if exists
 			if ( _hashForType.TryGetValue( type, out var hash ) ) {
@@ -198,21 +198,16 @@ namespace Jakintosh.Data {
 			return builtType;
 		}
 
-		static readonly HashSet<Type> serializableUnityTypes = new HashSet<Type> {
-			typeof(Color), typeof(Color32),
-			typeof(Vector2), typeof(Vector3), typeof(Vector4),
-			typeof(Quaternion),
-			#if UNITY_2017_2_OR_NEWER
-			typeof(Vector2Int), typeof(Vector3Int),
-			#endif
-		};
-		static private bool IsSerializable ( Type type ) => serializableUnityTypes.Contains( type ) ? true : type.IsSerializable;
 		static private bool AttributesExist ( MemberInfo info, Type attributeType ) => info.GetCustomAttributes( attributeType, true ).Length > 0;
 		static private bool IsFieldSerializable ( FieldInfo info ) {
 
-			if ( AttributesExist( info, typeof( NonSerializedAttribute ) ) ) { return false; }
-			if ( info.Name.StartsWith( "<" ) ) { return false; }
-			return IsSerializable( info.FieldType );
+			if ( AttributesExist( info, typeof( NonSerializedAttribute ) ) ) {
+				return false;
+			} else if ( info.Name.StartsWith( "<" ) ) {
+				return false;
+			} else {
+				return info.FieldType.IsSerializable;
+			}
 		}
 		static private List<FieldInfo> GetSerializableFields ( Type type ) {
 
@@ -228,7 +223,7 @@ namespace Jakintosh.Data {
 		static private string GetHashForType ( Type type ) {
 
 			if ( !_hashForType.ContainsKey( type ) ) {
-				GenerateTypeBuilder( type );
+				Parse( type );
 			}
 			return _hashForType[type];
 		}

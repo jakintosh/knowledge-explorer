@@ -1,4 +1,5 @@
 using Jakintosh.Actions;
+using Jakintosh.Data;
 using System;
 using System.Collections.Generic;
 
@@ -91,9 +92,11 @@ namespace Library.Actions.Concept {
 			// make sure concept exists
 			if ( _uid == null ) {
 				_uid = App.Graphs.Default.CreateConcept();
+				_address = App.Data.Nodes.New();
 			} else {
 				_markedForDeletion = false;
 				App.Graphs.Default.MarkConceptInvalid( _uid, _markedForDeletion );
+				App.Data.Nodes.Revalidate( _address );
 			}
 
 			// open concept
@@ -110,17 +113,20 @@ namespace Library.Actions.Concept {
 			// mark concept for deletion
 			_markedForDeletion = true;
 			App.Graphs.Default.MarkConceptInvalid( _uid, _markedForDeletion );
+			App.Data.Nodes.Invalidate( _address );
 		}
 		void IHistoryAction.Retire () {
 
 			if ( _markedForDeletion ) {
 				App.Graphs.Default.DeleteConcept( _uid );
+				App.Data.Nodes.Drop( _address );
 			}
 		}
 
 		// ********** Data **********
 
 		private string _uid;
+		private MutableAddress _address;
 		private bool _markedForDeletion;
 		private bool _shouldOpen;
 		private IHistoryAction _openAction;
@@ -144,6 +150,7 @@ namespace Library.Actions.Concept {
 			// mark concept for deletion
 			_markedForDeletion = true;
 			App.Graphs.Default.MarkConceptInvalid( _uid, _markedForDeletion );
+			App.Data.Nodes.Invalidate( _address );
 
 			// close all views
 			if ( _shouldClose ) {
@@ -164,18 +171,21 @@ namespace Library.Actions.Concept {
 			// unmark concept for deletion
 			_markedForDeletion = false;
 			App.Graphs.Default.MarkConceptInvalid( _uid, _markedForDeletion );
+			App.Data.Nodes.Revalidate( _address );
 		}
 		void IHistoryAction.Retire () {
 
 			// commit deletion when this action is retired
 			if ( _markedForDeletion ) {
 				App.Graphs.Default.DeleteConcept( _uid );
+				App.Data.Nodes.Drop( _address );
 			}
 		}
 
 		// ********** Data **********
 
 		private string _uid;
+		private MutableAddress _address;
 		private bool _markedForDeletion;
 		private bool _shouldClose;
 		private List<IHistoryAction> _closeActions;

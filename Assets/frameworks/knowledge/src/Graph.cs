@@ -154,9 +154,9 @@ namespace Jakintosh.Knowledge {
 		// Links
 		public Link GetLink ( string linkUID ) {
 
-			var link = graph.GetLink( linkUID );
-			var link2 = link;
-			var equal = ( link as IEquatable<Link> ).Equals( link2 );
+			// var link = graph.GetLink( linkUID );
+			// var link2 = link;
+			// var equal = ( link as IEquatable<Link> ).Equals( link2 );
 			return graph.GetLink( linkUID );
 		}
 		public List<Link> GetConceptLinks ( string conceptUID ) {

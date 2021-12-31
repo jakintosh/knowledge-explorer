@@ -393,23 +393,6 @@ namespace Jakintosh.Data {
 		}
 	}
 
-	public static class IListExtensions {
-
-		public static List<T> GetRange<T> ( this IList<T> list, int index, int count ) {
-
-			if ( list == null ) {
-				return null;
-			}
-
-			var result = new List<T>( count );
-			var stop = index + count;
-			for ( int i = index; i < stop; i++ ) {
-				result.Add( list[i] );
-			}
-			return result;
-		}
-	}
-
 	public class DiffUtil {
 
 		public static SequenceDiff<T> CreateSequenceDiff<T> ( IList<T> oldData, IList<T> newData )

@@ -99,7 +99,7 @@ namespace Jakintosh.Resources {
 
 			try {
 
-				PersistentStore.LoadInto_Throws( path: MetadataPath, obj: this );
+				PersistentStore.LoadFromJsonInto_Throws( path: MetadataPath, obj: this );
 
 			} catch ( PersistentStore.InvalidJsonException ) {
 
@@ -114,7 +114,7 @@ namespace Jakintosh.Resources {
 
 			try {
 
-				PersistentStore.Save_Throws( path: MetadataPath, data: this );
+				PersistentStore.WriteToJson_Throws( path: MetadataPath, data: this );
 
 			} catch ( PersistentStore.InvalidPathException ) {
 
@@ -235,7 +235,7 @@ namespace Jakintosh.Resources {
 
 			if ( ResourceIsOnDisk( uid ) ) {
 				try {
-					PersistentStore.Delete( metadata.Path );
+					PersistentStore.Delete_Throws( metadata.Path );
 					_persistedUIDs.Remove( uid );
 				} catch ( PersistentStore.FileNotFoundException ) {
 					Debug.LogError( $"Client.Model.Resources.Delete: Can't delete resource with uid {uid}, file doesn't exist at path." );
@@ -255,7 +255,7 @@ namespace Jakintosh.Resources {
 			try {
 
 				var metadata = RequestMetadata( uid );
-				var resource = PersistentStore.Load_Throws<TResource>( metadata.Path );
+				var resource = PersistentStore.LoadFromJson_Throws<TResource>( metadata.Path );
 				_loadedResourcesByUID[uid] = resource;
 				return true;
 
@@ -293,7 +293,7 @@ namespace Jakintosh.Resources {
 
 				var metadata = RequestMetadata( uid );
 				var resource = RequestResource( uid, load: false );
-				PersistentStore.Save_Throws<TResource>( metadata.Path, resource );
+				PersistentStore.WriteToJson_Throws<TResource>( metadata.Path, resource );
 				_persistedUIDs.Add( uid );
 				return true;
 
